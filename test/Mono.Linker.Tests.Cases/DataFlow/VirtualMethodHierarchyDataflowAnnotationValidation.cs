@@ -5,10 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using Mono.Linker.Tests.Cases.DataFlow.Dependencies;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Helpers;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
-using Mono.Linker.Tests.Cases.DataFlow.Dependencies;
 
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
@@ -739,7 +739,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		{
 			class ImplIAnnotatedMethodsMismatch : Library.IAnnotatedMethods
 			{
-				[ExpectedWarning("IL2095")]
+				[ExpectedWarning ("IL2095")]
 				public static void GenericWithMethodsStatic<T> () { }
 
 				[ExpectedWarning ("IL2092")]
@@ -748,7 +748,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				[ExpectedWarning ("IL2093")]
 				public static Type ReturnWithMethodsStatic () => typeof (int);
 
-				[ExpectedWarning("IL2095")]
+				[ExpectedWarning ("IL2095")]
 				public void GenericWithMethods<T> () { }
 
 				[ExpectedWarning ("IL2092")]
@@ -760,7 +760,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			class ImplIUnannotatedMethodsMismatch : Library.IUnannotatedMethods
 			{
-				[ExpectedWarning("IL2095")]
+				[ExpectedWarning ("IL2095")]
 				public static void GenericStatic<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T> () { }
 
 				[ExpectedWarning ("IL2092")]
@@ -770,7 +770,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 				public static Type ReturnStatic () => typeof (int);
 
-				[ExpectedWarning("IL2095")]
+				[ExpectedWarning ("IL2095")]
 				public void Generic<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T> () { }
 
 				[ExpectedWarning ("IL2092")]
@@ -783,20 +783,20 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			class DerivedFromUnannotatedMismatch : Library.UnannotatedMethods
 			{
-				[ExpectedWarning("IL2095")]
-				public override void Generic<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]T> () { }
+				[ExpectedWarning ("IL2095")]
+				public override void Generic<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T> () { }
 
 				[ExpectedWarning ("IL2092")]
-				public override void Param([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]Type t) { }
+				public override void Param ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type t) { }
 
 				[ExpectedWarning ("IL2093")]
 				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
-				public override Type Return() => typeof (int);
+				public override Type Return () => typeof (int);
 			}
 
 			class DerivedFromAnnotatedMismatch : Library.AnnotatedMethods
 			{
-				[ExpectedWarning("IL2095")]
+				[ExpectedWarning ("IL2095")]
 				public override void GenericWithMethods<T> () { }
 
 				[ExpectedWarning ("IL2092")]
@@ -816,9 +816,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 				public void Generic<T> () { }
 
-				public void Param(Type t) { }
+				public void Param (Type t) { }
 
-				public Type Return() => typeof (int);
+				public Type Return () => typeof (int);
 			}
 
 			class ImplIAnnotatedMethodsMatch : Library.IAnnotatedMethods
@@ -840,9 +840,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			class DerivedFromAnnotatedMatch : Library.AnnotatedMethods
 			{
-				public override void GenericWithMethods<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]T> () { }
+				public override void GenericWithMethods<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T> () { }
 
-				public override void ParamWithMethods ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]Type t) { }
+				public override void ParamWithMethods ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] Type t) { }
 
 				[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 				public override Type ReturnWithMethods () => typeof (int);
@@ -852,12 +852,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				public override void Generic<T> () { }
 
-				public override void Param(Type t) { }
+				public override void Param (Type t) { }
 
-				public override Type Return() => typeof (int);
+				public override Type Return () => typeof (int);
 			}
 
-			public static void Test()
+			public static void Test ()
 			{
 				typeof (ImplIUnannotatedMethodsMismatch).RequiresPublicMethods ();
 				typeof (ImplIAnnotatedMethodsMismatch).RequiresPublicMethods ();

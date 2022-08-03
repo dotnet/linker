@@ -58,9 +58,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow.Dependencies
 		{
 			public abstract void Generic<T> ();
 
-			public abstract void Param(Type t);
+			public abstract void Param (Type t);
 
-			public abstract Type Return();
+			public abstract Type Return ();
 		}
 	}
 }
