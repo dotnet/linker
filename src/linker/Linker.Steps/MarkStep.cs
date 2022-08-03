@@ -570,8 +570,7 @@ namespace Mono.Linker.Steps
 
 		void ProcessVirtualMethods ()
 		{
-			var virtualMethods = _virtual_methods.ToArray ();
-			foreach ((MethodDefinition method, MarkScopeStack.Scope scope) in virtualMethods) {
+			foreach ((MethodDefinition method, MarkScopeStack.Scope scope) in _virtual_methods) {
 				using (ScopeStack.PushScope (scope))
 					ProcessVirtualMethod (method);
 			}
