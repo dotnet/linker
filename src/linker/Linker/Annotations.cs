@@ -678,10 +678,22 @@ namespace Mono.Linker
 			if (!method.IsVirtual)
 				return;
 
+			// Implementations of static interface methods are not virtual and won't reach here
+			// We'll search through the implementations of static interface methods to find if any need to be enqueued
+			if (method.IsStatic) {
+				Debug.Assert (method.DeclaringType.IsInterface);
+				var overrides = GetOverrides (method);
+				if (overrides is not null) {
+					foreach (var @override in overrides) {
+						if (FlowAnnotations.RequiresVirtualMethodDataFlowAnalysis (@override.Override) || HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (@override.Override))
+							VirtualMethodsWithAnnotationsToValidate.Add (@override.Override);
+					}
+				}
+			}
 			// Implementations of static interface methods are not virtual and won't show up here.
 			// If the base static interface methods doesn't have annotations, the implementation still might and we need to warn.
 			// To account for this, we'll make sure to check all static interface method's overrides
-			if (FlowAnnotations.RequiresVirtualMethodDataFlowAnalysis (method) || HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method) || method.IsStatic)
+			if (FlowAnnotations.RequiresVirtualMethodDataFlowAnalysis (method) || HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method))
 				VirtualMethodsWithAnnotationsToValidate.Add (method);
 		}
 	}

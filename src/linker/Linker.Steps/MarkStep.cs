@@ -3111,9 +3111,7 @@ namespace Mono.Linker.Steps
 
 			MarkMethodSpecialCustomAttributes (method);
 
-			// Implementations of static interface methods may not be virtual
-			if (method.IsVirtual || method.IsStatic) {
-				// The only methods with bases that arent virtual should be static interface methods
+			if (method.IsVirtual) {
 				_virtual_methods.Add ((method, ScopeStack.CurrentScope));
 			}
 

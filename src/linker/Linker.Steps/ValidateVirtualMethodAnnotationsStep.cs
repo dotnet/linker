@@ -13,31 +13,26 @@ namespace Mono.Linker.Steps
 		{
 			var annotations = Context.Annotations;
 			foreach (var method in annotations.VirtualMethodsWithAnnotationsToValidate) {
-				var overrides = annotations.GetOverrides (method);
-				if (overrides != null) {
-					foreach (var overrideInformation in overrides) {
-						annotations.FlowAnnotations.ValidateMethodAnnotationsAreSame (overrideInformation.Override, method);
-						ValidateMethodRequiresUnreferencedCodeAreSame (overrideInformation.Override, method);
-					}
-				}
-
-				// We look at every static virtual method, so we only need to search one way in the virtual/override chain
-				//if (method.IsStatic)
-				//	continue;
-
 				var baseMethods = annotations.GetBaseMethods (method);
 				if (baseMethods != null) {
 					foreach (var baseMethod in baseMethods) {
-						// Skip validation for cases where both base and override are in the list, we will validate the edge
-						// when validating the override from the list.
-						// This avoids validating the edge twice (it would produce the same warning twice)
-						if (annotations.VirtualMethodsWithAnnotationsToValidate.Contains (baseMethod))
-							continue;
 						annotations.FlowAnnotations.ValidateMethodAnnotationsAreSame (method, baseMethod);
 						ValidateMethodRequiresUnreferencedCodeAreSame (method, baseMethod);
 					}
 				}
 
+				var overrides = annotations.GetOverrides (method);
+				if (overrides != null) {
+					foreach (var overrideInformation in overrides) {
+						// Skip validation for cases where both base and override are in the list, we will validate the edge
+						// when validating the override from the list.
+						// This avoids validating the edge twice (it would produce the same warning twice)
+						if (annotations.VirtualMethodsWithAnnotationsToValidate.Contains (overrideInformation.Override))
+							continue;
+						annotations.FlowAnnotations.ValidateMethodAnnotationsAreSame (overrideInformation.Override, method);
+						ValidateMethodRequiresUnreferencedCodeAreSame (overrideInformation.Override, method);
+					}
+				}
 			}
 		}
 
