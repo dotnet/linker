@@ -3348,8 +3348,8 @@ namespace Mono.Linker.Steps
 
 			foreach (MethodDefinition base_method in base_methods) {
 				if (base_method.DeclaringType.IsInterface && !method.DeclaringType.IsInterface) {
-					if (base_method.IsStatic)
-						_virtual_methods.Add ((base_method, ScopeStack.CurrentScope));
+					// These are all virtual, no need to check
+					_virtual_methods.Add ((base_method, ScopeStack.CurrentScope));
 					continue;
 				}
 
