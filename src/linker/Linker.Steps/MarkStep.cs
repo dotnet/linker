@@ -2397,7 +2397,7 @@ namespace Mono.Linker.Steps
 		}
 
 		/// <summary>
-		/// Returns true if the override method is required due to the interface that the base method is declared on.
+		/// Returns true if the override method is required due to the interface that the base method is declared on. See doc at <see href="docs/methods-kept-by-interface.md"/> for explanation of logic.
 		/// </summary>
 		bool IsInterfaceImplementationMethodNeededByTypeDueToInterface (OverrideInformation overrideInformation)
 		{
