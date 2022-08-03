@@ -20,7 +20,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		[Fact]
-		public Task RefFieldDataflow ()
+		public Task StaticInterfaceMethodDataflow ()
 		{
 			return RunTest (allowMissingWarnings: true);
 		}
