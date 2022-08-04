@@ -29,6 +29,7 @@ namespace Mono.Linker.Steps
 						// This avoids validating the edge twice (it would produce the same warning twice)
 						if (annotations.VirtualMethodsWithAnnotationsToValidate.Contains (overrideInformation.Override))
 							continue;
+
 						annotations.FlowAnnotations.ValidateMethodAnnotationsAreSame (overrideInformation.Override, method);
 						ValidateMethodRequiresUnreferencedCodeAreSame (overrideInformation.Override, method);
 					}
