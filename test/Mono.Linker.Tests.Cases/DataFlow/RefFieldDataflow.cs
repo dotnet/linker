@@ -73,7 +73,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			T,
 			[DAM (DAMT.PublicMethods)] TM,
 			[DAM (DAMT.PublicFields)] TF,
-			[DAM (DAMT.NonPublicMethods | DAMT.PublicMethods)] TMF>
+			[DAM (DAMT.PublicFields | DAMT.PublicMethods)] TMF>
 			(RefFieldWithMethods target)
 		{
 			var t = typeof (T);
@@ -95,7 +95,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			T,
 			[DAM (DAMT.PublicMethods)] TM,
 			[DAM (DAMT.PublicFields)] TF,
-			[DAM (DAMT.NonPublicMethods | DAMT.PublicMethods)] TMF>
+			[DAM (DAMT.PublicFields | DAMT.PublicMethods)] TMF>
 			(scoped RefFieldWithMethods target)
 		{
 			var t = typeof (T);
@@ -123,7 +123,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			T,
 			[DAM (DAMT.PublicMethods)] TM,
 			[DAM (DAMT.PublicFields)] TF,
-			[DAM (DAMT.NonPublicMethods | DAMT.PublicFields)] TMF>
+			[DAM (DAMT.PublicFields | DAMT.PublicFields)] TMF>
 			(scoped RefFieldWithMethods withMethods,
 			 scoped RefFieldWithFields withFields,
 			 scoped RefFieldWithMethodsAndFields withMethodsAndFields,
@@ -205,7 +205,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			T,
 			[DAM (DAMT.PublicMethods)] TM,
 			[DAM (DAMT.PublicFields)] TF,
-			[DAM (DAMT.NonPublicMethods | DAMT.PublicMethods)] TMF>
+			[DAM (DAMT.PublicFields | DAMT.PublicMethods)] TMF>
 			(scoped RefFieldWithMethods target,
 			scoped ref Type param,
 			[DAM (DAMT.PublicMethods)] scoped ref Type paramWithMethods,
@@ -295,7 +295,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			T,
 			[DAM (DAMT.PublicMethods)] TM,
 			[DAM (DAMT.PublicFields)] TF,
-			[DAM (DAMT.NonPublicMethods | DAMT.PublicMethods)] TMF>
+			[DAM (DAMT.PublicFields | DAMT.PublicMethods)] TMF>
 			(RefFieldWithMethods target)
 		{
 			target.T = ref GetRefUnannotated (); // Warn
@@ -330,7 +330,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			T,
 			[DAM (DAMT.PublicMethods)] TM,
 			[DAM (DAMT.PublicFields)] TF,
-			[DAM (DAMT.NonPublicMethods | DAMT.PublicMethods)] TMF>
+			[DAM (DAMT.PublicFields | DAMT.PublicMethods)] TMF>
 			(scoped RefFieldWithMethods target)
 		{
 			Type t = GetUnannotated ();
