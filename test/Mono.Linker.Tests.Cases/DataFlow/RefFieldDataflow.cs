@@ -32,10 +32,10 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 	{
 		[Kept]
 		// Bug for the IL2069's here: https://github.com/dotnet/linker/issues/2874
-		[ExpectedWarning("IL2069", ProducedBy = ProducedBy.Trimmer)]
-		[ExpectedWarning("IL2069", ProducedBy = ProducedBy.Trimmer)]
-		[ExpectedWarning("IL2069", ProducedBy = ProducedBy.Trimmer)]
-		[ExpectedWarning("IL2069", ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2069", ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2069", ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2069", ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2069", ProducedBy = ProducedBy.Trimmer)]
 		public static void Main ()
 		{
 			RefFieldWithMethods withMethods = new (ref fieldWithMethods);
@@ -53,6 +53,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			AssignRefFields (withMethods, unannotated, withMethods, withFields, withMethodsAndFields);
 			AssignReturns<int, int, int, int> (withMethods);
 			AssignRefReturns<int, int, int, int> (withMethods);
+			AssignProperties (withMethods);
+			AssignRefProperties (withMethods);
 		}
 		static Type field = typeof (int);
 
@@ -87,7 +89,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			target.T = t; // Okay
 		}
 
-		// If we track local refs values:
 		[ExpectedWarning ("IL2089", "T")]
 		[ExpectedWarning ("IL2089", "TF")]
 		static void AssignRefToLocals<
@@ -350,6 +351,119 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			target.T = typeof (TM);
 		}
 
+		[ExpectedWarning ("IL2074", "RefFieldWithMethods.T", "PropUnannotated.T")]
+		[ExpectedWarning ("IL2074", "RefFieldWithMethods.T", "PropWithFields.T")]
+		static void AssignProperties (RefFieldWithMethods target,
+			PropUnannotated unannotated = null,
+			PropWithMethods withMethods = null,
+			PropWithFields withFields = null,
+			PropWithMethodsAndFields withMethodsAndFields = null)
+		{
+			target.T = unannotated.T; // Warn
+			target.T = withMethods.T; // Okay
+			target.T = withFields.T; // Warn
+			target.T = withMethodsAndFields.T;// Okay
+		}
+
+		// target.T = x.T
+		[ExpectedWarning ("IL2074", "RefFieldWithMethods.T", "RefPropUnannotated.T", ProducedBy = ProducedBy.Analyzer)]
+		[ExpectedWarning ("IL2074", "RefFieldWithMethods.T", "RefPropWithFields.T", ProducedBy = ProducedBy.Analyzer)]
+		// target.T = t;
+		[ExpectedWarning ("IL2074", "RefFieldWithMethods.T", "RefPropUnannotated.T", ProducedBy = ProducedBy.Analyzer)]
+		[ExpectedWarning ("IL2074", "RefFieldWithMethods.T", "RefPropWithFields.T", ProducedBy = ProducedBy.Analyzer)]
+		// target.T = ref x.T
+		[ExpectedWarning ("IL2074", "RefFieldWithMethods.T", "RefPropUnannotated.T")]
+		[ExpectedWarning ("IL2074", "RefFieldWithMethods.T", "RefPropWithFields.T")]
+		// ref Type t = ref x.T; target.T = t;
+		// IL2064's are bugs - shouldn't be unknown values
+		// https://github.com/dotnet/linker/issues/2943
+		[ExpectedWarning ("IL2064", "RefFieldWithMethods.T", ProducedBy = ProducedBy.Trimmer)] // target.T = unannotated.T;
+		[ExpectedWarning ("IL2064", "RefFieldWithMethods.T", ProducedBy = ProducedBy.Trimmer)] // target.T = withMethods.T;
+		[ExpectedWarning ("IL2064", "RefFieldWithMethods.T", ProducedBy = ProducedBy.Trimmer)] // target.T = withFields.T;
+		[ExpectedWarning ("IL2064", "RefFieldWithMethods.T", ProducedBy = ProducedBy.Trimmer)] // target.T = withMethodsAndFieldswithMtho.T;
+		[ExpectedWarning ("IL2064", "RefFieldWithMethods.T", ProducedBy = ProducedBy.Trimmer)] // target.T = withMethods.T;
+		[ExpectedWarning ("IL2064", "RefFieldWithMethods.T", ProducedBy = ProducedBy.Trimmer)] // target.T = t;
+		[ExpectedWarning ("IL2064", "RefFieldWithMethods.T", ProducedBy = ProducedBy.Trimmer)] // target.T = t;
+		[ExpectedWarning ("IL2064", "RefFieldWithMethods.T", ProducedBy = ProducedBy.Trimmer)] // target.T = t;
+		[ExpectedWarning ("IL2064", "RefFieldWithMethods.T", ProducedBy = ProducedBy.Trimmer)] // target.T = t;
+		static void AssignRefProperties (RefFieldWithMethods target,
+			RefPropUnannotated unannotated = null,
+			RefPropWithMethods withMethods = null,
+			RefPropWithFields withFields = null,
+			RefPropWithMethodsAndFields withMethodsAndFields = null)
+		{
+			// All cause IL2064 -- linker doesn't recognize ldind.ref
+			target.T = unannotated.T; // Warn
+			target.T = withMethods.T; // Okay
+			target.T = withFields.T; // Warn
+			target.T = withMethodsAndFields.T;// Okay
+
+			target.T = ref unannotated.T; // Warn
+			target.T = ref withMethods.T; // Okay
+			target.T = ref withFields.T; // Warn
+			target.T = ref withMethodsAndFields.T; // Creates hole
+			target.T = withMethods.T; // Assigns a value with methods to a location with methods and fields
+
+
+			ref Type t = ref unannotated.T;
+			target.T = t; // Okay
+			t = ref withMethods.T;
+			target.T = t; // Creates hole
+			t = ref withFields.T;
+			target.T = t; // Creates hole
+			t = ref withMethodsAndFields.T;
+			target.T = t; // Creates hole
+		}
+
+		class PropUnannotated
+		{
+			public Type T { get; set; }
+		}
+		class PropWithMethods
+		{
+			[DAM (DAMT.PublicMethods)]
+			public Type T { get; set; }
+		}
+		class PropWithFields
+		{
+			[DAM (DAMT.PublicFields)]
+			public Type T { get; set; }
+		}
+		class PropWithMethodsAndFields
+		{
+			[DAM (DAMT.PublicMethods | DAMT.PublicFields)]
+			public Type T { get; set; }
+		}
+		class RefPropUnannotated
+		{
+			Type _field = null;
+
+			public ref Type T { get => ref _field; }
+		}
+		class RefPropWithMethods
+		{
+			[DAM (DAMT.PublicMethods)]
+			Type _field = null;
+
+			[DAM (DAMT.PublicMethods)]
+			public ref Type T { get => ref _field; }
+		}
+		class RefPropWithFields
+		{
+			[DAM (DAMT.PublicFields)]
+			Type _field = null;
+
+			[DAM (DAMT.PublicFields)]
+			public ref Type T { get => ref _field; }
+		}
+		class RefPropWithMethodsAndFields
+		{
+			[DAM (DAMT.PublicFields | DAMT.PublicMethods)]
+			Type _field = null;
+
+			[DAM (DAMT.PublicFields | DAMT.PublicMethods)]
+			public ref Type T { get => ref _field; }
+		}
 		class UnannotatedField
 		{
 			public Type T;
