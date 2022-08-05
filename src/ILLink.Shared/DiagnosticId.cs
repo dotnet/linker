@@ -130,13 +130,13 @@ namespace ILLink.Shared
 		TypePassedToGenericParameterCannotBeStaticallyDetermined = 2066,
 
 		// Dynamically Accessed Members attribute mismatch.
-		DynamicallyAccessedMembersMismatchParameterTargetsParameter = 2067,
-		DynamicallyAccessedMembersMismatchParameterTargetsMethodReturnType = 2068,
+		DynamicallyAccessedMembersMismatchParameterTargetsParameter = 2067, //
+		DynamicallyAccessedMembersMismatchParameterTargetsMethodReturnType = 2068,//
 		DynamicallyAccessedMembersMismatchParameterTargetsField = 2069,
 		DynamicallyAccessedMembersMismatchParameterTargetsThisParameter = 2070,
 		DynamicallyAccessedMembersMismatchParameterTargetsGenericParameter = 2071,
-		DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsParameter = 2072,
-		DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsMethodReturnType = 2073,
+		DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsParameter = 2072, //
+		DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsMethodReturnType = 2073, // 
 		DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsField = 2074,
 		DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsThisParameter = 2075,
 		DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsGenericParameter = 2076,
@@ -145,7 +145,7 @@ namespace ILLink.Shared
 		DynamicallyAccessedMembersMismatchFieldTargetsField = 2079,
 		DynamicallyAccessedMembersMismatchFieldTargetsThisParameter = 2080,
 		DynamicallyAccessedMembersMismatchFieldTargetsGenericParameter = 2081,
-		DynamicallyAccessedMembersMismatchThisParameterTargetsParameter = 2082,
+		DynamicallyAccessedMembersMismatchThisParameterTargetsParameter = 2082, //
 		DynamicallyAccessedMembersMismatchThisParameterTargetsMethodReturnType = 2083,
 		DynamicallyAccessedMembersMismatchThisParameterTargetsField = 2084,
 		DynamicallyAccessedMembersMismatchThisParameterTargetsThisParameter = 2085,
