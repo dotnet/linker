@@ -205,28 +205,100 @@ namespace ILLink.RoslynAnalyzer
 
 		static void VerifyDamOnMethodsMatch (SymbolAnalysisContext context, IMethodSymbol method, IMethodSymbol overriddenMethod)
 		{
-			var args = FlowAnnotations.GetMethodReturnValueAnnotation (overriddenMethod);
-			if (FlowAnnotations.GetMethodReturnValueAnnotation (method) != args)
-				context.ReportDiagnostic (Diagnostic.Create (
-					DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodReturnValueBetweenOverrides),
-					method.Locations[0], method.GetDisplayName (), overriddenMethod.GetDisplayName ()));
+			if (FlowAnnotations.GetMethodReturnValueAnnotation (method) != FlowAnnotations.GetMethodReturnValueAnnotation (overriddenMethod)) {
+				var methodArgs = FlowAnnotations.GetMethodReturnValueAnnotation (method);
+				IMethodSymbol methodWithAttributes;
+				IMethodSymbol methodNeedsAttributes;
+				if (methodArgs != DynamicallyAccessedMemberTypes.None) {
+					methodWithAttributes = method;
+					methodNeedsAttributes = overriddenMethod;
+				} else {
+					methodArgs = FlowAnnotations.GetMethodReturnValueAnnotation (overriddenMethod);
+					methodWithAttributes = overriddenMethod;
+					methodNeedsAttributes = method;
+				}
+				Location[] sourceLocation = new Location[1];
+				sourceLocation[0] = methodNeedsAttributes.Locations[0];
+
+				if (!sourceLocation[0].IsInSource) {
+					context.ReportDiagnostic (Diagnostic.Create (
+						DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodReturnValueBetweenOverrides),
+						method.Locations[0], methodWithAttributes.GetDisplayName (), methodNeedsAttributes.GetDisplayName ()));
+				} else {
+					Dictionary<string, string?> DAMArgument = new Dictionary<string, string?> ();
+					DAMArgument.Add ("attributeArgument", methodArgs.ToString ());
+					context.ReportDiagnostic (Diagnostic.Create (
+						DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodReturnValueBetweenOverrides),
+						method.Locations[0], sourceLocation, DAMArgument.ToImmutableDictionary (), methodWithAttributes.GetDisplayName (), methodNeedsAttributes.GetDisplayName ()));
+				}
+			}
 
 			for (int i = 0; i < method.Parameters.Length; i++) {
 				if (FlowAnnotations.GetMethodParameterAnnotation (method.Parameters[i]) != FlowAnnotations.GetMethodParameterAnnotation (overriddenMethod.Parameters[i])) {
-					context.ReportDiagnostic (Diagnostic.Create (
-						DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodParameterBetweenOverrides),
-						method.Parameters[i].Locations[0],
-						method.Parameters[i].GetDisplayName (), method.GetDisplayName (), overriddenMethod.Parameters[i].GetDisplayName (), overriddenMethod.GetDisplayName ()));
+
+					var paramArgs = FlowAnnotations.GetMethodParameterAnnotation (method.Parameters[i]);
+					IMethodSymbol paramWithAttributes;
+					IMethodSymbol paramNeedsAttributes;
+					if (paramArgs != DynamicallyAccessedMemberTypes.None) {
+						paramWithAttributes = method;
+						paramNeedsAttributes = overriddenMethod;
+					} else {
+						paramArgs = FlowAnnotations.GetMethodParameterAnnotation (overriddenMethod.Parameters[i]);
+						paramWithAttributes = overriddenMethod;
+						paramNeedsAttributes = method;
+					}
+					Location[] sourceLocation = new Location[1];
+					sourceLocation[0] = paramNeedsAttributes.Parameters[i].Locations[0];
+
+					if (!sourceLocation[0].IsInSource) {
+						context.ReportDiagnostic (Diagnostic.Create (
+							DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodParameterBetweenOverrides),
+							method.Parameters[i].Locations[0],
+							paramWithAttributes.Parameters[i].GetDisplayName (), paramWithAttributes.GetDisplayName (), paramNeedsAttributes.Parameters[i].GetDisplayName (), paramNeedsAttributes.GetDisplayName ()));
+					} else {
+						Dictionary<string, string?> DAMArgument = new ();
+						DAMArgument.Add ("attributeArgument", paramArgs.ToString ());
+						context.ReportDiagnostic (Diagnostic.Create (
+							DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodParameterBetweenOverrides),
+							method.Parameters[i].Locations[0], sourceLocation, DAMArgument.ToImmutableDictionary (),
+							paramWithAttributes.Parameters[i].GetDisplayName (), paramWithAttributes.GetDisplayName (), paramNeedsAttributes.Parameters[i].GetDisplayName (), paramNeedsAttributes.GetDisplayName ()));
+					}
 				}
 			}
 
 			for (int i = 0; i < method.TypeParameters.Length; i++) {
-				if (method.TypeParameters[i].GetDynamicallyAccessedMemberTypes () != overriddenMethod.TypeParameters[i].GetDynamicallyAccessedMemberTypes ())
-					context.ReportDiagnostic (Diagnostic.Create (
-						DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnGenericParameterBetweenOverrides),
-						method.TypeParameters[i].Locations[0],
-						method.TypeParameters[i].GetDisplayName (), method.GetDisplayName (),
-						overriddenMethod.TypeParameters[i].GetDisplayName (), overriddenMethod.GetDisplayName ()));
+				if (method.TypeParameters[i].GetDynamicallyAccessedMemberTypes () != overriddenMethod.TypeParameters[i].GetDynamicallyAccessedMemberTypes ()) {
+					var typeParamArgs = method.TypeParameters[i].GetDynamicallyAccessedMemberTypes ();
+
+					IMethodSymbol typeParamWithAttributes;
+					IMethodSymbol typeParamNeedsAttributes;
+					if (typeParamArgs != DynamicallyAccessedMemberTypes.None) {
+						typeParamWithAttributes = method;
+						typeParamNeedsAttributes = overriddenMethod;
+					} else {
+						typeParamArgs = overriddenMethod.TypeParameters[i].GetDynamicallyAccessedMemberTypes ();
+						typeParamWithAttributes = overriddenMethod;
+						typeParamNeedsAttributes = method;
+					}
+					Location[] sourceLocation = new Location[1];
+					sourceLocation[0] = typeParamNeedsAttributes.TypeParameters[i].Locations[0];
+					if (!sourceLocation[0].IsInSource) {
+						context.ReportDiagnostic (Diagnostic.Create (
+							DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnGenericParameterBetweenOverrides),
+							method.TypeParameters[i].Locations[0],
+							typeParamWithAttributes.TypeParameters[i].GetDisplayName (), typeParamWithAttributes.GetDisplayName (),
+							typeParamNeedsAttributes.TypeParameters[i].GetDisplayName (), typeParamNeedsAttributes.GetDisplayName ()));
+					} else {
+						Dictionary<string, string?> DAMArgument = new ();
+						DAMArgument.Add ("attributeArgument", typeParamArgs.ToString ());
+
+						context.ReportDiagnostic (Diagnostic.Create (
+							DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersMismatchOnGenericParameterBetweenOverrides),
+							method.TypeParameters[i].Locations[0], sourceLocation, DAMArgument.ToImmutableDictionary (),
+							typeParamWithAttributes.TypeParameters[i].GetDisplayName (), typeParamWithAttributes.GetDisplayName (),
+							typeParamNeedsAttributes.TypeParameters[i].GetDisplayName (), typeParamNeedsAttributes.GetDisplayName ()));
+					}
+				}
 			}
 
 			if (!method.IsStatic && method.GetDynamicallyAccessedMemberTypes () != overriddenMethod.GetDynamicallyAccessedMemberTypes ())

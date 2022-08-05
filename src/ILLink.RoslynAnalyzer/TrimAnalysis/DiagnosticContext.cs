@@ -1,6 +1,7 @@
 // Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using ILLink.RoslynAnalyzer;
@@ -36,35 +37,30 @@ namespace ILLink.Shared.TrimAnalysis
 			}
 
 			Location[] sourceLocation = new Location[1];
-			switch (sourceValue) {
-			case FieldValue field:
-				Location sourceFieldLocation = field.FieldSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
-				sourceLocation[0] = sourceFieldLocation;
-				break;
-			case MethodParameterValue mpv:
-				Location sourceMpvLocation = mpv.ParameterSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
-				sourceLocation[0] = sourceMpvLocation;
-				break;
-			case MethodReturnValue mrv:
-				Location sourceMrvLocation = mrv.MethodSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
-				sourceLocation[0] = sourceMrvLocation;
-				break;
-			case MethodThisParameterValue mtpv:
-				Location sourceMptvLocation = mtpv.MethodSymbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
-				sourceLocation[0] = sourceMptvLocation;
-				break;
-			case GenericParameterValue gpv:
-				Location sourceGpvLocation = gpv.GenericParameter.TypeParameterSymbol.DeclaringSyntaxReferences[0].GetSyntax().GetLocation();
-				sourceLocation[0] = sourceGpvLocation;
-				break;
-			default:
+			if (sourceValue is NullableValueWithDynamicallyAccessedMembers nv) {
+				sourceValue = nv.UnderlyingTypeValue;
+			}
+			ISymbol symbol = sourceValue switch {
+				FieldValue field => field.FieldSymbol,
+				MethodParameterValue mpv => mpv.ParameterSymbol,
+				MethodReturnValue mrv => mrv.MethodSymbol,
+				MethodThisParameterValue mtpv => mtpv.MethodSymbol,
+				GenericParameterValue gpv => gpv.GenericParameter.TypeParameterSymbol,
+				_ => throw new InvalidOperationException ()
+			};
+
+			if (symbol.DeclaringSyntaxReferences.Length == 0) {
+				Diagnostics.Add (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (id), Location, args));
 				return;
 			}
+
+			Location symbolLocation = symbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
+			sourceLocation[0] = symbolLocation;
 
 			Dictionary<string, string?> DAMArgument = new Dictionary<string, string?> ();
 			DAMArgument.Add ("attributeArgument", originalValue.DynamicallyAccessedMemberTypes.ToString ());
 
-			Diagnostics.Add (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (id), Location, sourceLocation, DAMArgument.ToImmutableDictionary(), args));
+			Diagnostics.Add (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (id), Location, sourceLocation, DAMArgument.ToImmutableDictionary (), args));
 		}
 	}
 }
