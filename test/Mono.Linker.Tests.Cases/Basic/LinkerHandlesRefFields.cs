@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Cases.Expectations.Helpers;
 
 namespace Mono.Linker.Tests.Cases.Basic
 {
@@ -21,7 +22,6 @@ namespace Mono.Linker.Tests.Cases.Basic
 			public ref int i;
 			public ref double d;
 			public RS2 rs2;
-			public ref string str;
 			public ref object obj;
 			public ref Type t;
 			public void MoveThis ()
@@ -34,7 +34,6 @@ namespace Mono.Linker.Tests.Cases.Basic
 		{
 			public ref int i;
 			public ref double d;
-			public ref string str;
 			public ref object obj;
 			public ref Type t;
 			public void MoveThis ()
@@ -43,10 +42,60 @@ namespace Mono.Linker.Tests.Cases.Basic
 			}
 		}
 
+		ref struct RsAnnotations
+		{
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			public ref Type tDam;
+
+			[RequiresUnreferencedCode ("message for " + nameof (RefReturnWithMethods_HasRuc))]
+			[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			public static ref Type RefReturnWithMethods_HasRuc (ref RsAnnotations rs)
+			{
+				return ref rs.tDam;
+			}
+		}
+
+		interface IRS
+		{
+			void RSParam (ref RS rsRef, RS rs);
+			RS RSReturn ();
+			ref RS2 RSParamAndReturn (ref RS rs);
+		}
+
+		class Base : IRS
+		{
+			public virtual void RSParam (ref RS rsRef, RS rs) { }
+			public virtual RS RSReturn () { return new RS (); }
+			public virtual ref RS2 RSParamAndReturn (ref RS rs)
+			{
+				return ref rs.rs2;
+			}
+		}
+
+		class Derived : Base, IRS
+		{
+			public override void RSParam (ref RS rsRef, RS rs) { }
+			public override RS RSReturn () { return new RS (); }
+		}
+
+		static void TestVirtualMethods ()
+		{
+			typeof (Base).RequiresPublicMethods ();
+			typeof (Derived).RequiresPublicMethods ();
+		}
+
+		// Ref structs can't implement interfaces
+
 		delegate RS2 RsParamRs2Return (RS rs);
 		delegate ref RS2 RefRSParamRefRs2Return (ref RS rs);
 		delegate ref int RsParamRefIntReturn (RS rs);
 
+		[ExpectedWarning ("IL2026", "message for " + nameof (RsAnnotations.RefReturnWithMethods_HasRuc))]
+		static void CallAnnotatedMethod ()
+		{
+			RsAnnotations rsa = new RsAnnotations ();
+			RsAnnotations.RefReturnWithMethods_HasRuc (ref rsa);
+		}
 		public static void Main (string[] args)
 		{
 			scoped RS rs = new RS ();
@@ -114,6 +163,9 @@ namespace Mono.Linker.Tests.Cases.Basic
 			// Call methods with this
 			rs.MoveThis ();
 			rs2.MoveThis ();
+
+			CallAnnotatedMethod ();
+			TestVirtualMethods ();
 		}
 	}
 }
