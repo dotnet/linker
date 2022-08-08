@@ -138,6 +138,8 @@ stages:
               MSBUILDENSURESTDOUTFORTASKPROCESSES: 1
             displayName: Build illink.sln $(_BuildConfig)
 
+# Disabled to prevent dotnet-format bugs (see https://github.com/dotnet/linker/pull/2884).
+# This should be turned back on when we are on a preview7 SDK.
 #  - ${{ if eq(variables.officialBuild, 'false') }}:
 #    - job: Lint
 #      pool:
