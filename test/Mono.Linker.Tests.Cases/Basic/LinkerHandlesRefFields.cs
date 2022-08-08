@@ -24,7 +24,7 @@ namespace Mono.Linker.Tests.Cases.Basic
 			public ref string str;
 			public ref object obj;
 			public ref Type t;
-			public void MoveThis()
+			public void MoveThis ()
 			{
 				this = new RS ();
 			}
@@ -37,7 +37,7 @@ namespace Mono.Linker.Tests.Cases.Basic
 			public ref string str;
 			public ref object obj;
 			public ref Type t;
-			public void MoveThis()
+			public void MoveThis ()
 			{
 				this = new RS2 ();
 			}
@@ -47,7 +47,7 @@ namespace Mono.Linker.Tests.Cases.Basic
 		delegate ref RS2 RefRSParamRefRs2Return (ref RS rs);
 		delegate ref int RsParamRefIntReturn (RS rs);
 
-		public static void Main(string[] args)
+		public static void Main (string[] args)
 		{
 			scoped RS rs = new RS ();
 			scoped RS2 rs2 = new RS2 ();
@@ -91,14 +91,14 @@ namespace Mono.Linker.Tests.Cases.Basic
 			rs.i = g (rs);
 
 			// As parameters and returns for local functions
-			RS LocalMethod(RS2 rs)
+			RS LocalMethod (RS2 rs)
 			{
 				rs.d = 0.2;
 				return new RS ();
 			}
 			rs = LocalMethod (rs.rs2);
 
-			ref RS LocalMethodRef(ref RS rs)
+			ref RS LocalMethodRef (ref RS rs)
 			{
 				return ref rs;
 			}
