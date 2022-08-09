@@ -100,21 +100,18 @@ namespace ILLink.CodeFix
 
 		public override async Task RegisterCodeFixesAsync (CodeFixContext context)
 		{
-			bool ReturnAttribute = false;
-			bool GenericAttribute = false;
 			var document = context.Document;
 			if (await document.GetSyntaxRootAsync (context.CancellationToken).ConfigureAwait (false) is not { } root)
 				return;
 			var diagnostic = context.Diagnostics[0];
 
-			SyntaxNode attributableNode;
-			if (diagnostic.AdditionalLocations.Count != 0) {
-				attributableNode = root.FindNode (diagnostic.AdditionalLocations[0].SourceSpan, getInnermostNodeForTie: true);
-			} else {
+			if (diagnostic.AdditionalLocations.Count == 0)
 				return;
-			}
 
-			if (attributableNode is null) return;
+			SyntaxNode attributableNode = root.FindNode (diagnostic.AdditionalLocations[0].SourceSpan, getInnermostNodeForTie: true);
+
+			if (attributableNode is null)
+				return;
 
 			string? stringArgs = diagnostic.Properties["attributeArgument"];
 
@@ -134,18 +131,16 @@ namespace ILLink.CodeFix
 
 			var codeFixTitle = CodeFixTitle.ToString ();
 
-			if (AttributeOnReturn.Contains (diagnostic.Id)) {
-				ReturnAttribute = true;
-			}
-
-			if (AttributeOnGeneric.Contains (diagnostic.Id)) {
-				GenericAttribute = true;
-			}
-
 			context.RegisterCodeFix (CodeAction.Create (
 				title: codeFixTitle,
 				createChangedDocument: ct => AddAttributeAsync (
-					document, attributableNode, attributeArguments, attributeSymbol, ReturnAttribute, GenericAttribute, ct),
+					document,
+					attributableNode,
+					attributeArguments,
+					attributeSymbol,
+					addAsReturnAttribute: AttributeOnReturn.Contains (diagnostic.Id),
+					addGenericParameterAttribute: AttributeOnGeneric.Contains (diagnostic.Id),
+					ct),
 				equivalenceKey: codeFixTitle), diagnostic);
 		}
 
@@ -165,10 +160,11 @@ namespace ILLink.CodeFix
 				.WithAdditionalAnnotations (Simplifier.Annotation, Simplifier.AddImportsAnnotation);
 
 			if (addAsReturnAttribute) {
-				// don't use AddReturnAttribute because it's the same as AddAttribute (bug)
+				// don't use AddReturnAttribute because it's the same as AddAttribute https://github.com/dotnet/roslyn/pull/63084
+				//editor.AddReturnAttribute (targetNode, attribute);
 				editor.ReplaceNode (targetNode, (d, g) => g.AddReturnAttributes (d, new[] { attribute }));
 			} else if (addGenericParameterAttribute) {
-				// no API for adding generic Type attributes yet
+				// no API for adding attributes to type parameters yet
 				var newNode = (TypeParameterSyntax) targetNode;
 				var nodeWithAttribute = newNode.AddAttributeLists ((AttributeListSyntax) attribute);
 				editor.ReplaceNode (targetNode, nodeWithAttribute);

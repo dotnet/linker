@@ -36,7 +36,6 @@ namespace ILLink.Shared.TrimAnalysis
 				return;
 			}
 
-			Location[] sourceLocation = new Location[1];
 			if (sourceValue is NullableValueWithDynamicallyAccessedMembers nv) {
 				sourceValue = nv.UnderlyingTypeValue;
 			}
@@ -49,18 +48,24 @@ namespace ILLink.Shared.TrimAnalysis
 				_ => throw new InvalidOperationException ()
 			};
 
-			if (symbol.DeclaringSyntaxReferences.Length == 0) {
-				Diagnostics.Add (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (id), Location, args));
-				return;
+			Location symbolLocation;
+			Location[] sourceLocation;
+			Dictionary<string, string?> DAMArgument = new Dictionary<string, string?> ();
+
+			if (symbol.DeclaringSyntaxReferences.Length == 0
+					|| symbol.TryGetAttribute (DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute, out var _)
+					|| (sourceValue is MethodReturnValue
+						&& symbol is IMethodSymbol method
+						&& method.GetDynamicallyAccessedMemberTypesOnReturnType () != System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.None)) {
+				sourceLocation = null;
+				DAMArgument = null;
+			} else {
+				symbolLocation = symbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
+				DAMArgument.Add ("attributeArgument", originalValue.DynamicallyAccessedMemberTypes.ToString ());
+				sourceLocation = new Location[] { symbolLocation };
 			}
 
-			Location symbolLocation = symbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
-			sourceLocation[0] = symbolLocation;
-
-			Dictionary<string, string?> DAMArgument = new Dictionary<string, string?> ();
-			DAMArgument.Add ("attributeArgument", originalValue.DynamicallyAccessedMemberTypes.ToString ());
-
-			Diagnostics.Add (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (id), Location, sourceLocation, DAMArgument.ToImmutableDictionary (), args));
+			Diagnostics.Add (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (id), Location, sourceLocation, DAMArgument?.ToImmutableDictionary (), args));
 		}
 	}
 }
