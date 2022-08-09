@@ -49,8 +49,8 @@ namespace ILLink.Shared.TrimAnalysis
 			};
 
 			Location symbolLocation;
-			Location[] sourceLocation;
-			Dictionary<string, string?> DAMArgument = new Dictionary<string, string?> ();
+			Location[]? sourceLocation;
+			Dictionary<string, string?>? DAMArgument = new Dictionary<string, string?> ();
 
 			if (symbol.DeclaringSyntaxReferences.Length == 0
 					|| symbol.TryGetAttribute (DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute, out var _)

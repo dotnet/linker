@@ -219,8 +219,8 @@ namespace ILLink.RoslynAnalyzer
 					methodNeedsAttributes = overriddenMethod;
 				}
 
-				Location[] sourceLocation = new Location[1];
-				Dictionary<string, string?> DAMArgument = new Dictionary<string, string?> ();
+				Location[]? sourceLocation = new Location[1];
+				Dictionary<string, string?>? DAMArgument = new Dictionary<string, string?> ();
 
 				sourceLocation[0] = methodNeedsAttributes.Locations[0];
 
@@ -253,7 +253,7 @@ namespace ILLink.RoslynAnalyzer
 						mismatchedArgument = methodParameterAnnotations;
 						paramNeedsAttributes = overriddenMethod;
 					}
-					Dictionary<string, string?> DAMArgument = new ();
+					Dictionary<string, string?>? DAMArgument = new ();
 					var sourceLocation = new Location[] { paramNeedsAttributes.Parameters[i].Locations[0] };
 
 					if (!sourceLocation[0].IsInSource) {
@@ -286,8 +286,8 @@ namespace ILLink.RoslynAnalyzer
 						mismatchedArgument = methodTypeParameterAnnotation;
 						typeParamNeedsAttributes = overriddenMethod;
 					}
-					Location[] sourceLocation = new Location[1];
-					Dictionary<string, string?> DAMArgument = new ();
+					Location[]? sourceLocation = new Location[1];
+					Dictionary<string, string?>? DAMArgument = new ();
 
 					sourceLocation[0] = typeParamNeedsAttributes.TypeParameters[i].Locations[0];
 
