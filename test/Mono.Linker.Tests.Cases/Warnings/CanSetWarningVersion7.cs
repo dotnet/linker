@@ -8,14 +8,14 @@ namespace Mono.Linker.Tests.Cases.Warnings
 {
 	[SkipKeptItemsValidation]
 	[SetupLinkerArgument ("--verbose")]
-	[SetupLinkerArgument ("--warn", "5")]
+	[SetupLinkerArgument ("--warn", "7")]
 	[ExpectedNoWarnings]
-	public class CanSetWarningVersion5
+	public class CanSetWarningVersion7
 	{
 		public static void Main ()
 		{
-			GetMethod ();
 			AccessCompilerGeneratedCode.Test ();
+			GetMethod ();
 		}
 
 		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
@@ -39,7 +39,8 @@ namespace Mono.Linker.Tests.Cases.Warnings
 				lambda ();
 			}
 
-			// This warns with --warn 7, but not --warn 5.
+			[ExpectedWarning ("IL2118", "<" + nameof (LambdaWithDataflow) + ">",
+				ProducedBy = ProducedBy.Trimmer)]
 			public static void Test ()
 			{
 				typeof (AccessCompilerGeneratedCode).RequiresAll ();
