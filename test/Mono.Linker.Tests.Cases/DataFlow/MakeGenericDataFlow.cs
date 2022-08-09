@@ -351,6 +351,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 				TestWithMultipleArgumentsWithRequirements ();
 
+				StaticInterfaceMethods.Test ();
 				NewConstraint.Test ();
 				StructConstraint.Test ();
 				UnmanagedConstraint.Test ();
@@ -748,6 +749,35 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				TOne,
 				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] TTwo> ()
 			{
+			}
+			class StaticInterfaceMethods
+			{
+				public static void Test()
+				{
+					KnownType ();
+					UnannotatedGenericParam<int> ();
+					AnnotatedGenericParam<int> ();
+				}
+				
+				static MethodInfo KnownType()
+					=> typeof (IFoo).GetMethod ("Method")
+					.MakeGenericMethod (new Type[] { typeof (int) });
+
+				[ExpectedWarning("IL2090", "T", "PublicMethods")]
+				static MethodInfo UnannotatedGenericParam<T>()
+					=> typeof (IFoo).GetMethod ("Method")
+					.MakeGenericMethod (new Type[] { typeof (T) });
+
+				static MethodInfo AnnotatedGenericParam<
+					[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] T>()
+					=> typeof (IFoo).GetMethod ("Method")
+					.MakeGenericMethod (new Type[] { typeof (T) });
+
+				interface IFoo
+				{
+					static abstract T Method<
+						[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] T> ();
+				}
 			}
 
 			class NewConstraint
