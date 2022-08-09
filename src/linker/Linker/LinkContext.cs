@@ -566,7 +566,7 @@ namespace Mono.Linker
 		/// <returns>New MessageContainer of 'Warning' category</returns>
 		public void LogWarning (string text, int code, MessageOrigin origin, string subcategory = MessageSubCategory.None)
 		{
-			WarnVersion version = GetWarningVersion ();
+			WarnVersion version = GetWarningVersion (code);
 			MessageContainer warning = MessageContainer.CreateWarningMessage (this, text, code, origin, version, subcategory);
 			_cachedWarningMessageContainers.Add (warning);
 		}
@@ -582,7 +582,7 @@ namespace Mono.Linker
 		/// <returns>New MessageContainer of 'Warning' category</returns>
 		public void LogWarning (MessageOrigin origin, DiagnosticId id, params string[] args)
 		{
-			WarnVersion version = GetWarningVersion ();
+			WarnVersion version = GetWarningVersion ((int)id);
 			MessageContainer warning = MessageContainer.CreateWarningMessage (this, origin, id, version, args);
 			_cachedWarningMessageContainers.Add (warning);
 		}
@@ -730,9 +730,11 @@ namespace Mono.Linker
 			return SingleWarn.TryGetValue (assemblyName, out value) && value;
 		}
 
-		static WarnVersion GetWarningVersion ()
+		static WarnVersion GetWarningVersion (int code)
 		{
 			// This should return an increasing WarnVersion for new warning waves.
+			if (code > 2116)
+				return WarnVersion.ILLink7;
 			return WarnVersion.ILLink5;
 		}
 

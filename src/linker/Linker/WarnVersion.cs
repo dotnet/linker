@@ -7,6 +7,7 @@ namespace Mono.Linker
 	{
 		ILLink0 = 0,
 		ILLink5 = 5,
+		ILLink7 = 7,
 		Latest = 9999,
 	}
 }
