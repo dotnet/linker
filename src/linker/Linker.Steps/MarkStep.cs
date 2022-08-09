@@ -3167,9 +3167,8 @@ namespace Mono.Linker.Steps
 
 			MarkMethodSpecialCustomAttributes (method);
 
-			if (method.IsVirtual) {
+			if (method.IsVirtual)
 				_virtual_methods.Add ((method, ScopeStack.CurrentScope));
-			}
 
 			MarkNewCodeDependencies (method);
 
@@ -3347,9 +3346,13 @@ namespace Mono.Linker.Steps
 				return;
 
 			foreach (MethodDefinition base_method in base_methods) {
+				// We should add all interface base methods to _virtual_methods for virtual override annotation validation
+				// Interfaces from preserved scope will be missed if we don't add them here
+				// This will produce warnings for all interface methods and virtual methods regardless of whether the interface, interface implementation, or interface method is kept or not.
 				if (base_method.DeclaringType.IsInterface && !method.DeclaringType.IsInterface) {
-					// These are all virtual, no need to check
+					// These are all virtual, no need to check IsVirtual before adding to list
 					_virtual_methods.Add ((base_method, ScopeStack.CurrentScope));
+					// _virtual_methods is a list and might have duplicates, but it's mostly just used for override validation, so it shouldn't matter
 					continue;
 				}
 
