@@ -209,7 +209,7 @@ namespace ILLink.RoslynAnalyzer
 			var overriddenMethodReturnAnnotations = FlowAnnotations.GetMethodReturnValueAnnotation (overriddenMethod);
 			if (methodReturnAnnotations != overriddenMethodReturnAnnotations) {
 
-				(IMethodSymbol attributableMethod, DynamicallyAccessedMemberTypes missingAttribute) = GetTargetAndRequirements (method, 
+				(IMethodSymbol attributableMethod, DynamicallyAccessedMemberTypes missingAttribute) = GetTargetAndRequirements (method,
 					overriddenMethod, methodReturnAnnotations, overriddenMethodReturnAnnotations);
 
 				Location attributableSymbolLocation = attributableMethod.Locations[0];
@@ -229,7 +229,7 @@ namespace ILLink.RoslynAnalyzer
 				var overriddenParameterAnnotation = FlowAnnotations.GetMethodParameterAnnotation (overriddenMethod.Parameters[i]);
 				if (methodParameterAnnotation != overriddenParameterAnnotation) {
 
-					(IMethodSymbol attributableMethod, DynamicallyAccessedMemberTypes missingAttribute) = GetTargetAndRequirements (method, 
+					(IMethodSymbol attributableMethod, DynamicallyAccessedMemberTypes missingAttribute) = GetTargetAndRequirements (method,
 						overriddenMethod, methodParameterAnnotation, overriddenParameterAnnotation);
 
 					Location attributableSymbolLocation = attributableMethod.Parameters[i].Locations[0];

@@ -54,7 +54,7 @@ namespace ILLink.Shared.TrimAnalysis
 					|| symbol.TryGetAttribute (DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute, out var _)
 					|| (sourceValue is MethodReturnValue
 						&& symbol is IMethodSymbol method
-						&& method.GetDynamicallyAccessedMemberTypesOnReturnType () != System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.None)) {
+						&& method.TryGetReturnAttribute (DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute, out var _))) {
 				sourceLocation = null;
 				DAMArgument = null;
 			} else {
