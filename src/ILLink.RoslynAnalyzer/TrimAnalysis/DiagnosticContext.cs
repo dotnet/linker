@@ -32,13 +32,12 @@ namespace ILLink.Shared.TrimAnalysis
 
 		public partial void AddDiagnostic (DiagnosticId id, ValueWithDynamicallyAccessedMembers sourceValue, ValueWithDynamicallyAccessedMembers originalValue, params string[] args)
 		{
-			if (Location == null) {
+			if (Location == null)
 				return;
-			}
 
-			if (sourceValue is NullableValueWithDynamicallyAccessedMembers nv) {
+			if (sourceValue is NullableValueWithDynamicallyAccessedMembers nv)
 				sourceValue = nv.UnderlyingTypeValue;
-			}
+
 			ISymbol symbol = sourceValue switch {
 				FieldValue field => field.FieldSymbol,
 				MethodParameterValue mpv => mpv.ParameterSymbol,
@@ -48,7 +47,6 @@ namespace ILLink.Shared.TrimAnalysis
 				_ => throw new InvalidOperationException ()
 			};
 
-			Location symbolLocation;
 			Location[]? sourceLocation;
 			Dictionary<string, string?>? DAMArgument = new Dictionary<string, string?> ();
 
@@ -60,6 +58,7 @@ namespace ILLink.Shared.TrimAnalysis
 				sourceLocation = null;
 				DAMArgument = null;
 			} else {
+				Location symbolLocation;
 				symbolLocation = symbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
 				DAMArgument.Add ("attributeArgument", originalValue.DynamicallyAccessedMemberTypes.ToString ());
 				sourceLocation = new Location[] { symbolLocation };
