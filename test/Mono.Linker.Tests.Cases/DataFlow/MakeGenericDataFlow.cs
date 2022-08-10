@@ -632,7 +632,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 					.MakeGenericMethod (typeof (T));
 			}
 
-
 			static void TestWithRequirementsViaRuntimeMethod ()
 			{
 				typeof (MakeGenericMethod).GetRuntimeMethod (nameof (GenericWithRequirements), Type.EmptyTypes)
@@ -776,7 +775,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				interface IFoo
 				{
 					static abstract T Method<
-						[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] T> ();
+						[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] T> ();
 				}
 			}
 

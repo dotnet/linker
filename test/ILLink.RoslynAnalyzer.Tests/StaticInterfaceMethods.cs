@@ -57,5 +57,11 @@ namespace ILLink.RoslynAnalyzer.Tests.Inheritance.Interfaces
 		{
 			return RunTest (allowMissingWarnings: false);
 		}
+
+		[Fact]
+		public Task BaseProvidesInterfaceMethod ()
+		{
+			return RunTest (allowMissingWarnings: false);
+		}
 	}
 }
