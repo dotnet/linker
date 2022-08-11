@@ -75,6 +75,14 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		static int Value => 2;
 
 		[Kept]
+		[ExpectedInstructionSequence (new[] {
+			"br.s il_3",
+			"ret",
+			"ldc.i4.1",
+			"brtrue.s il_2",
+			"ldnull",
+			"throw"
+			})]
 		static void TestRemovedLastBranch(int param)
 		{
 			goto DoWork;
