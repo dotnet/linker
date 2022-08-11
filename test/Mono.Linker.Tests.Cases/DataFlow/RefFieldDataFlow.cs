@@ -9,21 +9,6 @@ using Mono.Linker.Tests.Cases.Expectations.Helpers;
 using DAM = System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute;
 using DAMT = System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes;
 
-// Anytime a value is assigned to a ref field, it should be treated as unknown afterwards
-// -- even after it is reassigned
-// Should we allow an unannotated ref value (pointer to an unannotated variable) be assigned to an annotated ref?
-// Type unannotatedVariableWithKnownType = typeof(int);
-// RefStruct.AnnotatedField = ref unannotatedVariableWithKnownType;
-
-// ref local
-// ref to local
-// ref params
-// ref to param
-// ref fields
-// ref to field
-// ref return value
-// ref to index of array
-
 namespace Mono.Linker.Tests.Cases.DataFlow
 {
 	[SkipKeptItemsValidation]

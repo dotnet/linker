@@ -69,7 +69,8 @@ namespace Mono.Linker.Tests.Cases.Basic
 		[KeptAttributeAttribute (typeof (IsByRefLikeAttribute))]
 		[KeptAttributeAttribute (typeof (CompilerFeatureRequiredAttribute))]
 		[KeptAttributeAttribute (typeof (ObsoleteAttribute))]
-		ref struct ReferencedRefStruct {
+		ref struct ReferencedRefStruct
+		{
 			[Kept]
 			public ref int UnusedRefField;
 
