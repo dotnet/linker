@@ -1,5 +1,4 @@
 using System;
-using System.Reflection.Emit;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
@@ -12,6 +11,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		public static void Main ()
 		{
 			Test_1 (int.Parse ("91"));
+			TestRemovedLastBranch (int.Parse ("92"));
 		}
 
 		[Kept]
@@ -73,5 +73,28 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 		}
 
 		static int Value => 2;
+
+		[Kept]
+		static void TestRemovedLastBranch(int param)
+		{
+			goto DoWork;
+
+		ReturnFromMethod:
+			return;
+
+		DoWork:
+			if (AlwaysTrue) {
+				goto ReturnFromMethod;
+			} else { // This branch will be removed
+				DoSomething ();
+				goto ReturnFromMethod;
+			}
+		}
+
+		static void DoSomething ()
+		{
+		}
+
+		static bool AlwaysTrue => true;
 	}
 }

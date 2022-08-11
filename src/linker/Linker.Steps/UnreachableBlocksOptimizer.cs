@@ -815,8 +815,21 @@ namespace Mono.Linker.Steps
 					if (reachable[i])
 						continue;
 
-					processor.RemoveAt (i - removed);
-					++removed;
+					int index = i - removed;
+					// If we intend to remove the last instruction we replaced it with "ret" above (not "nop")
+					// but we can't get rid of it completely because it may happen that the last kept instruction
+					// is a conditional branch - in which case to keep the IL valid, there has to be something after
+					// the conditional branch instruction (the else branch). So if that's the case
+					// inject "ldnull; throw;" at the end - this branch should never be reachable and it's always valid
+					// (ret may need to return a value of the right type if the method has a return value which is complicated
+					// to construct out of nothing).
+					if (index == Body.Instructions.Count - 1 && Body.Instructions[index].OpCode == OpCodes.Ret) {
+						processor.Replace (index, Instruction.Create (OpCodes.Ldnull));
+						processor.InsertAfter (Body.Instructions[index], Instruction.Create (OpCodes.Throw));
+					} else {
+						processor.RemoveAt (index);
+						++removed;
+					}
 				}
 			}
 
@@ -1199,6 +1212,9 @@ namespace Mono.Linker.Steps
 			public void Process (List<int>? conditionInstrsToRemove, out List<Instruction>? sentinelNops)
 			{
 				List<VariableDefinition>? removedVariablesReferences = null;
+
+				if (this.body.Method.ToString ().Contains ("TestRemovedLastBranch"))
+					Debug.WriteLine ("");
 
 				//
 				// Initial pass which replaces unreachable instructions with nops or
