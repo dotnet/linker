@@ -50,8 +50,13 @@ namespace ILLink.Shared.TrimAnalysis
 			Location[]? sourceLocation;
 			Dictionary<string, string?>? DAMArgument = new Dictionary<string, string?> ();
 
+			if (symbol.TryGetAttribute (DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute, out var _)) {
+				Console.WriteLine ("hello!");
+			}
+
 			if (symbol.DeclaringSyntaxReferences.Length == 0
-					|| symbol.TryGetAttribute (DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute, out var _)
+					|| (sourceValue is not MethodReturnValue 
+						&& symbol.TryGetAttribute (DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute, out var _))
 					|| (sourceValue is MethodReturnValue
 						&& symbol is IMethodSymbol method
 						&& method.TryGetReturnAttribute (DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute, out var _))) {

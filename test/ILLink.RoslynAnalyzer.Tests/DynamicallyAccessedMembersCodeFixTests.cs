@@ -837,14 +837,14 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 			var fixtest = $$"""
 			using System;
 			using System.Diagnostics.CodeAnalysis;
-
+			
 			class C
 			{
 				public static void Main()
 				{
 					GetC().GetMethod("Foo");
 				}
-
+			
 			    [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
 			    private static Type GetC ()
 				{
@@ -861,6 +861,170 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 					.WithSpan(11, 2, 14, 3)
 					.WithArguments ("System.Type.GetMethod(String)",
 						"C.GetC()",
+						"'DynamicallyAccessedMemberTypes.PublicMethods'")},
+				fixedExpected: Array.Empty<DiagnosticResult> ());
+		}
+
+		[Fact]
+		public async Task CodeFix_IL2075_MethodAttributeLeavesOnCodeFix ()
+		{
+			var test = $$"""
+			namespace System
+			{
+				class C : TestSystemTypeBase
+				{
+					[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+					public static void Main()
+					{
+						GetC().GetMethod("Foo");
+					}
+
+					private static Type GetC ()
+					{
+						return typeof(int);
+					}
+				}
+			}
+			""";
+			var fixtest = $$"""
+			namespace System
+			{
+				class C : TestSystemTypeBase
+				{
+					[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+					public static void Main()
+					{
+						GetC().GetMethod("Foo");
+					}
+
+			        [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+			        private static Type GetC ()
+					{
+						return typeof(int);
+					}
+				}
+			}
+			""";
+			await VerifyDynamicallyAccessedMembersCodeFix (string.Concat (DynamicallyAccessedMembersAnalyzerTests.GetSystemTypeBase (), test),
+				string.Concat (DynamicallyAccessedMembersAnalyzerTests.GetSystemTypeBase (), fixtest), new[] {
+			  // /0/Test0.cs(8,3): warning IL2075: 'this' argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' in call to 'System.Type.GetMethod(String)'.
+			  //The return value of method 'C.GetFoo()' does not have matching annotations.
+			  //The source value must declare at least the same requirements as those declared on the target location it is assigned to.
+				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsThisParameter)
+					.WithSpan(194, 4, 194, 27)
+					.WithSpan(197, 3, 200, 4)
+					.WithArguments("System.Type.GetMethod(String)",
+						"System.C.GetC()",
+						"'DynamicallyAccessedMemberTypes.PublicMethods'")},
+				fixedExpected: Array.Empty<DiagnosticResult> ());
+		}
+
+		[Fact]
+		public async Task CodeFix_IL2075_MethodAttributeLeavesOnCodeFix_Reverse ()
+		{
+			var test = $$"""
+			namespace System
+			{
+				class C : TestSystemTypeBase
+				{
+					public static void Main()
+					{
+						GetC().GetMethod("Foo");
+					}
+
+					[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+			        private static Type GetC ()
+					{
+						return typeof(int);
+					}
+				}
+			}
+			""";
+			var fixtest = $$"""
+			namespace System
+			{
+				class C : TestSystemTypeBase
+				{
+					public static void Main()
+					{
+						GetC().GetMethod("Foo");
+					}
+
+					[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+			        [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+			        private static Type GetC ()
+					{
+						return typeof(int);
+					}
+				}
+			}
+			""";
+			await VerifyDynamicallyAccessedMembersCodeFix (string.Concat (DynamicallyAccessedMembersAnalyzerTests.GetSystemTypeBase (), test),
+				string.Concat (DynamicallyAccessedMembersAnalyzerTests.GetSystemTypeBase (), fixtest), new[] {
+			  // /0/Test0.cs(8,3): warning IL2075: 'this' argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' in call to 'System.Type.GetMethod(String)'.
+			  //The return value of method 'C.GetFoo()' does not have matching annotations.
+			  //The source value must declare at least the same requirements as those declared on the target location it is assigned to.
+				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsThisParameter)
+					.WithSpan(193, 4, 193, 27)
+					.WithSpan(196, 3, 200, 4)
+					.WithArguments("System.Type.GetMethod(String)",
+						"System.C.GetC()",
+						"'DynamicallyAccessedMemberTypes.PublicMethods'")},
+				fixedExpected: Array.Empty<DiagnosticResult> ());
+		}
+
+		[Fact]
+		public async Task CodeFix_IL2075_ReutrnAttributeLeavesOnCodeFix ()
+		{
+			var test = $$$"""
+			namespace System
+			{
+				class C : TestSystemTypeBase
+				{
+					[return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+					public static string Main()
+					{
+						GetC().GetMethod("Foo");
+						return "Foo";
+					}
+
+					private static Type GetC ()
+					{
+						return typeof(int);
+					}
+				}
+			}
+			""";
+			var fixtest = $$"""
+			namespace System
+			{
+				class C : TestSystemTypeBase
+				{
+					[return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+					public static string Main()
+					{
+						GetC().GetMethod("Foo");
+						return "Foo";
+					}
+
+			        [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+			        private static Type GetC ()
+					{
+						return typeof(int);
+					}
+				}
+			}
+			""";
+			await VerifyDynamicallyAccessedMembersCodeFix (string.Concat (DynamicallyAccessedMembersAnalyzerTests.GetSystemTypeBase (), test),
+				string.Concat (DynamicallyAccessedMembersAnalyzerTests.GetSystemTypeBase (), fixtest), new[] {
+			  // /0/Test0.cs(8,3): warning IL2075: 'this' argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' in call to 'System.Type.GetMethod(String)'.
+			  //The return value of method 'C.GetFoo()' does not have matching annotations.
+			  //The source value must declare at least the same requirements as those declared on the target location it is assigned to.
+				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsThisParameter)
+					.WithSpan(194, 4, 194, 27)
+					.WithSpan(198, 3, 201, 4)
+					.WithArguments("System.Type.GetMethod(String)", 
+						"System.C.GetC()", 
 						"'DynamicallyAccessedMemberTypes.PublicMethods'")},
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
@@ -1307,6 +1471,150 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 		}
 
 		[Fact]
+		public async Task CodeFix_IL2082_ReturnKeepsOnCodeFix ()
+		{
+			var test = $$"""
+			namespace System
+			{
+				class C : TestSystemTypeBase
+				{
+					public static void Main()
+					{
+						new C().M1();
+					}
+
+					[return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+					private string M1()
+					{
+						M2(this);
+						return "Foo";
+					}
+
+					private static void M2([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type t)
+					{
+					}
+				}
+			}
+			""";
+
+			var fixtest = $$"""
+			namespace System
+			{
+				class C : TestSystemTypeBase
+				{
+					public static void Main()
+					{
+						new C().M1();
+					}
+
+					[return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+			        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+			        private string M1()
+					{
+						M2(this);
+						return "Foo";
+					}
+
+					private static void M2([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type t)
+					{
+					}
+				}
+			}
+			""";
+			await VerifyDynamicallyAccessedMembersCodeFix (string.Concat (DynamicallyAccessedMembersAnalyzerTests.GetSystemTypeBase (), test),
+				string.Concat (DynamicallyAccessedMembersAnalyzerTests.GetSystemTypeBase (), fixtest),
+				new[] {
+			// /0/Test0.cs(198,4): warning IL2082: 'type' argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' in call to 'System.C.M2(Type)'.
+			// The implicit 'this' argument of method 'System.C.M1()' does not have matching annotations.
+			// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
+				VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsParameter)
+					.WithSpan(199, 4, 199, 12)
+					.WithSpan(196, 3, 201, 4)
+					.WithArguments("t",
+						"System.C.M2(Type)",
+						"System.C.M1()",
+						"'DynamicallyAccessedMemberTypes.PublicMethods'") },
+				new[] {
+					// /0/Test0.cs(193,4): warning IL2065: Value passed to implicit 'this' parameter of method 'System.C.M1()' can not be statically determined
+					// and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
+					VerifyCS.Diagnostic(DiagnosticId.ImplicitThisCannotBeStaticallyDetermined)
+						.WithSpan(193, 4, 193, 16)
+						.WithArguments("System.C.M1()")});
+		}
+
+		[Fact]
+		public async Task CodeFix_IL2082_ParamAttributeKeepsOnCodeFix ()
+		{
+			var test = $$"""
+			namespace System
+			{
+				class C : TestSystemTypeBase
+				{
+					public static void Main()
+					{
+						new C().M1("Foo");
+					}
+
+					[return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.NonPublicMethods)]
+					private string M1([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.NonPublicMethods)] string s)
+					{
+						M2(this);
+						return s;
+					}
+
+					private static void M2([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type t)
+					{
+					}
+				}
+			}
+			""";
+
+			var fixtest = $$"""
+			namespace System
+			{
+				class C : TestSystemTypeBase
+				{
+					public static void Main()
+					{
+						new C().M1("Foo");
+					}
+
+					[return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.NonPublicMethods)]
+			        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+			        private string M1([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.NonPublicMethods)] string s)
+					{
+						M2(this);
+						return s;
+					}
+
+					private static void M2([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type t)
+					{
+					}
+				}
+			}
+			""";
+			await VerifyDynamicallyAccessedMembersCodeFix (string.Concat (DynamicallyAccessedMembersAnalyzerTests.GetSystemTypeBase (), test),
+				string.Concat (DynamicallyAccessedMembersAnalyzerTests.GetSystemTypeBase (), fixtest),
+				new[] {
+			// /0/Test0.cs(198,4): warning IL2082: 'type' argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' in call to 'System.C.M2(Type)'.
+			// The implicit 'this' argument of method 'System.C.M1()' does not have matching annotations.
+			// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
+				VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsParameter)
+					.WithSpan(199, 4, 199, 12)
+					.WithSpan(196, 3, 201, 4)
+					.WithArguments("t", 
+						"System.C.M2(Type)", 
+						"System.C.M1(String)", 
+						"'DynamicallyAccessedMemberTypes.PublicMethods'") },
+				new[] {
+					// /0/Test0.cs(193,4): warning IL2065: Value passed to implicit 'this' parameter of method 'System.C.M1()' can not be statically determined
+					// and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
+					VerifyCS.Diagnostic(DiagnosticId.ImplicitThisCannotBeStaticallyDetermined)
+						.WithSpan(193, 4, 193, 21)
+						.WithArguments("System.C.M1(String)")});
+		}
+
+		[Fact]
 		public async Task CodeFix_IL2082_AttributeTurnsOffCodeFix ()
 		{
 			var test = $$"""
@@ -1407,6 +1715,67 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 					VerifyCS.Diagnostic(DiagnosticId.ImplicitThisCannotBeStaticallyDetermined)
 						.WithSpan(193, 4, 193, 16)
 						.WithArguments("System.C.M1()")});
+		}
+
+		[Fact]
+		public async Task CodeFix_IL2083_ParamAttributeKeepsCodeFix ()
+		{
+			var test = $$"""
+			namespace System
+			{
+				class C : TestSystemTypeBase
+				{
+					public static void Main()
+					{
+						new C().M1("Foo");
+					}
+
+					[return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+					private Type M1([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.NonPublicMethods)] string s)
+					{
+						s.AsSpan();
+						return this;
+					}
+				}
+			}
+			""";
+
+			var fixtest = $$"""
+			namespace System
+			{
+				class C : TestSystemTypeBase
+				{
+					public static void Main()
+					{
+						new C().M1("Foo");
+					}
+
+					[return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+			        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+			        private Type M1([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.NonPublicMethods)] string s)
+					{
+						s.AsSpan();
+						return this;
+					}
+				}
+			}
+			""";
+			await VerifyDynamicallyAccessedMembersCodeFix (string.Concat (DynamicallyAccessedMembersAnalyzerTests.GetSystemTypeBase (), test),
+				string.Concat (DynamicallyAccessedMembersAnalyzerTests.GetSystemTypeBase (), fixtest),
+				new[] {
+				// /0/Test0.cs(199,11): warning IL2083: 'System.C.M1()' method return value does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' requirements. The implicit 'this' argument of method 'System.C.M1()' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.
+				VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsMethodReturnType)
+					.WithSpan(200, 11, 200, 15)
+					.WithSpan(196, 3, 201, 4)
+					.WithArguments("System.C.M1(String)",
+						"System.C.M1(String)",
+						"'DynamicallyAccessedMemberTypes.PublicMethods'") },
+				new[] {
+					// /0/Test0.cs(193,4): warning IL2065: Value passed to implicit 'this' parameter of method 'System.C.M1()' can not be statically determined
+					// and may not meet 'DynamicallyAccessedMembersAttribute' requirements.
+					VerifyCS.Diagnostic(DiagnosticId.ImplicitThisCannotBeStaticallyDetermined)
+						.WithSpan(193, 4, 193, 21)
+						.WithArguments("System.C.M1(String)")});
 		}
 
 		[Fact]
