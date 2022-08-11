@@ -1951,6 +1951,102 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 		}
 
 		[Fact]
+		public async Task CodeFix_IL2091_MismatchTypeTargetsGenericParameter ()
+		{
+			var test = $$"""
+			using System.Diagnostics.CodeAnalysis;
+
+			class C
+			{
+				public static void Main()
+				{
+					M2<int>();
+				}
+
+				private static void M1<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] T>()
+				{
+				}
+
+				private static void M2<S>()
+				{
+					M1<S>();
+				}
+			}
+			""";
+			var fixtest = $$"""
+			using System.Diagnostics.CodeAnalysis;
+
+			class C
+			{
+				public static void Main()
+				{
+					M2<int>();
+				}
+
+				private static void M1<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] T>()
+				{
+				}
+
+				private static void M2<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] S>()
+				{
+					M1<S>();
+				}
+			}
+			""";
+			await VerifyDynamicallyAccessedMembersCodeFix (test, fixtest,
+				new[] {
+					// /0/Test0.cs(16,3): warning IL2091: 'T' generic argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' in 'C.M1<T>()'.
+					// The generic parameter 'S' of 'C.M2<S>()' does not have matching annotations.
+					// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
+					VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsGenericParameter)
+						.WithSpan(16, 3, 16, 8)
+						.WithSpan(14, 25, 14, 26)
+						.WithArguments("T", 
+							"C.M1<T>()", 
+							"S", 
+							"C.M2<S>()", 
+							"'DynamicallyAccessedMemberTypes.PublicMethods'")},
+				fixedExpected: Array.Empty<DiagnosticResult> ());
+		}
+
+		[Fact]
+		public async Task CodeFix_IL2091_AttrbuteTurnsOffCodeFix ()
+		{
+			var test = $$"""
+			using System.Diagnostics.CodeAnalysis;
+
+			class C
+			{
+				public static void Main()
+				{
+					M2<int>();
+				}
+
+				private static void M1<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] T>()
+				{
+				}
+
+				private static void M2<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.None)] S>()
+				{
+					M1<S>();
+				}
+			}
+			""";
+			var diag = new[] {
+					// /0/Test0.cs(16,3): warning IL2091: 'T' generic argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' in 'C.M1<T>()'.
+					// The generic parameter 'S' of 'C.M2<S>()' does not have matching annotations.
+					// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
+					VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsGenericParameter)
+						.WithSpan(16, 3, 16, 8)
+						.WithArguments("T",
+							"C.M1<T>()",
+							"S",
+							"C.M2<S>()",
+							"'DynamicallyAccessedMemberTypes.PublicMethods'")};
+			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
+		}
+
+		[Fact]
 		public async Task CodeFix_IL2092_MismatchMethodParamBtOverride_NonPublicMethods ()
 		{
 			var test = $$"""
