@@ -28,7 +28,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 {
 	[SkipKeptItemsValidation]
 	[ExpectedNoWarnings]
-	class RefFieldDataflow
+	class RefFieldDataFlow
 	{
 		[Kept]
 		// Bug for the IL2069's here: https://github.com/dotnet/linker/issues/2874
