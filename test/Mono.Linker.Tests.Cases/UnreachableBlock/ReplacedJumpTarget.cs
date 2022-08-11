@@ -83,7 +83,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			"ldnull",
 			"throw"
 			})]
-		static void TestRemovedLastBranch(int param)
+		static void TestRemovedLastBranch (int param)
 		{
 			goto DoWork;
 
