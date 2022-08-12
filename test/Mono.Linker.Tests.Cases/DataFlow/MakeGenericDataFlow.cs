@@ -749,6 +749,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] TTwo> ()
 			{
 			}
+
 			class StaticInterfaceMethods
 			{
 				public static void Test ()
