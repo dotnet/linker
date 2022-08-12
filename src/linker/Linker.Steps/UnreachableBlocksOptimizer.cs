@@ -807,16 +807,7 @@ namespace Mono.Linker.Steps
 			}
 
 			static bool IsConditionalBranch (OpCode opCode)
-			{
-				switch (opCode.Code) {
-				case Code.Brfalse:
-				case Code.Brfalse_S:
-				case Code.Brtrue:
-				case Code.Brtrue_S:
-					return true;
-				}
-				return false;
-			}
+			=> opCode.Code is Code.Brfalse or Code.Brfalse_S or Code.Brtrue or Code.Brtrue_S;
 
 			void RemoveUnreachableInstructions (BitArray reachable)
 			{
