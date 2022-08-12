@@ -34,12 +34,6 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		[Fact]
-		public Task CanPreserveNamespace ()
-		{
-			return RunTest (allowMissingWarnings: true);
-		}
-
-		[Fact]
 		public Task CanPreserveTypesUsingRegex ()
 		{
 			return RunTest (allowMissingWarnings: true);
