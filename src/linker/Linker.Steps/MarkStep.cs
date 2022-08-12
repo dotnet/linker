@@ -3595,9 +3595,8 @@ namespace Mono.Linker.Steps
 				Code.Ldsflda
 					=> ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForAccess (Context, (FieldReference) instruction.Operand),
 				// For ref fields, ldfld loads an address which can be used to store values to annotated fields
-				Code.Ldfld when ((FieldReference) instruction.Operand).FieldType.IsByRefOrPointer ()
+				Code.Ldfld or Code.Ldsfld when ((FieldReference) instruction.Operand).FieldType.IsByRefOrPointer ()
 					=> ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForAccess (Context, (FieldReference) instruction.Operand),
-
 				// Other field operations are not interesting as they don't need to be checked
 				_ => false
 			};
