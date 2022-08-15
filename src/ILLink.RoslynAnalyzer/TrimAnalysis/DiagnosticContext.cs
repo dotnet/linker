@@ -30,15 +30,15 @@ namespace ILLink.Shared.TrimAnalysis
 			Diagnostics.Add (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (id), Location, args));
 		}
 
-		public partial void AddDiagnostic (DiagnosticId id, ValueWithDynamicallyAccessedMembers sourceValue, ValueWithDynamicallyAccessedMembers originalValue, params string[] args)
+		public partial void AddDiagnostic (DiagnosticId id, ValueWithDynamicallyAccessedMembers actualValue, ValueWithDynamicallyAccessedMembers expectedAnnotationsValue, params string[] args)
 		{
 			if (Location == null)
 				return;
 
-			if (sourceValue is NullableValueWithDynamicallyAccessedMembers nv)
-				sourceValue = nv.UnderlyingTypeValue;
+			if (actualValue is NullableValueWithDynamicallyAccessedMembers nv)
+				actualValue = nv.UnderlyingTypeValue;
 
-			ISymbol symbol = sourceValue switch {
+			ISymbol symbol = actualValue switch {
 				FieldValue field => field.FieldSymbol,
 				MethodParameterValue mpv => mpv.ParameterSymbol,
 				MethodReturnValue mrv => mrv.MethodSymbol,
@@ -50,14 +50,10 @@ namespace ILLink.Shared.TrimAnalysis
 			Location[]? sourceLocation;
 			Dictionary<string, string?>? DAMArgument = new Dictionary<string, string?> ();
 
-			if (symbol.TryGetAttribute (DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute, out var _)) {
-				Console.WriteLine ("hello!");
-			}
-
 			if (symbol.DeclaringSyntaxReferences.Length == 0
-					|| (sourceValue is not MethodReturnValue 
+					|| (actualValue is not MethodReturnValue
 						&& symbol.TryGetAttribute (DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute, out var _))
-					|| (sourceValue is MethodReturnValue
+					|| (actualValue is MethodReturnValue
 						&& symbol is IMethodSymbol method
 						&& method.TryGetReturnAttribute (DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute, out var _))) {
 				sourceLocation = null;
@@ -65,7 +61,7 @@ namespace ILLink.Shared.TrimAnalysis
 			} else {
 				Location symbolLocation;
 				symbolLocation = symbol.DeclaringSyntaxReferences[0].GetSyntax ().GetLocation ();
-				DAMArgument.Add ("attributeArgument", originalValue.DynamicallyAccessedMemberTypes.ToString ());
+				DAMArgument.Add ("attributeArgument", expectedAnnotationsValue.DynamicallyAccessedMemberTypes.ToString ());
 				sourceLocation = new Location[] { symbolLocation };
 			}
 

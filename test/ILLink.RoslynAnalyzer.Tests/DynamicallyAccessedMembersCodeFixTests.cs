@@ -7,7 +7,6 @@ using ILLink.Shared;
 using Microsoft.CodeAnalysis.Testing;
 using Microsoft.CodeAnalysis.Text;
 using Xunit;
-//using static ILLink.RoslynAnalyzer.Tests.CSharpCodeFixVerifier<TAnalyzer, TCodeFix>;
 using VerifyCS = ILLink.RoslynAnalyzer.Tests.CSharpCodeFixVerifier<
 	ILLink.RoslynAnalyzer.DynamicallyAccessedMembersAnalyzer,
 	ILLink.CodeFix.DAMCodeFixProvider>;
@@ -135,6 +134,37 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 						"C.M(Type)",
 						"'DynamicallyAccessedMemberTypes.PublicMethods'")},
 				fixedExpected: Array.Empty<DiagnosticResult> ());
+		}
+
+		[Fact]
+		public async Task CodeFix_IL2067_TwoAttributesTurnsOffDiagnostic ()
+		{
+			var test = $$"""
+			using System;
+			using System.Diagnostics.CodeAnalysis;
+
+			class C
+			{
+				static void M(Type t) {
+					M2(t);
+				}
+
+				static void M2([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.PublicFields)] Type t) {}
+			}
+			""";
+			var diag = new[] {
+			    // /0/Test0.cs(7,3): warning IL2067: 't' argument does not satisfy 'DynamicallyAccessedMemberTypes.All' in call to 'C.M2(Type)'.
+				// The parameter 't' of method 'C.M(Type)' does not have matching annotations.
+				// The source value must declare at least the same requirements as those declared on the target location it is assigned to.
+				VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchParameterTargetsParameter)
+					.WithSpan(7, 3, 7, 8)
+					.WithSpan(6, 16, 6, 22)
+					.WithArguments("t",
+						"C.M2(Type)",
+						"t",
+						"C.M(Type)",
+						"'DynamicallyAccessedMemberTypes.PublicMethods', 'DynamicallyAccessedMemberTypes.PublicFields'")};
+			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 
 		[Fact]
@@ -1023,8 +1053,8 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchMethodReturnTypeTargetsThisParameter)
 					.WithSpan(194, 4, 194, 27)
 					.WithSpan(198, 3, 201, 4)
-					.WithArguments("System.Type.GetMethod(String)", 
-						"System.C.GetC()", 
+					.WithArguments("System.Type.GetMethod(String)",
+						"System.C.GetC()",
 						"'DynamicallyAccessedMemberTypes.PublicMethods'")},
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
@@ -1602,9 +1632,9 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 				VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchThisParameterTargetsParameter)
 					.WithSpan(199, 4, 199, 12)
 					.WithSpan(196, 3, 201, 4)
-					.WithArguments("t", 
-						"System.C.M2(Type)", 
-						"System.C.M1(String)", 
+					.WithArguments("t",
+						"System.C.M2(Type)",
+						"System.C.M1(String)",
 						"'DynamicallyAccessedMemberTypes.PublicMethods'") },
 				new[] {
 					// /0/Test0.cs(193,4): warning IL2065: Value passed to implicit 'this' parameter of method 'System.C.M1()' can not be statically determined
@@ -2370,10 +2400,10 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 					VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsGenericParameter)
 						.WithSpan(16, 3, 16, 8)
 						.WithSpan(14, 25, 14, 26)
-						.WithArguments("T", 
-							"C.M1<T>()", 
-							"S", 
-							"C.M2<S>()", 
+						.WithArguments("T",
+							"C.M1<T>()",
+							"S",
+							"C.M2<S>()",
 							"'DynamicallyAccessedMemberTypes.PublicMethods'")},
 				fixedExpected: Array.Empty<DiagnosticResult> ());
 		}
