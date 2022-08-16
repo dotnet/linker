@@ -3352,7 +3352,6 @@ namespace Mono.Linker.Steps
 				if (base_method.DeclaringType.IsInterface && !method.DeclaringType.IsInterface) {
 					// These are all virtual, no need to check IsVirtual before adding to list
 					_virtual_methods.Add ((base_method, ScopeStack.CurrentScope));
-					// _virtual_methods is a list and might have duplicates, but it's mostly just used for override validation, so it shouldn't matter
 					continue;
 				}
 
