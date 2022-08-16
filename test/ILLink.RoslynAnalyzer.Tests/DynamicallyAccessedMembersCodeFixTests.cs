@@ -2497,7 +2497,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 		}
 
 		[Fact]
-		public async Task CodeFix_IL2092_MismatchMethodParamBtOverride_NonPublicMethods_Reverse () // issue: diagnostic is reported as context.ReportDiagnostic in the Analyzer (not in the Action)
+		public async Task CodeFix_IL2092_MismatchMethodParamBtOverride_NonPublicMethods_Reverse ()
 		{
 			var test = $$"""
 			using System;
@@ -2576,6 +2576,41 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 			    // All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
 			    VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodParameterBetweenOverrides)
 				.WithSpan(11, 108, 11, 109)
+				.WithArguments("t",
+					"C.M(Type)",
+					"t",
+					"Base.M(Type)") };
+			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
+		}
+
+		[Fact]
+		public async Task CodeFix_IL2092_TwoAttributesTurnOffCodeFix ()
+		{
+			var test = $$"""
+			using System;
+			using System.Diagnostics.CodeAnalysis;
+
+			public class Base
+			{
+				public virtual void M([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.PublicFields)] Type t) {}
+			}
+
+			public class C : Base
+			{
+				public override void M(Type t) {}
+
+				public static void Main() {
+
+				}
+			}
+			""";
+			var diag = new[] {
+			    // /0/Test0.cs(11,108): warning IL2092: 'DynamicallyAccessedMemberTypes' in 'DynamicallyAccessedMembersAttribute' on the parameter 't' of method 'C.M(Type)'
+			    // don't match overridden parameter 't' of method 'Base.M(Type)'.
+			    // All overridden members must have the same 'DynamicallyAccessedMembersAttribute' usage.
+			    VerifyCS.Diagnostic(DiagnosticId.DynamicallyAccessedMembersMismatchOnMethodParameterBetweenOverrides)
+				.WithSpan(11, 30, 11, 31)
+				.WithSpan(11, 30, 11, 31)
 				.WithArguments("t",
 					"C.M(Type)",
 					"t",

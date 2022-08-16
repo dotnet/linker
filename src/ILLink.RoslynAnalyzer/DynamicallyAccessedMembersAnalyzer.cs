@@ -22,6 +22,7 @@ namespace ILLink.RoslynAnalyzer
 	{
 		internal const string DynamicallyAccessedMembers = nameof (DynamicallyAccessedMembers);
 		internal const string DynamicallyAccessedMembersAttribute = nameof (DynamicallyAccessedMembersAttribute);
+		public const string attributeArgument = "attributeArgument";
 		public const string FullyQualifiedDynamicallyAccessedMembersAttribute = "System.Diagnostics.CodeAnalysis." + DynamicallyAccessedMembersAttribute;
 
 		public static ImmutableArray<DiagnosticDescriptor> GetSupportedDiagnostics ()
@@ -324,7 +325,7 @@ namespace ILLink.RoslynAnalyzer
 		{
 			Dictionary<string, string?>? DAMArgument = new ();
 			Location[]? sourceLocation = new Location[] { attributableSymbolLocation };
-			DAMArgument.Add ("attributeArgument", mismatchedArgument.ToString ());
+			DAMArgument.Add (DynamicallyAccessedMembersAnalyzer.attributeArgument, mismatchedArgument.ToString ());
 			return (sourceLocation, DAMArgument);
 		}
 	}

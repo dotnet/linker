@@ -100,7 +100,7 @@ namespace ILLink.CodeFix
 				return;
 			if (root.FindNode (diagnostic.AdditionalLocations[0].SourceSpan, getInnermostNodeForTie: true) is not SyntaxNode attributableNode)
 				return;
-			if (diagnostic.Properties["attributeArgument"] is not string stringArgs || stringArgs.Contains (","))
+			if (diagnostic.Properties[DynamicallyAccessedMembersAnalyzer.attributeArgument] is not string stringArgs || stringArgs.Contains (","))
 				return;
 
 			var syntaxGenerator = SyntaxGenerator.GetGenerator (document);
@@ -141,7 +141,6 @@ namespace ILLink.CodeFix
 
 			if (addAsReturnAttribute) {
 				// don't use AddReturnAttribute because it's the same as AddAttribute https://github.com/dotnet/roslyn/pull/63084
-				//editor.AddReturnAttribute (targetNode, attribute);
 				editor.ReplaceNode (targetNode, (d, g) => g.AddReturnAttributes (d, new[] { attribute }));
 			} else if (addGenericParameterAttribute) {
 				// AddReturnAttributes currently doesn't support adding attributes to type arguments https://github.com/dotnet/roslyn/pull/63292
