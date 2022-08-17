@@ -50,6 +50,7 @@ namespace ILLink.Shared.TrimAnalysis
 			Location[]? sourceLocation;
 			Dictionary<string, string?>? DAMArgument = new Dictionary<string, string?> ();
 
+			// not supporting merging differing attributes, check to make sure symbol has no other attributes
 			if (symbol.DeclaringSyntaxReferences.Length == 0
 					|| (actualValue is not MethodReturnValue
 						&& symbol.TryGetAttribute (DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute, out var _))

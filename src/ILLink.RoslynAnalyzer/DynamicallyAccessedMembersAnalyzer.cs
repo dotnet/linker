@@ -215,6 +215,7 @@ namespace ILLink.RoslynAnalyzer
 
 				Location attributableSymbolLocation = attributableMethod.Locations[0];
 
+				// code fix does not support merging multiple attributes. If an attribute is present or the method is not in source, do not provide args for code fix.
 				(Location[]? sourceLocation, Dictionary<string, string?>? DAMArgs) = (!attributableSymbolLocation.IsInSource
 					|| (method.TryGetReturnAttribute (DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute, out var _)
 						&& overriddenMethod.TryGetReturnAttribute (DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute, out var _))
@@ -235,6 +236,7 @@ namespace ILLink.RoslynAnalyzer
 
 					Location attributableSymbolLocation = attributableMethod.Parameters[i].Locations[0];
 
+					// code fix does not support merging multiple attributes. If an attribute is present or the method is not in source, do not provide args for code fix.
 					(Location[]? sourceLocation, Dictionary<string, string?>? DAMArgs) = (!attributableSymbolLocation.IsInSource
 						|| (method.Parameters[i].TryGetAttribute (DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute, out var _)
 							&& overriddenMethod.Parameters[i].TryGetAttribute (DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute, out var _))
@@ -256,6 +258,7 @@ namespace ILLink.RoslynAnalyzer
 
 					Location attributableSymbolLocation = attributableMethod.TypeParameters[i].Locations[0];
 
+					// code fix does not support merging multiple attributes. If an attribute is present or the method is not in source, do not provide args for code fix.
 					(Location[]? sourceLocation, Dictionary<string, string?>? DAMArgs) = (!attributableSymbolLocation.IsInSource
 						|| (method.TypeParameters[i].TryGetAttribute (DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute, out var _)
 							&& overriddenMethod.TypeParameters[i].TryGetAttribute (DynamicallyAccessedMembersAnalyzer.DynamicallyAccessedMembersAttribute, out var _))

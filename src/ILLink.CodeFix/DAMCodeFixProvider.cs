@@ -100,6 +100,7 @@ namespace ILLink.CodeFix
 				return;
 			if (root.FindNode (diagnostic.AdditionalLocations[0].SourceSpan, getInnermostNodeForTie: true) is not SyntaxNode attributableNode)
 				return;
+			// currently not supporting multiple DAM argument, hence the check for commas in the string arguments
 			if (diagnostic.Properties[DynamicallyAccessedMembersAnalyzer.attributeArgument] is not string stringArgs || stringArgs.Contains (","))
 				return;
 
