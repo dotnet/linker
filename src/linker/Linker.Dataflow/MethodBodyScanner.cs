@@ -187,12 +187,11 @@ namespace Mono.Linker.Dataflow
 				VariableDefinition localVariable = keyValuePair.Key;
 				foreach (var val in localValue) {
 					if (val is LocalVariableReferenceValue reference
-					&& locals.TryGetValue (reference.LocalDefinition, out var referencedValue)
-					&& referencedValue.Value.Any (v => v is ReferenceValue)) {
+						&& reference.LocalDefinition.VariableType.IsByReference) {
 						throw new LinkerFatalErrorException (MessageContainer.CreateCustomErrorMessage (
-								$"In method {method.FullName}, local variable {localVariable.Index} references variable {reference.LocalDefinition.Index} which is a reference.",
-								(int) DiagnosticId.LinkerUnexpectedError,
-								origin: new MessageOrigin (method, ilOffset)));
+							$"In method {method.FullName}, local variable {localVariable.Index} references variable {reference.LocalDefinition.Index} which is a reference.",
+							(int) DiagnosticId.LinkerUnexpectedError,
+							origin: new MessageOrigin (method, ilOffset)));
 					}
 				}
 			}
