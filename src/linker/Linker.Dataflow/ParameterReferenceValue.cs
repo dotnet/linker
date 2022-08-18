@@ -6,7 +6,7 @@ using Mono.Cecil;
 namespace ILLink.Shared.TrimAnalysis
 {
 	public partial record ParameterReferenceValue (MethodDefinition MethodDefinition, int ParameterIndex)
-: ReferenceValue
+		: ReferenceValue (MethodDefinition.Parameters[ParameterIndex].ParameterType)
 	{
 		public override SingleValue DeepCopy ()
 		{
