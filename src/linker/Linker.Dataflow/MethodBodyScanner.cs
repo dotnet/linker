@@ -187,7 +187,8 @@ namespace Mono.Linker.Dataflow
 				VariableDefinition localVariable = keyValuePair.Key;
 				foreach (var val in localValue) {
 					if (val is LocalVariableReferenceValue reference
-						&& locals[reference.LocalDefinition].Value.Any (v => v is ReferenceValue)) {
+					&& locals.TryGetValue (reference.LocalDefinition, out var referencedValue)
+					&& referencedValue.Value.Any (v => v is ReferenceValue)) {
 						throw new LinkerFatalErrorException (MessageContainer.CreateCustomErrorMessage (
 								$"In method {method.FullName}, local variable {localVariable.Index} references variable {reference.LocalDefinition.Index} which is a reference.",
 								(int) DiagnosticId.LinkerUnexpectedError,
@@ -289,7 +290,6 @@ namespace Mono.Linker.Dataflow
 
 			ReturnValue = new ();
 			foreach (Instruction operation in methodBody.Instructions) {
-				ValidateNoReferenceToReference (locals, methodBody.Method, operation.Offset);
 				int curBasicBlock = blockIterator.MoveNext (operation);
 
 				if (knownStacks.ContainsKey (operation.Offset)) {
@@ -415,6 +415,7 @@ namespace Mono.Linker.Dataflow
 				case Code.Ldloca:
 				case Code.Ldloca_S:
 					ScanLdloc (operation, currentStack, methodBody, locals);
+					ValidateNoReferenceToReference (locals, methodBody.Method, operation.Offset);
 					break;
 
 				case Code.Ldstr: {
@@ -559,6 +560,7 @@ namespace Mono.Linker.Dataflow
 				case Code.Stind_Ref:
 				case Code.Stobj:
 					ScanIndirectStore (operation, currentStack, methodBody, locals, curBasicBlock, ref interproceduralState);
+					ValidateNoReferenceToReference (locals, methodBody.Method, operation.Offset);
 					break;
 
 				case Code.Initobj:
@@ -578,6 +580,7 @@ namespace Mono.Linker.Dataflow
 				case Code.Stloc_2:
 				case Code.Stloc_3:
 					ScanStloc (operation, currentStack, methodBody, locals, curBasicBlock);
+					ValidateNoReferenceToReference (locals, methodBody.Method, operation.Offset);
 					break;
 
 				case Code.Constrained:
@@ -619,6 +622,7 @@ namespace Mono.Linker.Dataflow
 				case Code.Newobj:
 					TrackNestedFunctionReference ((MethodReference) operation.Operand, ref interproceduralState);
 					HandleCall (methodBody, operation, currentStack, locals, ref interproceduralState, curBasicBlock);
+					ValidateNoReferenceToReference (locals, methodBody.Method, operation.Offset);
 					break;
 
 				case Code.Jmp:
@@ -656,6 +660,7 @@ namespace Mono.Linker.Dataflow
 							// If the return value is a reference, treat it as the value itself for now
 							//	We can handle ref return values better later
 							ReturnValue = MultiValueLattice.Meet (ReturnValue, DereferenceValue (retValue.Value, locals, ref interproceduralState));
+							ValidateNoReferenceToReference (locals, methodBody.Method, operation.Offset);
 						}
 						ClearStack (ref currentStack);
 						break;
