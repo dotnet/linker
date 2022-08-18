@@ -22,11 +22,11 @@ namespace Mono.Linker.Steps
 			// Suppressions targeting warning caused by anything but the linker should not be reported.
 			// Suppressions targeting RedundantSuppression warning should not be reported.
 			redundantSuppressions = redundantSuppressions
-				.Where (suppressionInfo => ((DiagnosticId) suppressionInfo.suppression.SuppressMessageInfo.Id).GetDiagnosticCategory () == DiagnosticCategory.Trimming)
-				.Where (suppressionInfo => ((DiagnosticId) suppressionInfo.suppression.SuppressMessageInfo.Id) != DiagnosticId.RedundantSuppression);
+				.Where (suppression => ((DiagnosticId) suppression.SuppressMessageInfo.Id).GetDiagnosticCategory () == DiagnosticCategory.Trimming)
+				.Where (suppression => ((DiagnosticId) suppression.SuppressMessageInfo.Id) != DiagnosticId.RedundantSuppression);
 
-			foreach (var (provider, suppression) in redundantSuppressions) {
-				var source = context.Suppressions.GetSuppressionOrigin (provider, suppression);
+			foreach (var suppression in redundantSuppressions) {
+				var source = context.Suppressions.GetSuppressionOrigin (suppression);
 
 				context.LogWarning (new MessageOrigin (source), DiagnosticId.RedundantSuppression, $"IL{suppression.SuppressMessageInfo.Id:0000}");
 			}
