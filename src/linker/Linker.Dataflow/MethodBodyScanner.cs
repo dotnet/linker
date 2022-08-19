@@ -186,25 +186,15 @@ namespace Mono.Linker.Dataflow
 				MultiValue localValue = keyValuePair.Value.Value;
 				VariableDefinition localVariable = keyValuePair.Key;
 				foreach (var val in localValue) {
-					if (val is ReferenceValue reference && reference.ReferencedType.IsByReference) {
-						string displayName = GetReferenceValueDisplayName (reference);
-						throw new LinkerFatalErrorException (MessageContainer.CreateCustomErrorMessage (
-						$"""In method {method.FullName}, local variable V_{localVariable.Index} references {displayName} of type {reference.ReferencedType.GetDisplayName ()} which is a reference. Linker dataflow tracking has failed.""",
-						(int) DiagnosticId.LinkerUnexpectedError,
-						origin: new MessageOrigin (method, ilOffset)));
+					if (val is LocalVariableReferenceValue localReference && localReference.ReferencedType.IsByReference) {
+						string displayName = $"local variable V_{localReference.LocalDefinition.Index}";
+						throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (
+							$"""In method {method.FullName}, local variable V_{localVariable.Index} references {displayName} of type {localReference.ReferencedType.GetDisplayName ()} which is a reference. Linker dataflow tracking has failed.""",
+							(int) DiagnosticId.LinkerUnexpectedError,
+							origin: new MessageOrigin (method, ilOffset)));
 					}
 				}
 			}
-			string GetReferenceValueDisplayName (ReferenceValue reference)
-				=> reference switch {
-					FieldReferenceValue fieldReference
-						=> "field" + fieldReference.FieldDefinition.GetDisplayName (),
-					ParameterReferenceValue parameterReference
-						=> "parameter" + parameterReference.MethodDefinition.Parameters[parameterReference.ParameterIndex].Name,
-					LocalVariableReferenceValue localReference
-						=> "local variable" + $"V_{localReference.LocalDefinition.Index}",
-					_ => "value"
-				};
 		}
 
 		protected static void StoreMethodLocalValue<KeyType> (
