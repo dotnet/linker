@@ -402,7 +402,7 @@ namespace Mono.Linker.Dataflow
 				case Code.Ldarg_S:
 				case Code.Ldarga:
 				case Code.Ldarga_S:
-					ScanLdarg (operation, currentStack, thisMethod, methodBody);
+					ScanLdarg (operation, currentStack, thisMethod);
 					break;
 
 				case Code.Ldloc:
@@ -719,7 +719,7 @@ namespace Mono.Linker.Dataflow
 
 		protected abstract SingleValue GetMethodParameterValue (MethodDefinition method, int parameterIndex);
 
-		private void ScanLdarg (Instruction operation, Stack<StackSlot> currentStack, MethodDefinition thisMethod, MethodBody methodBody)
+		private void ScanLdarg (Instruction operation, Stack<StackSlot> currentStack, MethodDefinition thisMethod)
 		{
 			Code code = operation.OpCode.Code;
 
@@ -728,42 +728,22 @@ namespace Mono.Linker.Dataflow
 			// Thank you Cecil, Operand being a ParameterDefinition instead of an integer,
 			// (except for Ldarg_0 - Ldarg_3, where it's null) makes all of this really convenient...
 			// NOT.
-			int paramNum;
-			if (code >= Code.Ldarg_0 &&
-				code <= Code.Ldarg_3) {
-				paramNum = code - Code.Ldarg_0;
-
-				if (thisMethod.HasImplicitThis ()) {
-					if (paramNum == 0) {
-						isByRef = thisMethod.DeclaringType.IsValueType;
-					} else {
-						isByRef = thisMethod.Parameters[paramNum - 1].ParameterType.IsByRefOrPointer ();
-					}
-				} else {
-					isByRef = thisMethod.Parameters[paramNum].ParameterType.IsByRefOrPointer ();
-				}
-			} else {
-				var paramDefinition = (ParameterDefinition) operation.Operand;
-				if (thisMethod.HasImplicitThis ()) {
-					if (paramDefinition == methodBody.ThisParameter) {
-						paramNum = 0;
-					} else {
-						paramNum = paramDefinition.Index + 1;
-					}
-				} else {
-					paramNum = paramDefinition.Index;
-				}
-
-				// This is semantically wrong if it returns true - we would representing a reference parameter as a reference to a parameter - but it should be fine for now
-				isByRef = paramDefinition.ParameterType.IsByRefOrPointer ();
+			var param = ParameterHelpers.GetSourceParameter (thisMethod, operation);
+			switch (param) {
+			case SourceParameterIndex.This:
+				isByRef = thisMethod.DeclaringType.IsValueType;
+				break;
+			default:
+				isByRef = thisMethod.GetParameterType (param).IsByRefOrPointer ();
+				break;
 			}
 
 			isByRef |= code == Code.Ldarga || code == Code.Ldarga_S;
 
 			StackSlot slot = new StackSlot (
 				isByRef
-				? new ParameterReferenceValue (thisMethod, paramNum)
-				: GetMethodParameterValue (thisMethod, paramNum));
+				? new ParameterReferenceValue (thisMethod, param)
+				: GetMethodParameterValue (thisMethod, (int)ParameterHelpers.ILParameterIndexFromSourceParameterIndex(thisMethod, param)));
 			currentStack.Push (slot);
 		}
 
@@ -896,11 +876,11 @@ namespace Mono.Linker.Dataflow
 					HandleStoreField (method, fieldValue, operation, source);
 					break;
 				case ParameterReferenceValue parameterReference
-				when GetMethodParameterValue (parameterReference.MethodDefinition, parameterReference.ParameterIndex) is MethodParameterValue parameterValue:
+				when GetMethodParameterValue (parameterReference.MethodDefinition, (int)ParameterHelpers.ILParameterIndexFromSourceParameterIndex(parameterReference.MethodDefinition, parameterReference.ParameterIndex)) is MethodParameterValue parameterValue:
 					HandleStoreParameter (method, parameterValue, operation, source);
 					break;
 				case ParameterReferenceValue parameterReference
-					when GetMethodParameterValue (parameterReference.MethodDefinition, parameterReference.ParameterIndex) is MethodThisParameterValue thisParameterValue:
+					when GetMethodParameterValue (parameterReference.MethodDefinition, (int)ParameterHelpers.ILParameterIndexFromSourceParameterIndex(parameterReference.MethodDefinition, parameterReference.ParameterIndex)) is MethodThisParameterValue thisParameterValue:
 					HandleStoreMethodThisParameter (method, thisParameterValue, operation, source);
 					break;
 				case MethodReturnValue methodReturnValue:
@@ -1061,7 +1041,7 @@ namespace Mono.Linker.Dataflow
 				case ParameterReferenceValue parameterReferenceValue:
 					dereferencedValue = MultiValue.Meet (
 						dereferencedValue,
-						GetMethodParameterValue (parameterReferenceValue.MethodDefinition, parameterReferenceValue.ParameterIndex));
+						GetMethodParameterValue (parameterReferenceValue.MethodDefinition, (int)ParameterHelpers.ILParameterIndexFromSourceParameterIndex(parameterReferenceValue.MethodDefinition, parameterReferenceValue.ParameterIndex)));
 					break;
 				case LocalVariableReferenceValue localVariableReferenceValue:
 					if (locals.TryGetValue (localVariableReferenceValue.LocalDefinition, out var valueBasicBlockPair))
