@@ -2,9 +2,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ILLink.RoslynAnalyzer;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -29,49 +31,56 @@ namespace ILLink.CodeFix
 			return WellKnownFixAllProviders.BatchFixer;
 		}
 
-		protected async Task BaseRegisterCodeFixesAsync (CodeFixContext context)
+		protected Task BaseRegisterCodeFixesAsync (CodeFixContext context)
 		{
 			var document = context.Document;
-			if (await document.GetSyntaxRootAsync (context.CancellationToken).ConfigureAwait (false) is not { } root)
-				return;
 			var diagnostic = context.Diagnostics.First ();
-			SyntaxNode targetNode = root.FindNode (diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
-			if (FindAttributableParent (targetNode, AttributableParentTargets) is not SyntaxNode attributableNode)
-				return;
-
-			if (await document.GetSemanticModelAsync (context.CancellationToken).ConfigureAwait (false) is not { } model)
-				return;
-			if (model.GetSymbolInfo (targetNode).Symbol is not { } targetSymbol)
-				return;
-			if (model.Compilation.GetTypeByMetadataName (FullyQualifiedAttributeName) is not { } attributeSymbol)
-				return;
-			// N.B. May be null for FieldDeclaration, since field declarations can declare multiple variables
-			var attributableSymbol = model.GetDeclaredSymbol (attributableNode);
-
-			var attributeArguments = GetAttributeArguments (attributableSymbol, targetSymbol, SyntaxGenerator.GetGenerator (document), diagnostic);
 			var codeFixTitle = CodeFixTitle.ToString ();
 
 			context.RegisterCodeFix (CodeAction.Create (
 				title: codeFixTitle,
 				createChangedDocument: ct => AddAttributeAsync (
-					document, attributableNode, attributeArguments, attributeSymbol, ct),
+					document, diagnostic, AttributableParentTargets, FullyQualifiedAttributeName, ct),
 				equivalenceKey: codeFixTitle), diagnostic);
+
+			return Task.CompletedTask;
 		}
 
 		private static async Task<Document> AddAttributeAsync (
 			Document document,
-			SyntaxNode targetNode,
-			SyntaxNode[] attributeArguments,
-			ITypeSymbol attributeSymbol,
+			Diagnostic diagnostic,
+			AttributeableParentTargets parentTargets,
+			string fullyQualifiedAttributeName,
 			CancellationToken cancellationToken)
 		{
+			if (await document.GetSyntaxRootAsync (cancellationToken).ConfigureAwait (false) is not { } root)
+				return document;
+
+			SyntaxNode targetNode = root.FindNode (diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
+			if (FindAttributableParent (targetNode, parentTargets) is not SyntaxNode attributableNode)
+				return document;
+
+			if (await document.GetSemanticModelAsync (cancellationToken).ConfigureAwait (false) is not { } model)
+				return document;
+			if (model.GetSymbolInfo (targetNode, cancellationToken).Symbol is not { } targetSymbol)
+				return document;
+			if (model.Compilation.GetBestTypeByMetadataName (fullyQualifiedAttributeName) is not { } attributeSymbol)
+				return document;
+
+			// N.B. May be null for FieldDeclaration, since field declarations can declare multiple variables
+			var attributableSymbol = model.GetDeclaredSymbol (attributableNode, cancellationToken);
+
+			var attributeArguments = fullyQualifiedAttributeName == UnconditionalSuppressMessageCodeFixProvider.FullyQualifiedUnconditionalSuppressMessageAttribute ?
+				GetAttributeArgumentsForUnconditionalSuppressMessageAttribute (SyntaxGenerator.GetGenerator (document), diagnostic) :
+				GetAttributeArgumentsForRequiresAttribute (attributableSymbol, targetSymbol, SyntaxGenerator.GetGenerator (document));
+
 			var editor = await DocumentEditor.CreateAsync (document, cancellationToken).ConfigureAwait (false);
 			var generator = editor.Generator;
 			var attribute = generator.Attribute (
 				generator.TypeExpression (attributeSymbol), attributeArguments)
 				.WithAdditionalAnnotations (Simplifier.Annotation, Simplifier.AddImportsAnnotation);
 
-			editor.AddAttribute (targetNode, attribute);
+			editor.AddAttribute (attributableNode, attribute);
 			return editor.GetChangedDocument ();
 		}
 
@@ -108,11 +117,34 @@ namespace ILLink.CodeFix
 			return null;
 		}
 
-		protected abstract SyntaxNode[] GetAttributeArguments (
-			ISymbol? attributableSymbol,
-			ISymbol targetSymbol,
-			SyntaxGenerator syntaxGenerator,
-			Diagnostic diagnostic);
+		private static SyntaxNode[] GetAttributeArgumentsForRequiresAttribute (ISymbol? attributableSymbol, ISymbol targetSymbol, SyntaxGenerator syntaxGenerator)
+		{
+			var symbolDisplayName = targetSymbol.GetDisplayName ();
+			if (string.IsNullOrEmpty (symbolDisplayName) || HasPublicAccessibility (attributableSymbol))
+				return Array.Empty<SyntaxNode> ();
+
+			return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.LiteralExpression ($"Calls {symbolDisplayName}")) };
+		}
+
+		private static SyntaxNode[] GetAttributeArgumentsForUnconditionalSuppressMessageAttribute (SyntaxGenerator syntaxGenerator, Diagnostic diagnostic)
+		{
+			// Category of the attribute
+			var ruleCategory = syntaxGenerator.AttributeArgument (
+				syntaxGenerator.LiteralExpression (diagnostic.Descriptor.Category));
+
+			// Identifier of the analysis rule the attribute applies to
+			var ruleTitle = diagnostic.Descriptor.Title.ToString (CultureInfo.CurrentUICulture);
+			var ruleId = syntaxGenerator.AttributeArgument (
+				syntaxGenerator.LiteralExpression (
+					string.IsNullOrWhiteSpace (ruleTitle) ? diagnostic.Id : $"{diagnostic.Id}:{ruleTitle}"));
+
+			// The user should provide a justification for the suppression
+			var suppressionJustification = syntaxGenerator.AttributeArgument ("Justification",
+				syntaxGenerator.LiteralExpression ("<Pending>"));
+
+			// [UnconditionalSuppressWarning (category, id, Justification = "<Pending>")]
+			return new[] { ruleCategory, ruleId, suppressionJustification };
+		}
 
 		protected static bool HasPublicAccessibility (ISymbol? m)
 		{
