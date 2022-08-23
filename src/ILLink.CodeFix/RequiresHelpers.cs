@@ -8,7 +8,7 @@ using ILLink.RoslynAnalyzer;
 
 namespace ILLink.CodeFixProvider
 {
-	class RequiresHelpers
+	sealed class RequiresHelpers
 	{
 		internal static SyntaxNode[] GetAttributeArgumentsForRequires (ISymbol targetSymbol, SyntaxGenerator syntaxGenerator, bool hasPublicAccessibility)
 		{
