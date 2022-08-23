@@ -90,41 +90,41 @@ namespace ILLink.CodeFix
 			return WellKnownFixAllProviders.BatchFixer;
 		}
 
-		public override Task RegisterCodeFixesAsync (CodeFixContext context)
+		public override async Task RegisterCodeFixesAsync (CodeFixContext context)
 		{
 			var document = context.Document;
 			var diagnostic = context.Diagnostics[0];
 			var codeFixTitle = CodeFixTitle.ToString ();
 
+			if (await document.GetSyntaxRootAsync (context.CancellationToken).ConfigureAwait (false) is not { } root)
+				return;
+			if (diagnostic.AdditionalLocations.Count == 0)
+				return;
+			if (root.FindNode (diagnostic.AdditionalLocations[0].SourceSpan, getInnermostNodeForTie: true) is not SyntaxNode targetNode)
+				return;
+			if (diagnostic.Properties["attributeArgument"] is not string stringArgs || stringArgs.Contains (","))
+				return;
+
 			context.RegisterCodeFix (CodeAction.Create (
 				title: CodeFixTitle.ToString (),
 				createChangedDocument: ct => AddAttributeAsync (
 					document,
-					diagnostic,
+					targetNode,
+					stringArgs,
 					addAsReturnAttribute: AttributeOnReturn.Contains (diagnostic.Id),
 					addGenericParameterAttribute: AttributeOnGeneric.Contains (diagnostic.Id),
 					ct),
 				equivalenceKey: codeFixTitle), diagnostic);
-
-			return Task.CompletedTask;
 		}
 
 		private static async Task<Document> AddAttributeAsync (
 			Document document,
-			Diagnostic diagnostic,
+			SyntaxNode targetNode,
+			string stringArguments,
 			bool addAsReturnAttribute,
 			bool addGenericParameterAttribute,
 			CancellationToken cancellationToken)
 		{
-			if (await document.GetSyntaxRootAsync (cancellationToken).ConfigureAwait (false) is not { } root)
-				return document;
-			if (diagnostic.AdditionalLocations.Count == 0)
-				return document;
-			if (root.FindNode (diagnostic.AdditionalLocations[0].SourceSpan, getInnermostNodeForTie: true) is not SyntaxNode targetNode)
-				return document;
-			if (diagnostic.Properties["attributeArgument"] is not string stringArgs || stringArgs.Contains (","))
-				return document;
-
 			if (await document.GetSemanticModelAsync (cancellationToken).ConfigureAwait (false) is not { } model)
 				return document;
 			if (model.Compilation.GetBestTypeByMetadataName (FullyQualifiedAttributeName) is not { } attributeSymbol)
@@ -132,7 +132,7 @@ namespace ILLink.CodeFix
 
 			var editor = await DocumentEditor.CreateAsync (document, cancellationToken).ConfigureAwait (false);
 			var generator = editor.Generator;
-			var attributeArguments = new[] { generator.AttributeArgument (generator.MemberAccessExpression (generator.DottedName ("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes"), stringArgs)) };
+			var attributeArguments = new[] { generator.AttributeArgument (generator.MemberAccessExpression (generator.DottedName ("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes"), stringArguments)) };
 			var attribute = generator.Attribute (
 				generator.TypeExpression (attributeSymbol), attributeArguments)
 				.WithAdditionalAnnotations (Simplifier.Annotation, Simplifier.AddImportsAnnotation);

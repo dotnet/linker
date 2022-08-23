@@ -202,7 +202,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 			};
 			// No fix available inside a lambda, requires manual code change since attribute cannot
 			// be applied
-			return VerifyRequiresUnreferencedCodeCodeFix (src, src, diag, diag, numberOfIterations: 1);
+			return VerifyRequiresUnreferencedCodeCodeFix (src, src, diag, diag);
 		}
 
 		[Fact]
@@ -318,7 +318,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 				VerifyCS.Diagnostic(DiagnosticId.RequiresUnreferencedCode).WithSpan(9, 12, 9, 16).WithArguments("C.M1()", " message.", "")
 			};
 			// Can't apply RUC on properties at the moment
-			return VerifyRequiresUnreferencedCodeCodeFix (src, src, diag, diag, numberOfIterations: 1);
+			return VerifyRequiresUnreferencedCodeCodeFix (src, src, diag, diag);
 		}
 
 		[Fact]

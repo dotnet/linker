@@ -73,6 +73,7 @@ namespace ILLink.RoslynAnalyzer
 
 			return type;
 		}
+		
 		// copied from https://github.com/dotnet/roslyn/blob/main/src/Workspaces/SharedUtilitiesAndExtensions/Compiler/Core/Extensions/ISymbolExtensions.cs
 		private static SymbolVisibility GetResultantVisibility (this ISymbol symbol)
 		{

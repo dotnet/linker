@@ -31,35 +31,34 @@ namespace ILLink.CodeFix
 			return WellKnownFixAllProviders.BatchFixer;
 		}
 
-		protected Task BaseRegisterCodeFixesAsync (CodeFixContext context)
+		protected async Task BaseRegisterCodeFixesAsync (CodeFixContext context)
 		{
 			var document = context.Document;
 			var diagnostic = context.Diagnostics.First ();
 			var codeFixTitle = CodeFixTitle.ToString ();
 
+			if (await document.GetSyntaxRootAsync (context.CancellationToken).ConfigureAwait (false) is not { } root)
+				return;
+
+			SyntaxNode targetNode = root.FindNode (diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
+			if (FindAttributableParent (targetNode, AttributableParentTargets) is not SyntaxNode attributableNode)
+				return;
+
 			context.RegisterCodeFix (CodeAction.Create (
 				title: codeFixTitle,
 				createChangedDocument: ct => AddAttributeAsync (
-					document, diagnostic, AttributableParentTargets, FullyQualifiedAttributeName, ct),
+					document, diagnostic, targetNode, attributableNode, FullyQualifiedAttributeName, ct),
 				equivalenceKey: codeFixTitle), diagnostic);
-
-			return Task.CompletedTask;
 		}
 
 		private static async Task<Document> AddAttributeAsync (
 			Document document,
 			Diagnostic diagnostic,
-			AttributeableParentTargets parentTargets,
+			SyntaxNode targetNode,
+			SyntaxNode attributableNode,
 			string fullyQualifiedAttributeName,
 			CancellationToken cancellationToken)
 		{
-			if (await document.GetSyntaxRootAsync (cancellationToken).ConfigureAwait (false) is not { } root)
-				return document;
-
-			SyntaxNode targetNode = root.FindNode (diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
-			if (FindAttributableParent (targetNode, parentTargets) is not SyntaxNode attributableNode)
-				return document;
-
 			if (await document.GetSemanticModelAsync (cancellationToken).ConfigureAwait (false) is not { } model)
 				return document;
 			if (model.GetSymbolInfo (targetNode, cancellationToken).Symbol is not { } targetSymbol)

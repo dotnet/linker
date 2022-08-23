@@ -173,7 +173,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 						"C.M(Type)",
 						"'DynamicallyAccessedMemberTypes.PublicMethods', 'DynamicallyAccessedMemberTypes.PublicFields'")
 			};
-			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag, numberOfIterations: 1);
+			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 
 		[Fact]
@@ -207,7 +207,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 						"C.M(Type)",
 						"'DynamicallyAccessedMemberTypes.PublicMethods'")
 			};
-			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag, numberOfIterations: 1);
+			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 
 		[Fact]
@@ -279,7 +279,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 						"C.M(Type)",
 						"'DynamicallyAccessedMemberTypes.All'")
 			};
-			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag, numberOfIterations: 1);
+			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 
 		[Fact]
@@ -691,7 +691,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 					"C.GetC()",
 					"'DynamicallyAccessedMemberTypes.PublicMethods'")
 			};
-			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag, numberOfIterations: 1);
+			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 
 		[Fact]
@@ -731,7 +731,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 					"C.GetT()",
 					"'DynamicallyAccessedMemberTypes.PublicMethods'")
 			};
-			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag, numberOfIterations: 1);
+			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 
 		[Fact]
@@ -1220,7 +1220,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 						"C.NeedsPublicMethods(Type)",
 						"C.f",
 						"'DynamicallyAccessedMemberTypes.PublicMethods'")};
-			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag, numberOfIterations: 1);
+			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 		[Fact]
 		public async Task CodeFix_IL2078_MismatchFieldTargetsMethodReturn ()
@@ -1301,7 +1301,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 					.WithArguments("C.Main()",
 						"C.f",
 						"'DynamicallyAccessedMemberTypes.PublicMethods'")};
-			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag, numberOfIterations: 1);
+			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 
 		[Fact]
@@ -1389,7 +1389,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 						"C.f1",
 						"'DynamicallyAccessedMemberTypes.PublicMethods'")
 			};
-			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag, numberOfIterations: 1);
+			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 
 		[Fact]
@@ -1518,7 +1518,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 						"C.f",
 						"'DynamicallyAccessedMemberTypes.PublicMethods'")
 			};
-			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag, numberOfIterations: 1);
+			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 
 		[Fact]
@@ -1784,7 +1784,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 					.WithArguments("System.C.M1()")
 			};
 			await VerifyDynamicallyAccessedMembersCodeFix (string.Concat (DynamicallyAccessedMembersAnalyzerTests.GetSystemTypeBase (), test),
-				string.Concat (DynamicallyAccessedMembersAnalyzerTests.GetSystemTypeBase (), test), diag, diag, numberOfIterations: 1);
+				string.Concat (DynamicallyAccessedMembersAnalyzerTests.GetSystemTypeBase (), test), diag, diag);
 		}
 
 		[Fact]
@@ -1949,7 +1949,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 					.WithArguments("System.C.M1()")
 			};
 			await VerifyDynamicallyAccessedMembersCodeFix (string.Concat (DynamicallyAccessedMembersAnalyzerTests.GetSystemTypeBase (), test),
-				string.Concat (DynamicallyAccessedMembersAnalyzerTests.GetSystemTypeBase (), test), diag, diag, numberOfIterations: 1);
+				string.Concat (DynamicallyAccessedMembersAnalyzerTests.GetSystemTypeBase (), test), diag, diag);
 		}
 
 
@@ -2135,7 +2135,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 					.WithArguments("System.C.M1()")
 			};
 			await VerifyDynamicallyAccessedMembersCodeFix (string.Concat (DynamicallyAccessedMembersAnalyzerTests.GetSystemTypeBase (), test),
-				string.Concat (DynamicallyAccessedMembersAnalyzerTests.GetSystemTypeBase (), test), diag, diag, numberOfIterations: 1);
+				string.Concat (DynamicallyAccessedMembersAnalyzerTests.GetSystemTypeBase (), test), diag, diag);
 		}
 
 		[Fact]
@@ -2293,7 +2293,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 						"C.M<T>()",
 						"'DynamicallyAccessedMemberTypes.PublicConstructors'")
 			};
-			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag, numberOfIterations: 1);
+			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 
 		[Fact]
@@ -2372,7 +2372,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 						"C.Main<T>()",
 						"'DynamicallyAccessedMemberTypes.PublicMethods'")
 			};
-			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag, numberOfIterations: 1);
+			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 
 
@@ -2446,7 +2446,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 						"C<T>",
 						"'DynamicallyAccessedMemberTypes.PublicMethods'")
 			};
-			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag, numberOfIterations: 1);
+			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 
 		[Fact]
@@ -2475,7 +2475,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 						"C<T>",
 						"'DynamicallyAccessedMemberTypes.PublicMethods'")
 			};
-			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag, numberOfIterations: 1);
+			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 
 		[Fact]
@@ -2575,7 +2575,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 						"C.M2<S>()",
 						"'DynamicallyAccessedMemberTypes.PublicMethods'")
 			};
-			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag, numberOfIterations: 1);
+			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 
 		[Fact]
@@ -2718,7 +2718,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 					"t",
 					"Base.M(Type)")
 			};
-			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag, numberOfIterations: 1);
+			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 
 		[Fact]
@@ -2754,7 +2754,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 					"t",
 					"Base.M(Type)")
 			};
-			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag, numberOfIterations: 1);
+			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 
 		[Fact]
@@ -2789,7 +2789,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 					"t",
 					"Base.M(Type)")
 			};
-			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag, numberOfIterations: 1);
+			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 
 		[Fact]
@@ -2955,7 +2955,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 					.WithArguments("C.M(Type)",
 					"Base.M(Type)")
 			};
-			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag, numberOfIterations: 1);
+			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 
 		[Fact]
@@ -2993,7 +2993,7 @@ build_property.{MSBuildPropertyOptionNames.EnableTrimAnalyzer} = true")));
 					.WithArguments("C.M(Type)",
 					"Base.M(Type)")
 			};
-			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag, numberOfIterations: 1);
+			await VerifyDynamicallyAccessedMembersCodeFix (test, test, diag, diag);
 		}
 	}
 }

@@ -532,34 +532,12 @@ build_property.{MSBuildPropertyOptionNames.EnableSingleFileAnalyzer} = true")));
 				}
 			}
 			""";
-			var fixtest = $$"""
-			using System;
-			using System.Diagnostics.CodeAnalysis;
-			class C
-			{
-				public static Lazy<C> _default = new Lazy<C>(InitC);
-				public static C Default => _default.Value;
 
-				[RequiresAssemblyFiles]
-				public static C InitC() {
-					C cObject = new C();
-					return cObject;
-				}
-			}
-			""";
-
-			return VerifyRequiresAssemblyFilesCodeFix (
-				source: src,
-				fixedSource: fixtest,
-				baselineExpected: new[] {
-					// /0/Test0.cs(5,47): warning IL3002: Using member 'C.InitC()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-					VerifyCS.Diagnostic (DiagnosticId.RequiresAssemblyFiles).WithSpan (5, 47, 5, 52).WithArguments ("C.InitC()", "", ""),
-				},
-				fixedExpected: new[] {
-					// /0/Test0.cs(5,47): warning IL3002: Using member 'C.InitC()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
-					VerifyCS.Diagnostic (DiagnosticId.RequiresAssemblyFiles).WithSpan (5, 47, 5, 52).WithArguments ("C.InitC()", "", ""),
-				},
-				numberOfIterations: 1);
+			var diag = new[] {
+				// /0/Test0.cs(5,47): warning IL3002: Using member 'C.InitC()' which has 'RequiresAssemblyFilesAttribute' can break functionality when embedded in a single-file app.
+				VerifyCS.Diagnostic (DiagnosticId.RequiresAssemblyFiles).WithSpan (5, 47, 5, 52).WithArguments ("C.InitC()", "", ""),
+			};
+			return VerifyRequiresAssemblyFilesCodeFix (src, src, diag, diag);
 		}
 
 		[Fact]

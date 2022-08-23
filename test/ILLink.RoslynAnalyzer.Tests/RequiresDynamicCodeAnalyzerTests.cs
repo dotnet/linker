@@ -166,7 +166,7 @@ build_property.{MSBuildPropertyOptionNames.EnableAotAnalyzer} = true")));
 			};
 			// No fix available inside a lambda, requires manual code change since attribute cannot
 			// be applied
-			return VerifyRequiresDynamicCodeCodeFix (src, src, diag, diag, numberOfIterations: 1);
+			return VerifyRequiresDynamicCodeCodeFix (src, src, diag, diag);
 		}
 
 		[Fact]
@@ -282,7 +282,7 @@ build_property.{MSBuildPropertyOptionNames.EnableAotAnalyzer} = true")));
 				VerifyCS.Diagnostic(DiagnosticId.RequiresDynamicCode).WithSpan(9, 12, 9, 16).WithArguments("C.M1()", " message.", "")
 			};
 			// Can't apply RDC on properties at the moment
-			return VerifyRequiresDynamicCodeCodeFix (src, src, diag, diag, numberOfIterations: 1);
+			return VerifyRequiresDynamicCodeCodeFix (src, src, diag, diag);
 		}
 	}
 }
