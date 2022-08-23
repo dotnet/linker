@@ -46,7 +46,7 @@ namespace ILLink.CodeFix
 			context.RegisterCodeFix (CodeAction.Create (
 				title: codeFixTitle,
 				createChangedDocument: ct => AddAttributeAsync (
-					document, diagnostic, targetNode, attributableNode, FullyQualifiedAttributeName, ct),
+					document, diagnostic, targetNode, attributableNode, ct),
 				equivalenceKey: codeFixTitle), diagnostic);
 		}
 
@@ -55,14 +55,13 @@ namespace ILLink.CodeFix
 			Diagnostic diagnostic,
 			SyntaxNode targetNode,
 			SyntaxNode attributableNode,
-			string fullyQualifiedAttributeName,
 			CancellationToken cancellationToken)
 		{
 			if (await document.GetSemanticModelAsync (cancellationToken).ConfigureAwait (false) is not { } model)
 				return document;
 			if (model.GetSymbolInfo (targetNode, cancellationToken).Symbol is not { } targetSymbol)
 				return document;
-			if (model.Compilation.GetBestTypeByMetadataName (fullyQualifiedAttributeName) is not { } attributeSymbol)
+			if (model.Compilation.GetBestTypeByMetadataName (FullyQualifiedAttributeName) is not { } attributeSymbol)
 				return document;
 
 			// N.B. May be null for FieldDeclaration, since field declarations can declare multiple variables
