@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -51,7 +50,7 @@ namespace ILLink.CodeFix
 				equivalenceKey: codeFixTitle), diagnostic);
 		}
 
-		private static async Task<Document> AddAttributeAsync (
+		private async Task<Document> AddAttributeAsync (
 			Document document,
 			Diagnostic diagnostic,
 			SyntaxNode targetNode,
@@ -69,9 +68,7 @@ namespace ILLink.CodeFix
 			// N.B. May be null for FieldDeclaration, since field declarations can declare multiple variables
 			var attributableSymbol = model.GetDeclaredSymbol (attributableNode, cancellationToken);
 
-			var attributeArguments = fullyQualifiedAttributeName == UnconditionalSuppressMessageCodeFixProvider.FullyQualifiedUnconditionalSuppressMessageAttribute ?
-				GetAttributeArgumentsForUnconditionalSuppressMessageAttribute (SyntaxGenerator.GetGenerator (document), diagnostic) :
-				GetAttributeArgumentsForRequiresAttribute (attributableSymbol, targetSymbol, SyntaxGenerator.GetGenerator (document));
+			var attributeArguments = GetAttributeArguments (attributableSymbol, targetSymbol, SyntaxGenerator.GetGenerator (document), diagnostic);
 
 			var editor = await DocumentEditor.CreateAsync (document, cancellationToken).ConfigureAwait (false);
 			var generator = editor.Generator;
@@ -116,34 +113,11 @@ namespace ILLink.CodeFix
 			return null;
 		}
 
-		private static SyntaxNode[] GetAttributeArgumentsForRequiresAttribute (ISymbol? attributableSymbol, ISymbol targetSymbol, SyntaxGenerator syntaxGenerator)
-		{
-			var symbolDisplayName = targetSymbol.GetDisplayName ();
-			if (string.IsNullOrEmpty (symbolDisplayName) || HasPublicAccessibility (attributableSymbol))
-				return Array.Empty<SyntaxNode> ();
-
-			return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.LiteralExpression ($"Calls {symbolDisplayName}")) };
-		}
-
-		private static SyntaxNode[] GetAttributeArgumentsForUnconditionalSuppressMessageAttribute (SyntaxGenerator syntaxGenerator, Diagnostic diagnostic)
-		{
-			// Category of the attribute
-			var ruleCategory = syntaxGenerator.AttributeArgument (
-				syntaxGenerator.LiteralExpression (diagnostic.Descriptor.Category));
-
-			// Identifier of the analysis rule the attribute applies to
-			var ruleTitle = diagnostic.Descriptor.Title.ToString (CultureInfo.CurrentUICulture);
-			var ruleId = syntaxGenerator.AttributeArgument (
-				syntaxGenerator.LiteralExpression (
-					string.IsNullOrWhiteSpace (ruleTitle) ? diagnostic.Id : $"{diagnostic.Id}:{ruleTitle}"));
-
-			// The user should provide a justification for the suppression
-			var suppressionJustification = syntaxGenerator.AttributeArgument ("Justification",
-				syntaxGenerator.LiteralExpression ("<Pending>"));
-
-			// [UnconditionalSuppressWarning (category, id, Justification = "<Pending>")]
-			return new[] { ruleCategory, ruleId, suppressionJustification };
-		}
+		protected abstract SyntaxNode[] GetAttributeArguments (
+			ISymbol? attributableSymbol,
+			ISymbol targetSymbol,
+			SyntaxGenerator syntaxGenerator,
+			Diagnostic diagnostic);
 
 		protected static bool HasPublicAccessibility (ISymbol? m)
 		{

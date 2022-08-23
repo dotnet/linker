@@ -1,6 +1,7 @@
 // Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
@@ -10,6 +11,7 @@ using ILLink.RoslynAnalyzer;
 using ILLink.Shared;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
+using Microsoft.CodeAnalysis.Editing;
 
 namespace ILLink.CodeFix
 {
@@ -30,5 +32,14 @@ namespace ILLink.CodeFix
 		private protected override AttributeableParentTargets AttributableParentTargets => AttributeableParentTargets.MethodOrConstructor | AttributeableParentTargets.Property | AttributeableParentTargets.Event;
 
 		public sealed override Task RegisterCodeFixesAsync (CodeFixContext context) => BaseRegisterCodeFixesAsync (context);
+
+		protected override SyntaxNode[] GetAttributeArguments (ISymbol? attributableSymbol, ISymbol targetSymbol, SyntaxGenerator syntaxGenerator, Diagnostic diagnostic)
+		{
+			var symbolDisplayName = targetSymbol.GetDisplayName ();
+			if (string.IsNullOrEmpty (symbolDisplayName) || HasPublicAccessibility (attributableSymbol))
+				return Array.Empty<SyntaxNode> ();
+
+			return new[] { syntaxGenerator.AttributeArgument (syntaxGenerator.LiteralExpression ($"Calls {symbolDisplayName}")) };
+		}
 	}
 }
