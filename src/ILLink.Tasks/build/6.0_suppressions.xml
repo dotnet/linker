@@ -6,12 +6,7 @@
       <argument>IL2070</argument>
       <property name="Scope">member</property>
       <property name="Target">M:System.Reflection.CustomAttribute.AddCustomAttributes(System.RuntimeType.ListBuilder{System.Object}@,System.Reflection.RuntimeModule,System.Int32,System.RuntimeType,System.Boolean,System.RuntimeType.ListBuilder{System.Object})</property>
-    </attribute>
-    <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
-      <argument>ILLink</argument>
-      <argument>IL2119</argument>
-      <property name="Scope">member</property>
-      <property name="Target">M:System.Diagnostics.Tracing.EventSource.{WriteEventString}g__GetTrimSafeTraceLoggingEventTypes|76_0</property>
+      <property name="Justification">Existing suppression code update due to ref param changes: https://github.com/dotnet/runtime/commit/50d289cc2b945c8ee6b4cca5b71d8d137c09a762</property>
     </attribute>
     <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
       <argument>ILLink</argument>
@@ -86,8 +81,7 @@
       <argument>ILLink</argument>
       <argument>IL2119</argument>
       <property name="Scope">member</property>
-      <property name="Target">M:System.Diagnostics.DiagnosticSourceEventSource.FilterAndTransform.#ctor(System.String,System.Int32,System.Int32,System.Diagnostics.DiagnosticSourceEventSource,System.Diagnostics.FilterAndTransform)</property>
-      <!-- <property name="Target">M:System.Diagnostics.DiagnosticSourceEventSource.FilterAndTransform.&lt;&gt;c__DisplayClass2_1.{#ctor}g__OnEventWritten|2(System.Collections.Generic.KeyValuePair{System.String,System.Object})</property> -->
+      <property name="Target">M:System.Diagnostics.DiagnosticSourceEventSource.FilterAndTransform.#ctor(System.String,System.Int32,System.Int32,System.Diagnostics.DiagnosticSourceEventSource,System.Diagnostics.DiagnosticSourceEventSource.FilterAndTransform)</property>
     </attribute>
   </assembly>
 
