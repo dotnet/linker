@@ -16,6 +16,7 @@ using LocalVariableStore = System.Collections.Generic.Dictionary<
 	Mono.Cecil.Cil.VariableDefinition,
 	Mono.Linker.Dataflow.ValueBasicBlockPair>;
 using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>;
+using static Mono.Linker.ParameterHelpers;
 
 namespace Mono.Linker.Dataflow
 {
@@ -717,33 +718,35 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		protected abstract SingleValue GetMethodParameterValue (MethodDefinition method, int parameterIndex);
+		protected abstract SingleValue GetMethodParameterValue (MethodDefinition method, SourceParameterIndex parameterIndex);
+
+		protected abstract SingleValue GetMethodThisParameterValue (MethodDefinition method);
 
 		private void ScanLdarg (Instruction operation, Stack<StackSlot> currentStack, MethodDefinition thisMethod)
 		{
 			Code code = operation.OpCode.Code;
+			bool isByRef = code == Code.Ldarga || code == Code.Ldarga_S;
 
-			bool isByRef;
-
-			// Thank you Cecil, Operand being a ParameterDefinition instead of an integer,
-			// (except for Ldarg_0 - Ldarg_3, where it's null) makes all of this really convenient...
-			// NOT.
-			var param = ParameterHelpers.GetSourceParameter (thisMethod, operation);
-			switch (param) {
-			case SourceParameterIndex.This:
-				isByRef = thisMethod.DeclaringType.IsValueType;
+			SingleValue valueToPush;
+			switch (GetSourceParameterIndex (thisMethod, operation, out var sourceIndex)) {
+			case SourceParameterKind.Numbered:
+				// This is semantically wrong if it returns true - we would representing a reference parameter as a reference to a parameter - but it should be fine for now
+				isByRef |= thisMethod.GetParameterType (sourceIndex).IsByRefOrPointer ();
+				valueToPush = isByRef
+					? new ParameterReferenceValue (thisMethod, sourceIndex)
+					: GetMethodParameterValue (thisMethod, sourceIndex);
+				break;
+			case SourceParameterKind.This:
+				isByRef |= thisMethod.DeclaringType.IsValueType;
+				valueToPush = isByRef
+					? new ThisParameterReferenceValue (thisMethod)
+					: GetMethodThisParameterValue (thisMethod);
 				break;
 			default:
-				isByRef = thisMethod.GetParameterType (param).IsByRefOrPointer ();
-				break;
+				throw new InvalidOperationException ("Unexpected IParameterIndex type");
 			}
 
-			isByRef |= code == Code.Ldarga || code == Code.Ldarga_S;
-
-			StackSlot slot = new StackSlot (
-				isByRef
-				? new ParameterReferenceValue (thisMethod, param)
-				: GetMethodParameterValue (thisMethod, (int)ParameterHelpers.ILParameterIndexFromSourceParameterIndex(thisMethod, param)));
+			StackSlot slot = new StackSlot (valueToPush);
 			currentStack.Push (slot);
 		}
 
@@ -753,13 +756,19 @@ namespace Mono.Linker.Dataflow
 			MethodDefinition thisMethod,
 			MethodBody methodBody)
 		{
-			ParameterDefinition param = (ParameterDefinition) operation.Operand;
 			var valueToStore = PopUnknown (currentStack, 1, methodBody, operation.Offset);
-			var targetValue = GetMethodParameterValue (thisMethod, param.Sequence);
-			if (targetValue is MethodParameterValue targetParameterValue)
-				HandleStoreParameter (thisMethod, targetParameterValue, operation, valueToStore.Value);
-
+			switch (GetSourceParameterIndex (thisMethod, operation, out var sourceParameterIndex)) {
+			case SourceParameterKind.Numbered:
+				var targetValue = GetMethodParameterValue (thisMethod, sourceParameterIndex);
+				if (targetValue is MethodParameterValue targetParameterValue)
+					HandleStoreParameter (thisMethod, targetParameterValue, operation, valueToStore.Value);
+				break;
 			// If the targetValue is MethodThisValue do nothing - it should never happen really, and if it does, there's nothing we can track there
+			case SourceParameterKind.This:
+				break;
+			default:
+				break;
+			}
 		}
 
 		private void ScanLdloc (
@@ -876,11 +885,11 @@ namespace Mono.Linker.Dataflow
 					HandleStoreField (method, fieldValue, operation, source);
 					break;
 				case ParameterReferenceValue parameterReference
-				when GetMethodParameterValue (parameterReference.MethodDefinition, (int)ParameterHelpers.ILParameterIndexFromSourceParameterIndex(parameterReference.MethodDefinition, parameterReference.ParameterIndex)) is MethodParameterValue parameterValue:
+				when GetMethodParameterValue (parameterReference.MethodDefinition, parameterReference.ParameterIndex) is MethodParameterValue parameterValue:
 					HandleStoreParameter (method, parameterValue, operation, source);
 					break;
-				case ParameterReferenceValue parameterReference
-					when GetMethodParameterValue (parameterReference.MethodDefinition, (int)ParameterHelpers.ILParameterIndexFromSourceParameterIndex(parameterReference.MethodDefinition, parameterReference.ParameterIndex)) is MethodThisParameterValue thisParameterValue:
+				case ThisParameterReferenceValue parameterReference
+					when GetMethodThisParameterValue (parameterReference.MethodDefinition) is MethodThisParameterValue thisParameterValue:
 					HandleStoreMethodThisParameter (method, thisParameterValue, operation, source);
 					break;
 				case MethodReturnValue methodReturnValue:
@@ -1041,13 +1050,18 @@ namespace Mono.Linker.Dataflow
 				case ParameterReferenceValue parameterReferenceValue:
 					dereferencedValue = MultiValue.Meet (
 						dereferencedValue,
-						GetMethodParameterValue (parameterReferenceValue.MethodDefinition, (int)ParameterHelpers.ILParameterIndexFromSourceParameterIndex(parameterReferenceValue.MethodDefinition, parameterReferenceValue.ParameterIndex)));
+						GetMethodParameterValue (parameterReferenceValue.MethodDefinition, parameterReferenceValue.ParameterIndex));
 					break;
 				case LocalVariableReferenceValue localVariableReferenceValue:
 					if (locals.TryGetValue (localVariableReferenceValue.LocalDefinition, out var valueBasicBlockPair))
 						dereferencedValue = MultiValue.Meet (dereferencedValue, valueBasicBlockPair.Value);
 					else
 						dereferencedValue = MultiValue.Meet (dereferencedValue, UnknownValue.Instance);
+					break;
+				case ThisParameterReferenceValue thisParameterReferenceValue:
+					dereferencedValue = MultiValue.Meet (
+						dereferencedValue,
+						GetMethodThisParameterValue (thisParameterReferenceValue.MethodDefinition));
 					break;
 				case ReferenceValue referenceValue:
 					throw new NotImplementedException ($"Unhandled dereference of ReferenceValue of type {referenceValue.GetType ().FullName}");
@@ -1077,15 +1091,16 @@ namespace Mono.Linker.Dataflow
 		{
 			MethodDefinition? calledMethodDefinition = _context.Resolve (calledMethod);
 			bool methodIsResolved = calledMethodDefinition is not null;
-			int offset = calledMethod.HasImplicitThis () ? 1 : 0;
-			int parameterIndex = 0;
-			for (int ilArgumentIndex = offset; ilArgumentIndex < methodArguments.Count; ilArgumentIndex++, parameterIndex++) {
-				if (calledMethod.ParameterReferenceKind (ilArgumentIndex) is not (ReferenceKind.Ref or ReferenceKind.Out))
+			ILParameterIndex ilArgumentIndex;
+			for (SourceParameterIndex parameterIndex = 0; (int)parameterIndex < calledMethod.Parameters.Count; parameterIndex++) {
+				ilArgumentIndex = ILParameterIndexFromSourceParameterIndex (calledMethod, parameterIndex);
+
+				if (calledMethod.ParameterReferenceKind ((int)ilArgumentIndex) is not (ReferenceKind.Ref or ReferenceKind.Out))
 					continue;
 				SingleValue newByRefValue = methodIsResolved
 					? _context.Annotations.FlowAnnotations.GetMethodParameterValue (calledMethodDefinition!, parameterIndex)
 					: UnknownValue.Instance;
-				StoreInReference (methodArguments[ilArgumentIndex], newByRefValue, callingMethodBody.Method, operation, locals, curBasicBlock, ref ipState);
+				StoreInReference (methodArguments[(int)ilArgumentIndex], newByRefValue, callingMethodBody.Method, operation, locals, curBasicBlock, ref ipState);
 			}
 		}
 

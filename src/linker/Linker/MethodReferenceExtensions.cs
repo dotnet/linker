@@ -91,10 +91,7 @@ namespace Mono.Linker
 		}
 
 		public static TypeReference GetParameterType (this MethodReference method, SourceParameterIndex index)
-			=> index switch {
-				SourceParameterIndex.This => method.DeclaringType,
-				_ => method.Parameters[(int) index].ParameterType
-			};
+			=> method.Parameters[(int) index].ParameterType;
 
 		public static bool IsDeclaredOnType (this MethodReference method, string fullTypeName)
 		{

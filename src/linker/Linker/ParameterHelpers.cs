@@ -12,76 +12,68 @@ namespace Mono.Linker
 	{
 		public static ILParameterIndex ILParameterIndexFromInstruction (MethodDefinition thisMethod, Instruction operation)
 		{
+			// Thank you Cecil, Operand being a ParameterDefinition instead of an integer,
+			// (except for Ldarg_0 - Ldarg_3, where it's null) makes all of this really convenient...
+			// NOT.
 			Code code = operation.OpCode.Code;
-			int paramNum;
 			return code switch {
-				Code.Ldarg
-				or Code.Ldarg_0
+				Code.Ldarg_0
 				or Code.Ldarg_1
 				or Code.Ldarg_2
 				or Code.Ldarg_3
-				or Code.Ldarg_S
-				or Code.Ldarga
-				or Code.Ldarga_S
 				=> GetLdargParamIndex (),
 
 				Code.Starg
+				or Code.Ldarg
 				or Code.Starg_S
-				=> GetStargParamIndex (),
+				or Code.Ldarg_S
+				or Code.Ldarga
+				or Code.Ldarga_S
+				=> GetParamSequence (),
 
 				_ => throw new ArgumentException ($"{nameof (ILParameterIndex)} expected an ldarg or starg instruction, got {operation.OpCode.Name}")
 			};
 
 			ILParameterIndex GetLdargParamIndex ()
 			{
-				if (code >= Code.Ldarg_0 &&
-					code <= Code.Ldarg_3) {
-					paramNum = code - Code.Ldarg_0;
-				} else {
-					var paramDefinition = (ParameterDefinition) operation.Operand;
-					if (thisMethod.HasImplicitThis ()) {
-						if (paramDefinition == thisMethod.Body.ThisParameter) {
-							paramNum = 0;
-						} else {
-							paramNum = paramDefinition.Index + 1;
-						}
-					} else {
-						paramNum = paramDefinition.Index;
-					}
-				}
-				return (ILParameterIndex) paramNum;
+				return (ILParameterIndex) (code - Code.Ldarg_0);
 			}
-			ILParameterIndex GetStargParamIndex ()
+			ILParameterIndex GetParamSequence ()
 			{
 				ParameterDefinition param = (ParameterDefinition) operation.Operand;
 				return (ILParameterIndex) param.Sequence;
 			}
 		}
 
-		public static SourceParameterIndex GetSourceParameter (MethodDefinition method, Instruction operation)
+		public enum SourceParameterKind
 		{
-			return SourceParameterIndexFromILParameterIndex (method, ILParameterIndexFromInstruction (method, operation));
+			This,
+			Numbered
 		}
 
-		public static SourceParameterIndex SourceParameterIndexFromILParameterIndex (MethodReference method, ILParameterIndex ilIndex)
+		public static SourceParameterKind GetSourceParameterIndex (MethodDefinition method, Instruction operation, out SourceParameterIndex sourceParameterIndex)
 		{
+			return SourceParameterIndexFromILParameterIndex (method, ILParameterIndexFromInstruction (method, operation), out sourceParameterIndex);
+		}
+
+		public static SourceParameterKind SourceParameterIndexFromILParameterIndex (MethodReference method, ILParameterIndex ilIndex, out SourceParameterIndex sourceParameterIndex)
+		{
+			sourceParameterIndex = (SourceParameterIndex) (int)ilIndex;
 			if (method.HasImplicitThis ()) {
-				if (ilIndex == 0)
-					return SourceParameterIndex.This;
-
-				ilIndex--;
+				if (ilIndex == 0) {
+					return SourceParameterKind.This;
+				}
+				sourceParameterIndex--;
 			}
-
-			return (SourceParameterIndex) ilIndex;
+			return SourceParameterKind.Numbered;
 		}
 
 		public static ILParameterIndex ILParameterIndexFromSourceParameterIndex (MethodReference method, SourceParameterIndex sourceIndex)
 		{
-			if (method.HasImplicitThis ()) {
-				return (ILParameterIndex) sourceIndex + 1;
-			}
+			if (method.HasImplicitThis ())
+				return (ILParameterIndex) ((int)sourceIndex + 1);
 
-			return (ILParameterIndex) sourceIndex;
+			return (ILParameterIndex) (int)sourceIndex;
 		}
 	}
 }
