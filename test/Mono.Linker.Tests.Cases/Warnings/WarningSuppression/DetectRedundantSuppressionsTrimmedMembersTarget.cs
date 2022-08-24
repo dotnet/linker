@@ -15,7 +15,7 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 	[SkipKeptItemsValidation]
 	class DetectRedundantSuppressionsTrimmedMembersTarget
 	{
-		[ExpectedWarning("IL2072")]
+		[ExpectedWarning ("IL2072")]
 		static void Main ()
 		{
 			Expression.Call (TriggerUnrecognizedPattern (), "", Type.EmptyTypes);

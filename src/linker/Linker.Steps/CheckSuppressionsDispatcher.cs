@@ -4,6 +4,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using ILLink.Shared;
+using Mono.Cecil;
 
 namespace Mono.Linker.Steps
 {
@@ -24,12 +25,28 @@ namespace Mono.Linker.Steps
 			redundantSuppressions = redundantSuppressions
 				.Where (suppression => ((DiagnosticId) suppression.SuppressMessageInfo.Id).GetDiagnosticCategory () == DiagnosticCategory.Trimming)
 				.Where (suppression => ((DiagnosticId) suppression.SuppressMessageInfo.Id) != DiagnosticId.RedundantSuppression)
-				.Where (suppression => context.Annotations.IsMarked (suppression.Provider));
+				.Where (suppression => ProviderIsMarked (suppression.Provider));
 
 			foreach (var suppression in redundantSuppressions) {
 				var source = context.Suppressions.GetSuppressionOrigin (suppression);
 
 				context.LogWarning (new MessageOrigin (source), DiagnosticId.RedundantSuppression, $"IL{suppression.SuppressMessageInfo.Id:0000}");
+			}
+
+
+			bool ProviderIsMarked (ICustomAttributeProvider provider)
+			{
+				if (provider is PropertyDefinition property) {
+					return context.Annotations.IsMarked (property.GetMethod) || context.Annotations.IsMarked (property.SetMethod);
+				}
+
+				if (provider is EventDefinition @event) {
+					return context.Annotations.IsMarked (@event.AddMethod)
+						|| context.Annotations.IsMarked (@event.InvokeMethod)
+						|| context.Annotations.IsMarked (@event.RemoveMethod);
+				}
+
+				return context.Annotations.IsMarked (provider);
 			}
 		}
 	}
