@@ -23,7 +23,8 @@ namespace Mono.Linker.Steps
 			// Suppressions targeting RedundantSuppression warning should not be reported.
 			redundantSuppressions = redundantSuppressions
 				.Where (suppression => ((DiagnosticId) suppression.SuppressMessageInfo.Id).GetDiagnosticCategory () == DiagnosticCategory.Trimming)
-				.Where (suppression => ((DiagnosticId) suppression.SuppressMessageInfo.Id) != DiagnosticId.RedundantSuppression);
+				.Where (suppression => ((DiagnosticId) suppression.SuppressMessageInfo.Id) != DiagnosticId.RedundantSuppression)
+				.Where (suppression => context.Annotations.IsMarked (suppression.Provider));
 
 			foreach (var suppression in redundantSuppressions) {
 				var source = context.Suppressions.GetSuppressionOrigin (suppression);
