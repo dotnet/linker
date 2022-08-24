@@ -68,7 +68,7 @@
       <argument>IL2060</argument>
       <property name="Scope">member</property>
       <property name="Target">M:System.Data.DataRowExtensions.UnboxT`1.Create()</property>
-      <property name="Justification">Suppressed in 7.0 for new constraint warning: https://github.com/dotnet/runtime/commit/31d5d23e9c6f3da877343ccb020e85ca9f136c05</proprety>
+      <property name="Justification">Suppressed in 7.0 for new constraint warning: https://github.com/dotnet/runtime/commit/31d5d23e9c6f3da877343ccb020e85ca9f136c05</property>
     </attribute>
   </assembly>
 
@@ -108,21 +108,21 @@
       <argument>IL2055</argument>
       <property name="Scope">member</property>
       <property name="Target">M:System.Text.Json.Serialization.Converters.FSharpTypeConverterFactory.CreateConverter(System.Type,System.Text.Json.JsonSerializerOptions)</property>
-      <property name="Justification">Suppressed in 7.0 for new constraint warning: https://github.com/dotnet/runtime/commit/31d5d23e9c6f3da877343ccb020e85ca9f136c05</proprety>
+      <property name="Justification">Suppressed in 7.0 for new constraint warning: https://github.com/dotnet/runtime/commit/31d5d23e9c6f3da877343ccb020e85ca9f136c05</property>
     </attribute>
     <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
       <argument>ILLink</argument>
       <argument>IL2070</argument>
       <property name="Scope">member</property>
       <property name="Target">M:System.Text.Json.Serialization.Converters.EnumConverterFactory.GetEnumConverterType(System.Type)</property>
-      <property name="Justification">Suppressed in 7.0 for new constraint warning: https://github.com/dotnet/runtime/commit/31d5d23e9c6f3da877343ccb020e85ca9f136c05</proprety>
+      <property name="Justification">Suppressed in 7.0 for new constraint warning: https://github.com/dotnet/runtime/commit/31d5d23e9c6f3da877343ccb020e85ca9f136c05</property>
     </attribute>
     <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
       <argument>ILLink</argument>
       <argument>IL2070</argument>
       <property name="Scope">member</property>
       <property name="Target">M:System.Text.Json.Serialization.Converters.NullableConverterFactory.GetNullableConverterType(System.Type)</property>
-      <property name="Justification">Suppressed in 7.0 for new constraint warning: https://github.com/dotnet/runtime/commit/31d5d23e9c6f3da877343ccb020e85ca9f136c05</proprety>
+      <property name="Justification">Suppressed in 7.0 for new constraint warning: https://github.com/dotnet/runtime/commit/31d5d23e9c6f3da877343ccb020e85ca9f136c05</property>
     </attribute>
   </assembly>
 
