@@ -83,7 +83,7 @@ namespace Mono.Linker
 
 		public static TypeReference? GetInflatedParameterType (this MethodReference method, int index, LinkContext context)
 		{
-			var uninflatedParameterType = method.GetParameterType ((SourceParameterIndex)index);
+			var uninflatedParameterType = method.GetParameterType ((SourceParameterIndex) index);
 			if (method.DeclaringType is GenericInstanceType genericInstance) {
 				return TypeReferenceExtensions.InflateGenericType (genericInstance, uninflatedParameterType, context);
 			}

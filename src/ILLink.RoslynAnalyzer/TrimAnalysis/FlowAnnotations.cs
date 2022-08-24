@@ -95,11 +95,11 @@ namespace ILLink.Shared.TrimAnalysis
 			=> GetMethodThisParameterValue (method, method.Method.GetDynamicallyAccessedMemberTypes ());
 
 		internal partial MethodParameterValue GetMethodParameterValue (MethodProxy method, SourceParameterIndex parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-			=> new MethodParameterValue (method.Method.Parameters[(int)parameterIndex], dynamicallyAccessedMemberTypes);
+			=> new MethodParameterValue (method.Method.Parameters[(int) parameterIndex], dynamicallyAccessedMemberTypes);
 
 		internal partial MethodParameterValue GetMethodParameterValue (MethodProxy method, SourceParameterIndex parameterIndex)
 		{
-			var annotation = GetMethodParameterAnnotation (method.Method.Parameters[(int)parameterIndex]);
+			var annotation = GetMethodParameterAnnotation (method.Method.Parameters[(int) parameterIndex]);
 			return GetMethodParameterValue (method, parameterIndex, annotation);
 		}
 #pragma warning restore CA1822

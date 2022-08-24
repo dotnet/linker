@@ -49,7 +49,7 @@ namespace ILLink.Shared.TrimAnalysis
 		{
 			if (GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var annotation) &&
 				annotation.ParameterAnnotations != null)
-				return annotation.ParameterAnnotations[(int) ParameterHelpers.ILParameterIndexFromSourceParameterIndex (method, parameterIndex)];
+				return annotation.ParameterAnnotations[(int) ParameterHelpers.GetILParameterIndex (method, parameterIndex)];
 
 			return DynamicallyAccessedMemberTypes.None;
 		}

@@ -1092,15 +1092,15 @@ namespace Mono.Linker.Dataflow
 			MethodDefinition? calledMethodDefinition = _context.Resolve (calledMethod);
 			bool methodIsResolved = calledMethodDefinition is not null;
 			ILParameterIndex ilArgumentIndex;
-			for (SourceParameterIndex parameterIndex = 0; (int)parameterIndex < calledMethod.Parameters.Count; parameterIndex++) {
-				ilArgumentIndex = ILParameterIndexFromSourceParameterIndex (calledMethod, parameterIndex);
+			for (SourceParameterIndex parameterIndex = 0; (int) parameterIndex < calledMethod.Parameters.Count; parameterIndex++) {
+				ilArgumentIndex = GetILParameterIndex (calledMethod, parameterIndex);
 
-				if (calledMethod.ParameterReferenceKind ((int)ilArgumentIndex) is not (ReferenceKind.Ref or ReferenceKind.Out))
+				if (calledMethod.ParameterReferenceKind ((int) ilArgumentIndex) is not (ReferenceKind.Ref or ReferenceKind.Out))
 					continue;
 				SingleValue newByRefValue = methodIsResolved
 					? _context.Annotations.FlowAnnotations.GetMethodParameterValue (calledMethodDefinition!, parameterIndex)
 					: UnknownValue.Instance;
-				StoreInReference (methodArguments[(int)ilArgumentIndex], newByRefValue, callingMethodBody.Method, operation, locals, curBasicBlock, ref ipState);
+				StoreInReference (methodArguments[(int) ilArgumentIndex], newByRefValue, callingMethodBody.Method, operation, locals, curBasicBlock, ref ipState);
 			}
 		}
 

@@ -10,7 +10,7 @@ namespace Mono.Linker
 {
 	public static class ParameterHelpers
 	{
-		public static ILParameterIndex ILParameterIndexFromInstruction (MethodDefinition thisMethod, Instruction operation)
+		public static ILParameterIndex GetILParameterIndex (MethodDefinition thisMethod, Instruction operation)
 		{
 			// Thank you Cecil, Operand being a ParameterDefinition instead of an integer,
 			// (except for Ldarg_0 - Ldarg_3, where it's null) makes all of this really convenient...
@@ -45,20 +45,32 @@ namespace Mono.Linker
 			}
 		}
 
+		/// <Summary>
+		/// This enum is used when converting from an ILParameterIndex to a SourceParamterIndex to
+		/// differentiate `This` parameters from other parameters.
+		/// </Summary>
 		public enum SourceParameterKind
 		{
 			This,
 			Numbered
 		}
 
+		/// <summary>
+		/// Used to get the SourceParameterIndex that an instruction refers to.
+		/// If the return value is <see cref="SourceParameterKind.Numbered" />, the instruction refers to a numbered non-this parameter and <paramref name="sourceParameterIndex"/> will have a valid value.
+		/// If the return value is <see cref="SourceParameterKind.This" />, the instruction refers to the `this` parameter, and <paramref name="sourceParameterIndex"/> will not have a valid value.
+		/// </summary>
 		public static SourceParameterKind GetSourceParameterIndex (MethodDefinition method, Instruction operation, out SourceParameterIndex sourceParameterIndex)
-		{
-			return SourceParameterIndexFromILParameterIndex (method, ILParameterIndexFromInstruction (method, operation), out sourceParameterIndex);
-		}
+			=> GetSourceParameterIndex (method, GetILParameterIndex (method, operation), out sourceParameterIndex);
 
-		public static SourceParameterKind SourceParameterIndexFromILParameterIndex (MethodReference method, ILParameterIndex ilIndex, out SourceParameterIndex sourceParameterIndex)
+		/// <summary>
+		/// Used to get the SourceParameterIndex that an ILParameterIndex refers to.
+		/// If the return value is <see cref="SourceParameterKind.Numbered" />, the instruction refers to a numbered non-this parameter and <paramref name="sourceParameterIndex"/> will have a valid value.
+		/// If the return value is <see cref="SourceParameterKind.This" />, the instruction refers to the `this` parameter, and <paramref name="sourceParameterIndex"/> will not have a valid value.
+		/// </summary>
+		public static SourceParameterKind GetSourceParameterIndex (MethodReference method, ILParameterIndex ilIndex, out SourceParameterIndex sourceParameterIndex)
 		{
-			sourceParameterIndex = (SourceParameterIndex) (int)ilIndex;
+			sourceParameterIndex = (SourceParameterIndex) (int) ilIndex;
 			if (method.HasImplicitThis ()) {
 				if (ilIndex == 0) {
 					return SourceParameterKind.This;
@@ -68,12 +80,9 @@ namespace Mono.Linker
 			return SourceParameterKind.Numbered;
 		}
 
-		public static ILParameterIndex ILParameterIndexFromSourceParameterIndex (MethodReference method, SourceParameterIndex sourceIndex)
-		{
-			if (method.HasImplicitThis ())
-				return (ILParameterIndex) ((int)sourceIndex + 1);
-
-			return (ILParameterIndex) (int)sourceIndex;
-		}
+		public static ILParameterIndex GetILParameterIndex (MethodReference method, SourceParameterIndex sourceIndex)
+			=> method.HasImplicitThis ()
+				? (ILParameterIndex) (sourceIndex + 1)
+				: (ILParameterIndex) sourceIndex;
 	}
 }
