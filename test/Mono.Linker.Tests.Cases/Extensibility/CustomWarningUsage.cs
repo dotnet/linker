@@ -4,8 +4,8 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Extensibility
 {
-	[SetupCompileBefore ("MarkHandler.dll", new[] { "Dependencies/CustomWarning.cs" }, new[] { "illink.dll", "Mono.Cecil.dll", "netstandard.dll" })]
-	[SetupLinkerArgument ("--custom-step", "CustomWarning,MarkHandler.dll")]
+	[SetupCompileBefore ("CustomWarning.dll", new[] { "Dependencies/CustomWarning.cs" }, new[] { "illink.dll", "Mono.Cecil.dll", "netstandard.dll" })]
+	[SetupLinkerArgument ("--custom-step", "CustomWarning,CustomWarning.dll")]
 	[SetupLinkerArgument ("--notrimwarn")]
 	[ExpectedNoWarnings]
 	public class CustomWarningUsage
