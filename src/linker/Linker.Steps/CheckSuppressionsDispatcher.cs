@@ -36,13 +36,14 @@ namespace Mono.Linker.Steps
 			bool ProviderIsMarked (ICustomAttributeProvider provider)
 			{
 				if (provider is PropertyDefinition property) {
-					return context.Annotations.IsMarked (property.GetMethod) || context.Annotations.IsMarked (property.SetMethod);
+					return (property.GetMethod != null && context.Annotations.IsMarked (property.GetMethod))
+						|| (property.SetMethod != null && context.Annotations.IsMarked (property.SetMethod));
 				}
 
 				if (provider is EventDefinition @event) {
-					return context.Annotations.IsMarked (@event.AddMethod)
-						|| context.Annotations.IsMarked (@event.InvokeMethod)
-						|| context.Annotations.IsMarked (@event.RemoveMethod);
+					return (@event.AddMethod != null && context.Annotations.IsMarked (@event.AddMethod))
+						|| (@event.InvokeMethod != null && context.Annotations.IsMarked (@event.InvokeMethod))
+						|| (@event.RemoveMethod != null && context.Annotations.IsMarked (@event.RemoveMethod));
 				}
 
 				return context.Annotations.IsMarked (provider);

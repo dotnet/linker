@@ -10,6 +10,15 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 [assembly: UnconditionalSuppressMessage ("Test", "IL2071",
 	Scope = "type",
 	Target = "T:Mono.Linker.Tests.Cases.Warnings.WarningSuppression.UnusedTypeWithRedundantSuppression")]
+[assembly: UnconditionalSuppressMessage ("Test", "IL2071",
+	Scope = "member",
+	Target = "P:Mono.Linker.Tests.Cases.Warnings.WarningSuppression.UnusedTypeWithMembers.UnusedPropertyWithSuppression")]
+[assembly: UnconditionalSuppressMessage ("Test", "IL2071",
+	Scope = "member",
+	Target = "E:Mono.Linker.Tests.Cases.Warnings.WarningSuppression.UnusedTypeWithMembers.UnusedEventWithSuppression")]
+[assembly: UnconditionalSuppressMessage ("Test", "IL2071",
+	Scope = "member",
+	Target = "M:Mono.Linker.Tests.Cases.Warnings.WarningSuppression.UnusedTypeWithMembers.UnusedMethodWithSuppression")]
 
 namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 {
@@ -31,6 +40,17 @@ namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 
 	class UnusedTypeWithRedundantSuppression
 	{
+	}
 
+	class UnusedTypeWithMembers
+	{
+		int UnusedPropertyWithSuppression { get; set; }
+
+		event EventHandler<EventArgs> UnusedEventWithSuppression {
+			add { }
+			remove { }
+		}
+
+		void UnusedMethodWithSuppression () { }
 	}
 }
