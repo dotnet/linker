@@ -32,6 +32,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestFromFieldToThis ();
 			TestFromThisToOthers ();
 			TestFromGenericParameterToThis<MethodThisDataFlow> ();
+
+			TestIntrinsicOnDerivedType ();
 		}
 
 		[ExpectedWarning ("IL2075",
@@ -80,6 +82,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)]
 		static MethodThisDataFlowTypeTest GetWithNonPublicMethods ()
+		{
+			return null;
+		}
+
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicEvents)]
+		static MethodThisDataFlowTypeTest GetWithPublicEvents ()
 		{
 			return null;
 		}
@@ -139,6 +147,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			GetWithPublicMethods ().PropagateToReturn ();
 			GetWithPublicMethods ().PropagateToField ();
 			GetWithPublicMethods ().PropagateToThis ();
+		}
+
+		static void TestIntrinsicOnDerivedType ()
+		{
+			GetWithPublicEvents ().IntrinsicOnDerivedType ();
 		}
 
 		class NonTypeType
@@ -227,6 +240,15 @@ namespace System
 		public void PropagateToThis ()
 		{
 			this.RequireThisNonPublicMethods ();
+		}
+
+		[ExpectedNoWarnings]
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicEvents)]
+		public void IntrinsicOnDerivedType ()
+		{
+			const BindingFlags DefaultBindingFlags = BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance;
+			// https://github.com/dotnet/linker/issues/3001
+			// GetEvents (DefaultBindingFlags);
 		}
 
 		public object PropertyRequireThisPublicMethods {
