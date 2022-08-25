@@ -33,7 +33,6 @@ namespace Mono.Linker.Steps
 				context.LogWarning (new MessageOrigin (source), DiagnosticId.RedundantSuppression, $"IL{suppression.SuppressMessageInfo.Id:0000}");
 			}
 
-
 			bool ProviderIsMarked (ICustomAttributeProvider provider)
 			{
 				if (provider is PropertyDefinition property) {

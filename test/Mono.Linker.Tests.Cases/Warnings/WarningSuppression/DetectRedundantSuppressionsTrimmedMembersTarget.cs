@@ -7,7 +7,9 @@ using System.Linq.Expressions;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
-[assembly: UnconditionalSuppressMessage ("Test", "IL2071", Scope = "type", Target = "T:Mono.Linker.Tests.Cases.Warnings.WarningSuppression.UnusedTypeWithRedundantSuppression")]
+[assembly: UnconditionalSuppressMessage ("Test", "IL2071",
+	Scope = "type",
+	Target = "T:Mono.Linker.Tests.Cases.Warnings.WarningSuppression.UnusedTypeWithRedundantSuppression")]
 
 namespace Mono.Linker.Tests.Cases.Warnings.WarningSuppression
 {
