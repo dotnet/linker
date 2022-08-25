@@ -59,7 +59,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 
   <!-- Suppress warnings produced by the linker or by the ILLink Roslyn analyzer. -->
   <PropertyGroup Condition="'$(SuppressTrimAnalysisWarnings)' == 'true'">
-    <ILLinkWarningLevel Condition="'$(ILLinkWarningLevel)' == ''">0</ILLinkWarningLevel>
+    <_ExtraTrimmerArgs>$(_ExtraTrimmerArgs) --notrimwarn</_ExtraTrimmerArgs>
     <EnableTrimAnalyzer Condition="'$(EnableTrimAnalyzer)' == ''">false</EnableTrimAnalyzer>
   </PropertyGroup>
 
