@@ -33,7 +33,7 @@ namespace Mono.Linker.Dataflow
 			return Intrinsics.GetIntrinsicIdForMethod (methodDefinition) > IntrinsicId.RequiresReflectionBodyScanner_Sentinel ||
 				context.Annotations.FlowAnnotations.RequiresDataFlowAnalysis (methodDefinition) ||
 				context.Annotations.DoesMethodRequireUnreferencedCode (methodDefinition, out _) ||
-				methodDefinition.IsPInvokeImpl;
+				methodDefinition.IsPInvokeImpl && ComDangerousMethod (methodDefinition, context);
 		}
 
 		public static bool RequiresReflectionMethodBodyScannerForMethodBody (LinkContext context, MethodDefinition methodDefinition)
@@ -249,17 +249,8 @@ namespace Mono.Linker.Dataflow
 				}
 
 			case IntrinsicId.None: {
-					if (calledMethodDefinition.IsPInvokeImpl) {
-						// Is the PInvoke dangerous?
-						bool comDangerousMethod = IsComInterop (calledMethodDefinition.MethodReturnType, calledMethodDefinition.ReturnType, context);
-						foreach (ParameterDefinition pd in calledMethodDefinition.Parameters) {
-							comDangerousMethod |= IsComInterop (pd, pd.ParameterType, context);
-						}
-
-						if (comDangerousMethod) {
+					if (calledMethodDefinition.IsPInvokeImpl && ComDangerousMethod (calledMethodDefinition, context))
 							diagnosticContext.AddDiagnostic (DiagnosticId.CorrectnessOfCOMCannotBeGuaranteed, calledMethodDefinition.GetDisplayName ());
-						}
-					}
 					if (context.Annotations.DoesMethodRequireUnreferencedCode (calledMethodDefinition, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCode))
 						MarkStep.ReportRequiresUnreferencedCode (calledMethodDefinition.GetDisplayName (), requiresUnreferencedCode, diagnosticContext);
 
@@ -452,6 +443,16 @@ namespace Mono.Linker.Dataflow
 			ValueWithDynamicallyAccessedMembers targetValue)
 		{
 			TrimAnalysisPatterns.Add (new TrimAnalysisAssignmentPattern (value, targetValue, origin));
+		}
+
+		private static bool ComDangerousMethod (MethodDefinition methodDefinition, LinkContext context)
+		{
+			bool comDangerousMethod = IsComInterop (methodDefinition.MethodReturnType, methodDefinition.ReturnType, context);
+			foreach (ParameterDefinition pd in methodDefinition.Parameters) {
+				comDangerousMethod |= IsComInterop (pd, pd.ParameterType, context);
+			}
+
+			return comDangerousMethod;
 		}
 	}
 }
