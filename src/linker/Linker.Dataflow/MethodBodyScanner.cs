@@ -1097,7 +1097,7 @@ namespace Mono.Linker.Dataflow
 
 				if (calledMethod.ParameterReferenceKind ((int) ilArgumentIndex) is not (ReferenceKind.Ref or ReferenceKind.Out))
 					continue;
-				SingleValue newByRefValue = methodIsResolved
+				SingleValue newByRefValue = methodIsResolved && parameterIndex < calledMethodDefinition!.Parameters.Count
 					? _context.Annotations.FlowAnnotations.GetMethodParameterValue (calledMethodDefinition!, parameterIndex)
 					: UnknownValue.Instance;
 				StoreInReference (methodArguments[(int) ilArgumentIndex], newByRefValue, callingMethodBody.Method, operation, locals, curBasicBlock, ref ipState);
