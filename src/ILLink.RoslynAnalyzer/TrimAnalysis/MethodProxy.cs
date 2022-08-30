@@ -57,8 +57,8 @@ namespace ILLink.Shared.TypeSystemProxy
 			return namedType.HasName (fullTypeName);
 		}
 
-		public ReferenceKind ParameterReferenceKind (int index)
-			=> Method.Parameters[index].RefKind switch {
+		internal partial ReferenceKind ParameterReferenceKind (SourceParameterIndex index)
+			=> Method.Parameters[(int)index].RefKind switch {
 				RefKind.In => ReferenceKind.In,
 				RefKind.Out => ReferenceKind.Out,
 				RefKind.Ref => ReferenceKind.Ref,

@@ -25,5 +25,6 @@ namespace ILLink.Shared.TypeSystemProxy
 		internal partial ImmutableArray<GenericParameterProxy> GetGenericParameters ();
 		internal partial bool IsStatic ();
 		internal partial bool ReturnsVoid ();
+		internal partial ReferenceKind ParameterReferenceKind (SourceParameterIndex index);
 	}
 }

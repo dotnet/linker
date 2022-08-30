@@ -111,14 +111,9 @@ namespace Mono.Linker
 		/// <summary>
 		/// Returns the ReferenceKind of a parameter (in, out, ref, none) of a method. Uses the IL based index number (i.e. `this` is 0 if there is a `this`, then 1 is the first parameter)
 		/// </summary>
-		public static ReferenceKind ParameterReferenceKind (this MethodReference method, int index)
+		public static ReferenceKind ParameterReferenceKind (this MethodReference method, SourceParameterIndex index)
 		{
-			if (method.HasImplicitThis ()) {
-				if (index == 0)
-					return method.DeclaringType.IsValueType ? ReferenceKind.Ref : ReferenceKind.None;
-				index--;
-			}
-			var param = method.Parameters[index];
+			var param = method.Parameters[(int)index];
 			if (!param.ParameterType.IsByReference)
 				return ReferenceKind.None;
 			if (param.IsIn)

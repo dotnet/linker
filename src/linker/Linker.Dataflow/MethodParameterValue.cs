@@ -17,7 +17,7 @@ namespace ILLink.Shared.TrimAnalysis
 	/// </summary>
 	partial record MethodParameterValue : IValueWithStaticType
 	{
-		public MethodParameterValue (TypeDefinition? staticType, MethodDefinition method, int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+		public MethodParameterValue (TypeDefinition? staticType, MethodDefinition method, SourceParameterIndex parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 		{
 			StaticType = staticType;
 			Method = method;
@@ -31,9 +31,9 @@ namespace ILLink.Shared.TrimAnalysis
 		/// This is the index of non-implicit parameter - so the index into MethodDefinition.Parameters array.
 		/// It's NOT the IL parameter index which could be offset by 1 if the method has an implicit this.
 		/// </summary>
-		public readonly int ParameterIndex;
+		public readonly SourceParameterIndex ParameterIndex;
 
-		public ParameterDefinition ParameterDefinition => Method.Parameters[ParameterIndex];
+		public ParameterDefinition ParameterDefinition => Method.Parameters[(int)ParameterIndex];
 
 		public override DynamicallyAccessedMemberTypes DynamicallyAccessedMemberTypes { get; }
 
@@ -44,6 +44,6 @@ namespace ILLink.Shared.TrimAnalysis
 
 		public override SingleValue DeepCopy () => this; // This value is immutable
 
-		public override string ToString () => this.ValueToString (Method, ParameterIndex, DynamicallyAccessedMemberTypes);
+		public override string ToString () => this.ValueToString (Method, (int)ParameterIndex, DynamicallyAccessedMemberTypes);
 	}
 }

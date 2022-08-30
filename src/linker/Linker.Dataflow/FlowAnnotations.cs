@@ -29,7 +29,7 @@ namespace ILLink.Shared.TrimAnalysis
 
 		public bool RequiresDataFlowAnalysis (MethodDefinition method) =>
 			GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var methodAnnotations)
-				&& (methodAnnotations.ReturnParameterAnnotation != DynamicallyAccessedMemberTypes.None || methodAnnotations.ParameterAnnotations != null);
+				&& (methodAnnotations.ReturnParameterAnnotation != DynamicallyAccessedMemberTypes.None || methodAnnotations.ParametersHaveAnnotations());
 
 		public bool RequiresVirtualMethodDataFlowAnalysis (MethodDefinition method) =>
 			GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out _);
@@ -49,7 +49,7 @@ namespace ILLink.Shared.TrimAnalysis
 		{
 			if (GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var annotation) &&
 				annotation.ParameterAnnotations != null)
-				return annotation.ParameterAnnotations[(int) ParameterHelpers.GetILParameterIndex (method, parameterIndex)];
+				return annotation.ParameterAnnotations[(int) parameterIndex];
 
 			return DynamicallyAccessedMemberTypes.None;
 		}
@@ -59,9 +59,8 @@ namespace ILLink.Shared.TrimAnalysis
 			if (!method.HasThis)
 				throw new InvalidOperationException ($"Cannot get annotation of `this` of method {method.FullName} without `this`");
 
-			if (GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var annotation) &&
-				annotation.ParameterAnnotations != null)
-				return annotation.ParameterAnnotations[0];
+			if (GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var annotation))
+				return annotation.ThisParameterAnnotation;
 
 			return DynamicallyAccessedMemberTypes.None;
 		}
@@ -115,7 +114,8 @@ namespace ILLink.Shared.TrimAnalysis
 			if (!GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var annotation))
 				return false;
 
-			if (annotation.ParameterAnnotations == null && annotation.ReturnParameterAnnotation == DynamicallyAccessedMemberTypes.None)
+			if (!annotation.ParametersHaveAnnotations()
+				&& annotation.ReturnParameterAnnotation.IsNone())
 				return false;
 
 			// If the method only has annotation on the return value and it's not virtual avoid warning.
@@ -157,7 +157,7 @@ namespace ILLink.Shared.TrimAnalysis
 			//            return typeof(BaseWithAnnotation).GetMethod("GetTypeWithFields");
 			//       }
 			//   }
-			return method.IsVirtual || annotation.ParameterAnnotations != null;
+			return method.IsVirtual || annotation.ParametersHaveAnnotations();
 		}
 
 		public bool ShouldWarnWhenAccessedForReflection (FieldDefinition field) =>
@@ -236,6 +236,7 @@ namespace ILLink.Shared.TrimAnalysis
 			// Next go over all methods with an explicit annotation
 			if (type.HasMethods) {
 				foreach (MethodDefinition method in type.Methods) {
+					DynamicallyAccessedMemberTypes thisParameterAnnotation = DynamicallyAccessedMemberTypes.None;
 					DynamicallyAccessedMemberTypes[]? paramAnnotations = null;
 
 					// We convert indices from metadata space to IL space here.
@@ -244,21 +245,17 @@ namespace ILLink.Shared.TrimAnalysis
 
 					DynamicallyAccessedMemberTypes methodMemberTypes = GetMemberTypesForDynamicallyAccessedMembersAttribute (method);
 
-					int offset;
 					if (method.HasImplicitThis ()) {
-						offset = 1;
 						if (IsTypeInterestingForDataflow (method.DeclaringType)) {
 							// If there's an annotation on the method itself and it's one of the special types (System.Type for example)
 							// treat that annotation as annotating the "this" parameter.
 							if (methodMemberTypes != DynamicallyAccessedMemberTypes.None) {
-								paramAnnotations = new DynamicallyAccessedMemberTypes[method.Parameters.Count + offset];
-								paramAnnotations[0] = methodMemberTypes;
+								thisParameterAnnotation = methodMemberTypes;
 							}
 						} else if (methodMemberTypes != DynamicallyAccessedMemberTypes.None) {
 							_context.LogWarning (method, DiagnosticId.DynamicallyAccessedMembersIsNotAllowedOnMethods);
 						}
 					} else {
-						offset = 0;
 						if (methodMemberTypes != DynamicallyAccessedMemberTypes.None) {
 							_context.LogWarning (method, DiagnosticId.DynamicallyAccessedMembersIsNotAllowedOnMethods);
 						}
@@ -277,9 +274,9 @@ namespace ILLink.Shared.TrimAnalysis
 						}
 
 						if (paramAnnotations == null) {
-							paramAnnotations = new DynamicallyAccessedMemberTypes[method.Parameters.Count + offset];
+							paramAnnotations = new DynamicallyAccessedMemberTypes[method.Parameters.Count];
 						}
-						paramAnnotations[i + offset] = pa;
+						paramAnnotations[i] = pa;
 					}
 
 					DynamicallyAccessedMemberTypes returnAnnotation = GetMemberTypesForDynamicallyAccessedMembersAttribute (method, providerIfNotMember: method.MethodReturnType);
@@ -300,8 +297,8 @@ namespace ILLink.Shared.TrimAnalysis
 						}
 					}
 
-					if (returnAnnotation != DynamicallyAccessedMemberTypes.None || paramAnnotations != null || genericParameterAnnotations != null) {
-						annotatedMethods.Add (new MethodAnnotations (method, paramAnnotations, returnAnnotation, genericParameterAnnotations));
+					if (!returnAnnotation.IsNone() || paramAnnotations != null || genericParameterAnnotations != null || !thisParameterAnnotation.IsNone()) {
+						annotatedMethods.Add (new MethodAnnotations (method, thisParameterAnnotation, paramAnnotations, returnAnnotation, genericParameterAnnotations));
 					}
 				}
 			}
@@ -349,11 +346,10 @@ namespace ILLink.Shared.TrimAnalysis
 						if (annotatedMethods.Any (a => a.Method == setMethod)) {
 							_context.LogWarning (setMethod, DiagnosticId.DynamicallyAccessedMembersConflictsBetweenPropertyAndAccessor, property.GetDisplayName (), setMethod.GetDisplayName ());
 						} else {
-							int offset = setMethod.HasImplicitThis () ? 1 : 0;
 							if (setMethod.Parameters.Count > 0) {
-								DynamicallyAccessedMemberTypes[] paramAnnotations = new DynamicallyAccessedMemberTypes[setMethod.Parameters.Count + offset];
+								DynamicallyAccessedMemberTypes[] paramAnnotations = new DynamicallyAccessedMemberTypes[setMethod.Parameters.Count];
 								paramAnnotations[paramAnnotations.Length - 1] = annotation;
-								annotatedMethods.Add (new MethodAnnotations (setMethod, paramAnnotations, DynamicallyAccessedMemberTypes.None, null));
+								annotatedMethods.Add (new MethodAnnotations (setMethod, DynamicallyAccessedMemberTypes.None, paramAnnotations, DynamicallyAccessedMemberTypes.None, null));
 							}
 						}
 					}
@@ -376,7 +372,7 @@ namespace ILLink.Shared.TrimAnalysis
 						if (annotatedMethods.Any (a => a.Method == getMethod)) {
 							_context.LogWarning (getMethod, DiagnosticId.DynamicallyAccessedMembersConflictsBetweenPropertyAndAccessor, property.GetDisplayName (), getMethod.GetDisplayName ());
 						} else {
-							annotatedMethods.Add (new MethodAnnotations (getMethod, null, annotation, null));
+							annotatedMethods.Add (new MethodAnnotations (getMethod, DynamicallyAccessedMemberTypes.None, null, annotation, null));
 						}
 					}
 
@@ -488,6 +484,9 @@ namespace ILLink.Shared.TrimAnalysis
 			if (methodAnnotations.ReturnParameterAnnotation != baseMethodAnnotations.ReturnParameterAnnotation)
 				LogValidationWarning (method.MethodReturnType, baseMethod.MethodReturnType, method);
 
+			if (methodAnnotations.ThisParameterAnnotation != baseMethodAnnotations.ThisParameterAnnotation)
+				LogValidationWarning (method, baseMethod, method);
+
 			if (methodAnnotations.ParameterAnnotations != null || baseMethodAnnotations.ParameterAnnotations != null) {
 				if (methodAnnotations.ParameterAnnotations == null)
 					ValidateMethodParametersHaveNoAnnotations (baseMethodAnnotations.ParameterAnnotations!, method, baseMethod, method);
@@ -500,8 +499,8 @@ namespace ILLink.Shared.TrimAnalysis
 					for (int parameterIndex = 0; parameterIndex < methodAnnotations.ParameterAnnotations.Length; parameterIndex++) {
 						if (methodAnnotations.ParameterAnnotations[parameterIndex] != baseMethodAnnotations.ParameterAnnotations[parameterIndex])
 							LogValidationWarning (
-								DiagnosticUtilities.GetMethodParameterFromIndex (method, parameterIndex),
-								DiagnosticUtilities.GetMethodParameterFromIndex (baseMethod, parameterIndex),
+								DiagnosticUtilities.GetMethodParameterFromIndex (method, (SourceParameterIndex)parameterIndex),
+								DiagnosticUtilities.GetMethodParameterFromIndex (baseMethod, (SourceParameterIndex)parameterIndex),
 								method);
 					}
 				}
@@ -534,8 +533,8 @@ namespace ILLink.Shared.TrimAnalysis
 				var annotation = parameterAnnotations[parameterIndex];
 				if (annotation != DynamicallyAccessedMemberTypes.None)
 					LogValidationWarning (
-						DiagnosticUtilities.GetMethodParameterFromIndex (method, parameterIndex),
-						DiagnosticUtilities.GetMethodParameterFromIndex (baseMethod, parameterIndex),
+						DiagnosticUtilities.GetMethodParameterFromIndex (method, (SourceParameterIndex)parameterIndex),
+						DiagnosticUtilities.GetMethodParameterFromIndex (baseMethod, (SourceParameterIndex)parameterIndex),
 						origin);
 			}
 		}
@@ -659,17 +658,25 @@ namespace ILLink.Shared.TrimAnalysis
 		readonly struct MethodAnnotations
 		{
 			public readonly MethodDefinition Method;
+			public readonly DynamicallyAccessedMemberTypes ThisParameterAnnotation;
 			public readonly DynamicallyAccessedMemberTypes[]? ParameterAnnotations;
 			public readonly DynamicallyAccessedMemberTypes ReturnParameterAnnotation;
 			public readonly DynamicallyAccessedMemberTypes[]? GenericParameterAnnotations;
 
 			public MethodAnnotations (
 				MethodDefinition method,
+				DynamicallyAccessedMemberTypes thisParameterAnnotation,
 				DynamicallyAccessedMemberTypes[]? paramAnnotations,
 				DynamicallyAccessedMemberTypes returnParamAnnotations,
 				DynamicallyAccessedMemberTypes[]? genericParameterAnnotations)
-				=> (Method, ParameterAnnotations, ReturnParameterAnnotation, GenericParameterAnnotations) =
-					(method, paramAnnotations, returnParamAnnotations, genericParameterAnnotations);
+				=> (Method, ThisParameterAnnotation, ParameterAnnotations, ReturnParameterAnnotation, GenericParameterAnnotations) =
+					(method, thisParameterAnnotation, paramAnnotations, returnParamAnnotations, genericParameterAnnotations);
+
+			/// <summary>
+			/// Returns true if the method parameters AND the `this` parameter do not have annotations besides <see cref="DynamicallyAccessedMemberTypes.None" />.
+			/// Returns false if any parameter or the `this` parameter have any annotation besides <see cref="DynamicallyAccessedMemberTypes.None" />.
+			/// </summary>
+			public bool ParametersHaveAnnotations () => ParameterAnnotations != null || !ThisParameterAnnotation.IsNone ();
 
 			public bool TryGetAnnotation (GenericParameter genericParameter, out DynamicallyAccessedMemberTypes annotation)
 			{
@@ -719,7 +726,7 @@ namespace ILLink.Shared.TrimAnalysis
 			=> GetMethodThisParameterValue (method, GetThisParameterAnnotation (method.Method));
 
 		internal partial MethodParameterValue GetMethodParameterValue (MethodProxy method, SourceParameterIndex parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-			=> new (method.Method.Parameters[(int) parameterIndex].ParameterType.ResolveToTypeDefinition (_context), method.Method, (int) parameterIndex, dynamicallyAccessedMemberTypes);
+			=> new (method.Method.Parameters[(int) parameterIndex].ParameterType.ResolveToTypeDefinition (_context), method.Method, parameterIndex, dynamicallyAccessedMemberTypes);
 
 		internal partial MethodParameterValue GetMethodParameterValue (MethodProxy method, SourceParameterIndex parameterIndex)
 			=> GetMethodParameterValue (method, parameterIndex, GetParameterAnnotation (method.Method, parameterIndex));

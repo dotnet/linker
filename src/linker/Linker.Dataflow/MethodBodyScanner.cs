@@ -1007,32 +1007,27 @@ namespace Mono.Linker.Dataflow
 			return (VariableDefinition) operation.Operand;
 		}
 
-		private ValueNodeList PopCallArguments (
+		private (MultiValue ThisArgument, ValueNodeList MethodArguments) PopCallArguments (
 			Stack<StackSlot> currentStack,
 			MethodReference methodCalled,
 			MethodBody containingMethodBody,
-			bool isNewObj, int ilOffset,
-			out SingleValue? newObjValue)
+			bool isNewObj, int ilOffset)
 		{
-			newObjValue = null;
 
-			int countToPop = 0;
-			if (!isNewObj && methodCalled.HasThis && !methodCalled.ExplicitThis)
-				countToPop++;
-			countToPop += methodCalled.Parameters.Count;
+			MultiValue thisArgument = MultiValueLattice.Top;
+			if (!isNewObj && methodCalled.HasImplicitThis ())
+				thisArgument = PopUnknown (currentStack, 1, containingMethodBody, ilOffset).Value;
+			if (isNewObj)
+				thisArgument = UnknownValue.Instance;
 
-			ValueNodeList methodParams = new ValueNodeList (countToPop);
-			for (int iParam = 0; iParam < countToPop; ++iParam) {
+			ValueNodeList methodArguments = new ValueNodeList (methodCalled.Parameters.Count);
+			for (int iParam = 0; iParam < methodCalled.Parameters.Count; ++iParam) {
 				StackSlot slot = PopUnknown (currentStack, 1, containingMethodBody, ilOffset);
-				methodParams.Add (slot.Value);
+				methodArguments.Add (slot.Value);
 			}
 
-			if (isNewObj) {
-				newObjValue = UnknownValue.Instance;
-				methodParams.Add (newObjValue);
-			}
-			methodParams.Reverse ();
-			return methodParams;
+			methodArguments.Reverse ();
+			return (thisArgument, methodArguments);
 		}
 
 		internal MultiValue DereferenceValue (MultiValue maybeReferenceValue, LocalVariableStore locals, ref InterproceduralState interproceduralState)
@@ -1091,16 +1086,13 @@ namespace Mono.Linker.Dataflow
 		{
 			MethodDefinition? calledMethodDefinition = _context.Resolve (calledMethod);
 			bool methodIsResolved = calledMethodDefinition is not null;
-			ILParameterIndex ilArgumentIndex;
 			for (SourceParameterIndex parameterIndex = 0; (int) parameterIndex < calledMethod.Parameters.Count; parameterIndex++) {
-				ilArgumentIndex = GetILParameterIndex (calledMethod, parameterIndex);
-
-				if (calledMethod.ParameterReferenceKind ((int) ilArgumentIndex) is not (ReferenceKind.Ref or ReferenceKind.Out))
+				if (calledMethod.ParameterReferenceKind (parameterIndex) is not (ReferenceKind.Ref or ReferenceKind.Out))
 					continue;
-				SingleValue newByRefValue = methodIsResolved && (int)parameterIndex < calledMethodDefinition!.Parameters.Count
+				SingleValue newByRefValue = methodIsResolved && (int) parameterIndex < calledMethodDefinition!.Parameters.Count
 					? _context.Annotations.FlowAnnotations.GetMethodParameterValue (calledMethodDefinition!, parameterIndex)
 					: UnknownValue.Instance;
-				StoreInReference (methodArguments[(int) ilArgumentIndex], newByRefValue, callingMethodBody.Method, operation, locals, curBasicBlock, ref ipState);
+				StoreInReference (methodArguments[(int) parameterIndex], newByRefValue, callingMethodBody.Method, operation, locals, curBasicBlock, ref ipState);
 			}
 		}
 
@@ -1116,27 +1108,28 @@ namespace Mono.Linker.Dataflow
 
 			bool isNewObj = operation.OpCode.Code == Code.Newobj;
 
-			SingleValue? newObjValue;
-			ValueNodeList methodArguments = PopCallArguments (currentStack, calledMethod, callingMethodBody, isNewObj,
-														   operation.Offset, out newObjValue);
-			var dereferencedMethodParams = new List<MultiValue> ();
+			(MultiValue thisArgument, ValueNodeList methodArguments) =
+				PopCallArguments (currentStack, calledMethod, callingMethodBody, isNewObj, operation.Offset);
+
+			ValueNodeList dereferencedMethodArguments = new (methodArguments.Count);
 			foreach (var argument in methodArguments)
-				dereferencedMethodParams.Add (DereferenceValue (argument, locals, ref interproceduralState));
+				dereferencedMethodArguments.Add (DereferenceValue (argument, locals, ref interproceduralState));
+
+			thisArgument = DereferenceValue (thisArgument, locals, ref interproceduralState);
+
 			MultiValue methodReturnValue;
 			bool handledFunction = HandleCall (
 				callingMethodBody,
 				calledMethod,
 				operation,
-				new ValueNodeList (dereferencedMethodParams),
+				thisArgument,
+				dereferencedMethodArguments,
 				out methodReturnValue);
 
 			// Handle the return value or newobj result
 			if (!handledFunction) {
 				if (isNewObj) {
-					if (newObjValue == null)
-						methodReturnValue = new MultiValue (UnknownValue.Instance);
-					else
-						methodReturnValue = newObjValue;
+					methodReturnValue = thisArgument;
 				} else {
 					if (!calledMethod.ReturnsVoid ()) {
 						methodReturnValue = UnknownValue.Instance;
@@ -1164,7 +1157,8 @@ namespace Mono.Linker.Dataflow
 			MethodBody callingMethodBody,
 			MethodReference calledMethod,
 			Instruction operation,
-			ValueNodeList methodParams,
+			MultiValue thisArgument,
+			ValueNodeList methodArguments,
 			out MultiValue methodReturnValue);
 
 		// Limit tracking array values to 32 values for performance reasons. There are many arrays much longer than 32 elements in .NET, but the interesting ones for the linker are nearly always less than 32 elements.

@@ -126,7 +126,7 @@ namespace Mono.Linker.Dataflow
 		protected override void HandleStoreMethodReturnValue (MethodDefinition method, MethodReturnValue returnValue, Instruction operation, MultiValue valueToStore)
 			=> HandleStoreValueWithDynamicallyAccessedMembers (returnValue, operation, valueToStore);
 
-		public override bool HandleCall (MethodBody callingMethodBody, MethodReference calledMethod, Instruction operation, ValueNodeList methodParams, out MultiValue methodReturnValue)
+		public override bool HandleCall (MethodBody callingMethodBody, MethodReference calledMethod, Instruction operation, MultiValue thisArgument, ValueNodeList methodArguments, out MultiValue methodReturnValue)
 		{
 			methodReturnValue = new ();
 
@@ -141,20 +141,12 @@ namespace Mono.Linker.Dataflow
 
 			_origin = _origin.WithInstructionOffset (operation.Offset);
 
-			MultiValue instanceValue;
-			ImmutableArray<MultiValue> arguments;
-			if (calledMethodDefinition.HasImplicitThis ()) {
-				instanceValue = methodParams[0];
-				arguments = methodParams.Skip (1).ToImmutableArray ();
-			} else {
-				instanceValue = MultiValueLattice.Top;
-				arguments = methodParams.ToImmutableArray ();
-			}
+			ImmutableArray<MultiValue> arguments = methodArguments.ToImmutableArray();
 
 			TrimAnalysisPatterns.Add (new TrimAnalysisMethodCallPattern (
 				operation,
 				calledMethod,
-				instanceValue,
+				thisArgument,
 				arguments,
 				_origin
 			));
@@ -163,7 +155,7 @@ namespace Mono.Linker.Dataflow
 			return HandleCall (
 				operation,
 				calledMethod,
-				instanceValue,
+				thisArgument,
 				arguments,
 				diagnosticContext,
 				_reflectionMarker,
