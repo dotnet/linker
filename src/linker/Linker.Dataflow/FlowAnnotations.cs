@@ -498,10 +498,7 @@ namespace ILLink.Shared.TrimAnalysis
 
 					for (int parameterIndex = 0; parameterIndex < methodAnnotations.ParameterAnnotations.Length; parameterIndex++) {
 						if (methodAnnotations.ParameterAnnotations[parameterIndex] != baseMethodAnnotations.ParameterAnnotations[parameterIndex])
-							LogValidationWarning (
-								DiagnosticUtilities.GetMethodParameterFromIndex (method, (SourceParameterIndex)parameterIndex),
-								DiagnosticUtilities.GetMethodParameterFromIndex (baseMethod, (SourceParameterIndex)parameterIndex),
-								method);
+							LogValidationWarning (method.Parameters[parameterIndex], baseMethod.Parameters[parameterIndex], method);
 					}
 				}
 			}
@@ -532,10 +529,7 @@ namespace ILLink.Shared.TrimAnalysis
 			for (int parameterIndex = 0; parameterIndex < parameterAnnotations.Length; parameterIndex++) {
 				var annotation = parameterAnnotations[parameterIndex];
 				if (annotation != DynamicallyAccessedMemberTypes.None)
-					LogValidationWarning (
-						DiagnosticUtilities.GetMethodParameterFromIndex (method, (SourceParameterIndex)parameterIndex),
-						DiagnosticUtilities.GetMethodParameterFromIndex (baseMethod, (SourceParameterIndex)parameterIndex),
-						origin);
+					LogValidationWarning (method.Parameters[parameterIndex], baseMethod.Parameters[parameterIndex], origin);
 			}
 		}
 

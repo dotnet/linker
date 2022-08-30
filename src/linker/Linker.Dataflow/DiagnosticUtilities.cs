@@ -1,18 +1,12 @@
 // Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using ILLink.Shared;
 using Mono.Cecil;
 
 namespace Mono.Linker.Dataflow
 {
 	static class DiagnosticUtilities
 	{
-		internal static IMetadataTokenProvider GetMethodParameterFromIndex (MethodDefinition method, SourceParameterIndex parameterIndex)
-		{
-			return method.Parameters[(int) parameterIndex];
-		}
-
 		internal static string GetParameterNameForErrorMessage (ParameterDefinition parameterDefinition) =>
 			string.IsNullOrEmpty (parameterDefinition.Name) ? $"#{parameterDefinition.Index}" : parameterDefinition.Name;
 
