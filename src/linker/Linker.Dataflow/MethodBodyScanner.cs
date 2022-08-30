@@ -1013,18 +1013,18 @@ namespace Mono.Linker.Dataflow
 			MethodBody containingMethodBody,
 			bool isNewObj, int ilOffset)
 		{
-
 			MultiValue thisArgument = MultiValueLattice.Top;
-			if (!isNewObj && methodCalled.HasImplicitThis ())
-				thisArgument = PopUnknown (currentStack, 1, containingMethodBody, ilOffset).Value;
-			if (isNewObj)
-				thisArgument = UnknownValue.Instance;
 
 			ValueNodeList methodArguments = new ValueNodeList (methodCalled.Parameters.Count);
 			for (int iParam = 0; iParam < methodCalled.Parameters.Count; ++iParam) {
 				StackSlot slot = PopUnknown (currentStack, 1, containingMethodBody, ilOffset);
 				methodArguments.Add (slot.Value);
 			}
+
+			if (!isNewObj && methodCalled.HasImplicitThis ())
+				thisArgument = PopUnknown (currentStack, 1, containingMethodBody, ilOffset).Value;
+			if (isNewObj)
+				thisArgument = UnknownValue.Instance;
 
 			methodArguments.Reverse ();
 			return (thisArgument, methodArguments);
