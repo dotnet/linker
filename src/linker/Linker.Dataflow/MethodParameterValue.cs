@@ -33,7 +33,7 @@ namespace ILLink.Shared.TrimAnalysis
 		/// </summary>
 		public readonly SourceParameterIndex ParameterIndex;
 
-		public ParameterDefinition ParameterDefinition => Method.Parameters[(int)ParameterIndex];
+		public ParameterDefinition ParameterDefinition => Method.Parameters[(int) ParameterIndex];
 
 		public override DynamicallyAccessedMemberTypes DynamicallyAccessedMemberTypes { get; }
 
@@ -44,6 +44,6 @@ namespace ILLink.Shared.TrimAnalysis
 
 		public override SingleValue DeepCopy () => this; // This value is immutable
 
-		public override string ToString () => this.ValueToString (Method, (int)ParameterIndex, DynamicallyAccessedMemberTypes);
+		public override string ToString () => this.ValueToString (Method, (int) ParameterIndex, DynamicallyAccessedMemberTypes);
 	}
 }

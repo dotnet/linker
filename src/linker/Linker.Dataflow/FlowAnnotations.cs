@@ -29,7 +29,7 @@ namespace ILLink.Shared.TrimAnalysis
 
 		public bool RequiresDataFlowAnalysis (MethodDefinition method) =>
 			GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var methodAnnotations)
-				&& (methodAnnotations.ReturnParameterAnnotation != DynamicallyAccessedMemberTypes.None || methodAnnotations.ParametersHaveAnnotations());
+				&& (methodAnnotations.ReturnParameterAnnotation != DynamicallyAccessedMemberTypes.None || methodAnnotations.ParametersHaveAnnotations ());
 
 		public bool RequiresVirtualMethodDataFlowAnalysis (MethodDefinition method) =>
 			GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out _);
@@ -114,8 +114,8 @@ namespace ILLink.Shared.TrimAnalysis
 			if (!GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var annotation))
 				return false;
 
-			if (!annotation.ParametersHaveAnnotations()
-				&& annotation.ReturnParameterAnnotation.IsNone())
+			if (!annotation.ParametersHaveAnnotations ()
+				&& annotation.ReturnParameterAnnotation.IsNone ())
 				return false;
 
 			// If the method only has annotation on the return value and it's not virtual avoid warning.
@@ -157,7 +157,7 @@ namespace ILLink.Shared.TrimAnalysis
 			//            return typeof(BaseWithAnnotation).GetMethod("GetTypeWithFields");
 			//       }
 			//   }
-			return method.IsVirtual || annotation.ParametersHaveAnnotations();
+			return method.IsVirtual || annotation.ParametersHaveAnnotations ();
 		}
 
 		public bool ShouldWarnWhenAccessedForReflection (FieldDefinition field) =>
@@ -297,7 +297,7 @@ namespace ILLink.Shared.TrimAnalysis
 						}
 					}
 
-					if (!returnAnnotation.IsNone() || paramAnnotations != null || genericParameterAnnotations != null || !thisParameterAnnotation.IsNone()) {
+					if (!returnAnnotation.IsNone () || paramAnnotations != null || genericParameterAnnotations != null || !thisParameterAnnotation.IsNone ()) {
 						annotatedMethods.Add (new MethodAnnotations (method, thisParameterAnnotation, paramAnnotations, returnAnnotation, genericParameterAnnotations));
 					}
 				}

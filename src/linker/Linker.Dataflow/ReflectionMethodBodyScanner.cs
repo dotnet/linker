@@ -141,7 +141,7 @@ namespace Mono.Linker.Dataflow
 
 			_origin = _origin.WithInstructionOffset (operation.Offset);
 
-			ImmutableArray<MultiValue> arguments = methodArguments.ToImmutableArray();
+			ImmutableArray<MultiValue> arguments = methodArguments.ToImmutableArray ();
 
 			TrimAnalysisPatterns.Add (new TrimAnalysisMethodCallPattern (
 				operation,

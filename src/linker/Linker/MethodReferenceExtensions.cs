@@ -113,7 +113,7 @@ namespace Mono.Linker
 		/// </summary>
 		public static ReferenceKind ParameterReferenceKind (this MethodReference method, SourceParameterIndex index)
 		{
-			var param = method.Parameters[(int)index];
+			var param = method.Parameters[(int) index];
 			if (!param.ParameterType.IsByReference)
 				return ReferenceKind.None;
 			if (param.IsIn)
