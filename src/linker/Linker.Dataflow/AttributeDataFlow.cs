@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using ILLink.Shared;
 using ILLink.Shared.TrimAnalysis;
 using Mono.Cecil;
 using Mono.Linker.Steps;
@@ -28,7 +27,7 @@ namespace Mono.Linker.Dataflow
 		public void ProcessAttributeDataflow (MethodDefinition method, IList<CustomAttributeArgument> arguments)
 		{
 			for (int i = 0; i < method.Parameters.Count; i++) {
-				var parameterValue = _context.Annotations.FlowAnnotations.GetMethodParameterValue (method, (SourceParameterIndex)i);
+				var parameterValue = _context.Annotations.FlowAnnotations.GetMethodParameterValue (method, i);
 				if (parameterValue.DynamicallyAccessedMemberTypes != DynamicallyAccessedMemberTypes.None) {
 					MultiValue value = GetValueForCustomAttributeArgument (arguments[i]);
 					var diagnosticContext = new DiagnosticContext (_origin, diagnosticsEnabled: true, _context);

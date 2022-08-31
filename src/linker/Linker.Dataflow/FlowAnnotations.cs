@@ -45,23 +45,11 @@ namespace ILLink.Shared.TrimAnalysis
 		/// </summary>
 		/// <param name="parameterIndex">Parameter index in the IL sense. Parameter 0 on instance methods is `this`.</param>
 		/// <returns></returns>
-		public DynamicallyAccessedMemberTypes GetParameterAnnotation (MethodDefinition method, SourceParameterIndex parameterIndex)
+		public DynamicallyAccessedMemberTypes GetParameterAnnotation (MethodDefinition method, int parameterIndex)
 		{
 			if (GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var annotation) &&
 				annotation.ParameterAnnotations != null)
-				return annotation.ParameterAnnotations[(int) ParameterHelpers.GetILParameterIndex (method, parameterIndex)];
-
-			return DynamicallyAccessedMemberTypes.None;
-		}
-
-		public DynamicallyAccessedMemberTypes GetThisParameterAnnotation (MethodDefinition method)
-		{
-			if (!method.HasThis)
-				throw new InvalidOperationException ($"Cannot get annotation of `this` of method {method.FullName} without `this`");
-
-			if (GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var annotation) &&
-				annotation.ParameterAnnotations != null)
-				return annotation.ParameterAnnotations[0];
+				return annotation.ParameterAnnotations[parameterIndex];
 
 			return DynamicallyAccessedMemberTypes.None;
 		}
@@ -716,13 +704,13 @@ namespace ILLink.Shared.TrimAnalysis
 #pragma warning restore CA1822
 
 		internal partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method)
-			=> GetMethodThisParameterValue (method, GetThisParameterAnnotation (method.Method));
+			=> GetMethodThisParameterValue (method, GetParameterAnnotation (method.Method, 0));
 
-		internal partial MethodParameterValue GetMethodParameterValue (MethodProxy method, SourceParameterIndex parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-			=> new (method.Method.Parameters[(int) parameterIndex].ParameterType.ResolveToTypeDefinition (_context), method.Method, (int) parameterIndex, dynamicallyAccessedMemberTypes);
+		internal partial MethodParameterValue GetMethodParameterValue (MethodProxy method, int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+			=> new (method.Method.Parameters[parameterIndex].ParameterType.ResolveToTypeDefinition (_context), method.Method, parameterIndex, dynamicallyAccessedMemberTypes);
 
-		internal partial MethodParameterValue GetMethodParameterValue (MethodProxy method, SourceParameterIndex parameterIndex)
-			=> GetMethodParameterValue (method, parameterIndex, GetParameterAnnotation (method.Method, parameterIndex));
+		internal partial MethodParameterValue GetMethodParameterValue (MethodProxy method, int parameterIndex)
+			=> GetMethodParameterValue (method, parameterIndex, GetParameterAnnotation (method.Method, parameterIndex + (method.IsStatic () ? 0 : 1)));
 
 		// Linker-specific dataflow value creation. Eventually more of these should be shared.
 		internal SingleValue GetFieldValue (FieldDefinition field)
