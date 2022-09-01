@@ -1378,5 +1378,38 @@ namespace System
 				// (8,3): error CS0103: The name 'type' does not exist in the current context
 				DiagnosticResult.CompilerError ("CS0103").WithSpan (8, 3, 8, 7).WithArguments ("type"));
 		}
+
+		[Fact]
+		public Task CRefGenericParameterAnalysis ()
+		{
+			var Source = """
+			using System;
+			using System.Diagnostics.CodeAnalysis;
+
+			class C<TOuter>
+			{
+				public static void Main()
+				{
+				}
+
+				[return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+				static Type GetTypeWithAll() => null;
+
+				/// <summary>
+				/// <remarks>
+				/// <see cref="CRequires{TOuter}.IsIt"/>
+				/// </remarks>
+				/// </summary>
+				static CRequires<TOuter> Value => throw new Exception();
+			}
+
+			class CRequires<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] TInner> { public static bool IsIt => false; }
+			""";
+
+			// The actual usage (return value) should warn, about missing annotation, but the cref should not.
+			return VerifyDynamicallyAccessedMembersAnalyzer (Source,
+				// (18,9): warning IL2091: 'TInner' generic argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' in 'CRequires<TInner>'. The generic parameter 'TOuter' of 'C<TOuter>' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.
+				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsGenericParameter).WithSpan (18, 9, 18, 26).WithSpan (4, 9, 4, 15).WithArguments ("TInner", "CRequires<TInner>", "TOuter", "C<TOuter>", "'DynamicallyAccessedMemberTypes.PublicMethods'"));
+		}
 	}
 }
