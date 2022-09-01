@@ -37,7 +37,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void ValidateMethodRequiresUnreferencedCodeAreSame (MethodDefinition method, MethodDefinition baseMethod)
+		private void ValidateMethodRequiresUnreferencedCodeAreSame (MethodDefinition method, MethodDefinition baseMethod)
 		{
 			var annotations = Context.Annotations;
 			bool methodHasAttribute = annotations.IsInRequiresUnreferencedCodeScope (method);

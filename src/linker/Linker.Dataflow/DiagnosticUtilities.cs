@@ -6,7 +6,7 @@ using Mono.Cecil;
 
 namespace Mono.Linker.Dataflow
 {
-	static class DiagnosticUtilities
+	internal static class DiagnosticUtilities
 	{
 		internal static IMetadataTokenProvider GetMethodParameterFromIndex (MethodDefinition method, int parameterIndex)
 		{

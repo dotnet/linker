@@ -10,7 +10,9 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 {
 	// Tracks the set of methods which get analyzed together during interprocedural analysis,
 	// and the possible states of hoisted locals in state machine methods and lambdas/local functions.
+#pragma warning disable CA1067 // Struct has its own Equals method
 	public struct InterproceduralState<TValue, TValueLattice> : IEquatable<InterproceduralState<TValue, TValueLattice>>
+#pragma warning restore CA1067 // Override Object.Equals(object) when implementing IEquatable<T>
 		where TValue : struct, IEquatable<TValue>
 		where TValueLattice : ILattice<TValue>
 	{
@@ -23,7 +25,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		// dictionary instead of the per-method dictionary.
 		public DefaultValueDictionary<LocalKey, Maybe<TValue>> HoistedLocals;
 
-		readonly InterproceduralStateLattice<TValue, TValueLattice> lattice;
+		private readonly InterproceduralStateLattice<TValue, TValueLattice> lattice;
 
 		public InterproceduralState (
 			ValueSet<MethodBodyValue> methods,
@@ -75,6 +77,11 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 
 		public bool TryGetHoistedLocal (LocalKey key, [NotNullWhen (true)] out TValue? value)
 			=> (value = HoistedLocals.Get (key).MaybeValue) != null;
+
+		public override int GetHashCode ()
+		{
+			throw new NotImplementedException ();
+		}
 	}
 
 	public struct InterproceduralStateLattice<TValue, TValueLattice> : ILattice<InterproceduralState<TValue, TValueLattice>>

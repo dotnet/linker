@@ -9,9 +9,9 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 {
 	public readonly struct TrimAnalysisPatternStore
 	{
-		readonly Dictionary<(IOperation, bool), TrimAnalysisAssignmentPattern> AssignmentPatterns;
-		readonly Dictionary<IOperation, TrimAnalysisMethodCallPattern> MethodCallPatterns;
-		readonly ValueSetLattice<SingleValue> Lattice;
+		private readonly Dictionary<(IOperation, bool), TrimAnalysisAssignmentPattern> AssignmentPatterns;
+		private readonly Dictionary<IOperation, TrimAnalysisMethodCallPattern> MethodCallPatterns;
+		private readonly ValueSetLattice<SingleValue> Lattice;
 
 		public TrimAnalysisPatternStore (ValueSetLattice<SingleValue> lattice)
 		{

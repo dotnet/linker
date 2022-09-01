@@ -39,7 +39,7 @@ namespace Mono.Linker
 	public class Pipeline
 	{
 
-		readonly List<IStep> _steps;
+		private readonly List<IStep> _steps;
 		public List<IMarkHandler> MarkHandlers { get; }
 
 		public Pipeline ()

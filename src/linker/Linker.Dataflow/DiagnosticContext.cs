@@ -9,7 +9,7 @@ namespace ILLink.Shared.TrimAnalysis
 	{
 		public readonly MessageOrigin Origin;
 		public readonly bool DiagnosticsEnabled;
-		readonly LinkContext _context;
+		private readonly LinkContext _context;
 
 		public DiagnosticContext (in MessageOrigin origin, bool diagnosticsEnabled, LinkContext context)
 			=> (Origin, DiagnosticsEnabled, _context) = (origin, diagnosticsEnabled, context);

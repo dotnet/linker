@@ -9,8 +9,8 @@ namespace Mono.Linker.Steps
 {
 	public class RootAssemblyInput : BaseStep
 	{
-		readonly string fileName;
-		readonly AssemblyRootMode rootMode;
+		private readonly string fileName;
+		private readonly AssemblyRootMode rootMode;
 
 		public RootAssemblyInput (string fileName, AssemblyRootMode rootMode)
 		{
@@ -97,7 +97,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		AssemblyDefinition? LoadAssemblyFile ()
+		private AssemblyDefinition? LoadAssemblyFile ()
 		{
 			AssemblyDefinition? assembly;
 
@@ -123,7 +123,7 @@ namespace Mono.Linker.Steps
 			return assembly;
 		}
 
-		void MarkAndPreserve (AssemblyDefinition assembly, TypePreserveMembers preserve)
+		private void MarkAndPreserve (AssemblyDefinition assembly, TypePreserveMembers preserve)
 		{
 			var module = assembly.MainModule;
 			if (module.HasExportedTypes)
@@ -134,7 +134,7 @@ namespace Mono.Linker.Steps
 				MarkAndPreserve (type, preserve);
 		}
 
-		void MarkAndPreserve (TypeDefinition type, TypePreserveMembers preserve)
+		private void MarkAndPreserve (TypeDefinition type, TypePreserveMembers preserve)
 		{
 			TypePreserveMembers preserve_anything = preserve;
 			if ((preserve & TypePreserveMembers.Visible) != 0 && !IsTypeVisible (type))
@@ -173,7 +173,7 @@ namespace Mono.Linker.Steps
 				MarkAndPreserve (nested, preserve);
 		}
 
-		void MarkAndPreserve (AssemblyDefinition assembly, ExportedType type, TypePreserveMembers preserve)
+		private void MarkAndPreserve (AssemblyDefinition assembly, ExportedType type, TypePreserveMembers preserve)
 		{
 			var di = new DependencyInfo (DependencyKind.RootAssembly, assembly);
 			var origin = new MessageOrigin (assembly);
@@ -182,17 +182,17 @@ namespace Mono.Linker.Steps
 			Annotations.SetMembersPreserve (type, preserve);
 		}
 
-		static bool IsTypeVisible (TypeDefinition type)
+		private static bool IsTypeVisible (TypeDefinition type)
 		{
 			return type.IsPublic || type.IsNestedPublic || type.IsNestedFamily || type.IsNestedFamilyOrAssembly;
 		}
 
-		static bool IsTypePrivate (TypeDefinition type)
+		private static bool IsTypePrivate (TypeDefinition type)
 		{
 			return type.IsNestedPrivate;
 		}
 
-		bool MarkInternalsVisibleTo (AssemblyDefinition assembly)
+		private bool MarkInternalsVisibleTo (AssemblyDefinition assembly)
 		{
 			foreach (CustomAttribute attribute in assembly.CustomAttributes) {
 				if (attribute.Constructor.DeclaringType.IsTypeOf ("System.Runtime.CompilerServices", "InternalsVisibleToAttribute")) {

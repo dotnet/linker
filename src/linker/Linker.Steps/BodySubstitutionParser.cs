@@ -13,7 +13,7 @@ namespace Mono.Linker.Steps
 {
 	public class BodySubstitutionParser : ProcessLinkerXmlBase
 	{
-		SubstitutionInfo? _substitutionInfo;
+		private SubstitutionInfo? _substitutionInfo;
 
 		public BodySubstitutionParser (LinkContext context, Stream documentStream, string xmlDocumentLocation)
 			: base (context, documentStream, xmlDocumentLocation)
@@ -121,14 +121,14 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void ProcessResources (AssemblyDefinition assembly, XPathNavigator nav)
+		private void ProcessResources (AssemblyDefinition assembly, XPathNavigator nav)
 		{
 			foreach (XPathNavigator resourceNav in nav.SelectChildren ("resource", "")) {
 				if (!ShouldProcessElement (resourceNav))
 					continue;
 
 				string name = GetAttribute (resourceNav, "name");
-				if (String.IsNullOrEmpty (name)) {
+				if (string.IsNullOrEmpty (name)) {
 					LogWarning (resourceNav, DiagnosticId.XmlMissingNameAttributeInResource);
 					continue;
 				}
@@ -149,7 +149,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		static MethodDefinition? FindMethod (TypeDefinition type, string signature)
+		private static MethodDefinition? FindMethod (TypeDefinition type, string signature)
 		{
 			if (!type.HasMethods)
 				return null;

@@ -61,15 +61,15 @@ namespace Mono.Linker
 		protected readonly Dictionary<IMemberDefinition, List<MethodDefinition>> preserved_methods = new Dictionary<IMemberDefinition, List<MethodDefinition>> ();
 		protected readonly HashSet<IMetadataTokenProvider> public_api = new HashSet<IMetadataTokenProvider> ();
 		protected readonly Dictionary<AssemblyDefinition, ISymbolReader> symbol_readers = new Dictionary<AssemblyDefinition, ISymbolReader> ();
-		readonly Dictionary<IMemberDefinition, LinkerAttributesInformation> linker_attributes = new Dictionary<IMemberDefinition, LinkerAttributesInformation> ();
-		readonly Dictionary<object, Dictionary<IMetadataTokenProvider, object>> custom_annotations = new Dictionary<object, Dictionary<IMetadataTokenProvider, object>> ();
+		private readonly Dictionary<IMemberDefinition, LinkerAttributesInformation> linker_attributes = new Dictionary<IMemberDefinition, LinkerAttributesInformation> ();
+		private readonly Dictionary<object, Dictionary<IMetadataTokenProvider, object>> custom_annotations = new Dictionary<object, Dictionary<IMetadataTokenProvider, object>> ();
 		protected readonly Dictionary<AssemblyDefinition, HashSet<EmbeddedResource>> resources_to_remove = new Dictionary<AssemblyDefinition, HashSet<EmbeddedResource>> ();
 		protected readonly HashSet<CustomAttribute> marked_attributes = new HashSet<CustomAttribute> ();
-		readonly HashSet<TypeDefinition> marked_types_with_cctor = new HashSet<TypeDefinition> ();
+		private readonly HashSet<TypeDefinition> marked_types_with_cctor = new HashSet<TypeDefinition> ();
 		protected readonly HashSet<TypeDefinition> marked_instantiated = new HashSet<TypeDefinition> ();
 		protected readonly HashSet<MethodDefinition> indirectly_called = new HashSet<MethodDefinition> ();
 		protected readonly HashSet<TypeDefinition> types_relevant_to_variant_casting = new HashSet<TypeDefinition> ();
-		readonly HashSet<IMemberDefinition> reflection_used = new ();
+		private readonly HashSet<IMemberDefinition> reflection_used = new ();
 
 		public AnnotationStore (LinkContext context)
 		{
@@ -92,7 +92,7 @@ namespace Mono.Linker
 
 		internal HashSet<MethodDefinition> VirtualMethodsWithAnnotationsToValidate { get; }
 
-		TypeMapInfo TypeMapInfo { get; }
+		private TypeMapInfo TypeMapInfo { get; }
 
 		public MemberActionStore MemberActions { get; }
 
@@ -377,7 +377,7 @@ namespace Mono.Linker
 				preserved_type_members.Add (type, preserve);
 		}
 
-		static TypePreserveMembers CombineMembers (TypePreserveMembers left, TypePreserveMembers right)
+		private static TypePreserveMembers CombineMembers (TypePreserveMembers left, TypePreserveMembers right)
 		{
 			return left | right;
 		}
@@ -481,7 +481,7 @@ namespace Mono.Linker
 			AddPreservedMethod (key as IMemberDefinition, method);
 		}
 
-		List<MethodDefinition>? GetPreservedMethods (IMemberDefinition definition)
+		private List<MethodDefinition>? GetPreservedMethods (IMemberDefinition definition)
 		{
 			if (preserved_methods.TryGetValue (definition, out List<MethodDefinition>? preserved))
 				return preserved;
@@ -489,7 +489,7 @@ namespace Mono.Linker
 			return null;
 		}
 
-		void AddPreservedMethod (IMemberDefinition definition, MethodDefinition method)
+		private void AddPreservedMethod (IMemberDefinition definition, MethodDefinition method)
 		{
 			if (IsMarked (definition)) {
 				Mark (method, new DependencyInfo (DependencyKind.PreservedMethod, definition), new MessageOrigin (definition));

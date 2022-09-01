@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis;
 
 namespace ILLink.RoslynAnalyzer
 {
-	static class ITypeSymbolExtensions
+	internal static class ITypeSymbolExtensions
 	{
 		[Flags]
 		private enum HierarchyFlags

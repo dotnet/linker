@@ -6,7 +6,7 @@ using Mono.Cecil;
 
 namespace TLens.Analyzers
 {
-	abstract class Analyzer
+	internal abstract class Analyzer
 	{
 		protected virtual bool RequiredMethodBody => true;
 
@@ -19,7 +19,7 @@ namespace TLens.Analyzers
 
 		public abstract void PrintResults (int maxCount);
 
-		void WalkType (TypeDefinition type)
+		private void WalkType (TypeDefinition type)
 		{
 			foreach (var method in type.Methods) {
 				if (RequiredMethodBody && !method.HasBody)
@@ -55,4 +55,3 @@ namespace TLens.Analyzers
 		}
 	}
 }
-

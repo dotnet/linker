@@ -13,9 +13,9 @@ namespace Mono.Linker.Dataflow
 {
 	public readonly struct ReflectionMarker
 	{
-		readonly LinkContext _context;
-		readonly MarkStep _markStep;
-		readonly bool _enabled;
+		private readonly LinkContext _context;
+		private readonly MarkStep _markStep;
+		private readonly bool _enabled;
 
 		public ReflectionMarker (LinkContext context, MarkStep markStep, bool enabled)
 		{
@@ -84,7 +84,7 @@ namespace Mono.Linker.Dataflow
 			return true;
 		}
 
-		void MarkResolvedType (
+		private void MarkResolvedType (
 			in DiagnosticContext diagnosticContext,
 			TypeReference typeReference,
 			TypeDefinition typeDefinition,
@@ -120,7 +120,7 @@ namespace Mono.Linker.Dataflow
 			_markStep.MarkMethodVisibleToReflection (method, new DependencyInfo (dependencyKind, origin.Provider), origin);
 		}
 
-		void MarkField (in MessageOrigin origin, FieldDefinition field, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
+		private void MarkField (in MessageOrigin origin, FieldDefinition field, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
 		{
 			if (!_enabled)
 				return;
@@ -136,7 +136,7 @@ namespace Mono.Linker.Dataflow
 			_markStep.MarkPropertyVisibleToReflection (property, new DependencyInfo (dependencyKind, origin.Provider), origin);
 		}
 
-		void MarkEvent (in MessageOrigin origin, EventDefinition @event, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
+		private void MarkEvent (in MessageOrigin origin, EventDefinition @event, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
 		{
 			if (!_enabled)
 				return;
@@ -144,7 +144,7 @@ namespace Mono.Linker.Dataflow
 			_markStep.MarkEventVisibleToReflection (@event, new DependencyInfo (dependencyKind, origin.Provider), origin);
 		}
 
-		void MarkInterfaceImplementation (in MessageOrigin origin, InterfaceImplementation interfaceImplementation, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
+		private void MarkInterfaceImplementation (in MessageOrigin origin, InterfaceImplementation interfaceImplementation, DependencyKind dependencyKind = DependencyKind.AccessedViaReflection)
 		{
 			if (!_enabled)
 				return;

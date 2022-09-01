@@ -39,7 +39,7 @@ namespace Mono.Linker
 	{
 		protected readonly LinkContext context;
 
-		List<IDependencyRecorder>? recorders;
+		private List<IDependencyRecorder>? recorders;
 
 		public Tracer (LinkContext context)
 		{
@@ -69,7 +69,7 @@ namespace Mono.Linker
 		}
 
 		[MemberNotNullWhen (true, "recorders")]
-		bool IsRecordingEnabled ()
+		private bool IsRecordingEnabled ()
 		{
 			return recorders != null;
 		}

@@ -69,14 +69,14 @@ namespace Mono.Linker
 			return results;
 		}
 
-		static string GetSignaturePart (TypeReference type, ITryResolveMetadata resolver)
+		private static string GetSignaturePart (TypeReference type, ITryResolveMetadata resolver)
 		{
 			var builder = new StringBuilder ();
 			DocumentationSignatureGenerator.PartVisitor.Instance.VisitTypeReference (type, builder, resolver);
 			return builder.ToString ();
 		}
 
-		static bool ParseDocumentationSignature (string id, ModuleDefinition module, List<IMemberDefinition> results, ITryResolveMetadata resolver)
+		private static bool ParseDocumentationSignature (string id, ModuleDefinition module, List<IMemberDefinition> results, ITryResolveMetadata resolver)
 		{
 			if (id == null)
 				return false;
@@ -90,7 +90,7 @@ namespace Mono.Linker
 			return results.Count > 0;
 		}
 
-		static void ParseSignature (string id, ref int index, ModuleDefinition module, List<IMemberDefinition> results, ITryResolveMetadata resolver)
+		private static void ParseSignature (string id, ref int index, ModuleDefinition module, List<IMemberDefinition> results, ITryResolveMetadata resolver)
 		{
 			Debug.Assert (results.Count == 0);
 			var memberTypeChar = PeekNextChar (id, index);
@@ -147,7 +147,7 @@ namespace Mono.Linker
 				(name, arity) = ParseTypeOrNamespaceName (id, ref index, nameBuilder);
 				// if we are at the end of the dotted name and still haven't resolved it to
 				// a type, there are no results.
-				if (String.IsNullOrEmpty (name))
+				if (string.IsNullOrEmpty (name))
 					return;
 
 				// no more dots, so don't loop any more
@@ -263,7 +263,7 @@ namespace Mono.Linker
 		// To avoid looking for types by name in all referenced assemblies, we just represent types
 		// that are part of a signature by their doc comment strings, and we check for matching
 		// strings when looking for matching member signatures.
-		static string? ParseTypeSymbol (string id, ref int index, IGenericParameterProvider? typeParameterContext)
+		private static string? ParseTypeSymbol (string id, ref int index, IGenericParameterProvider? typeParameterContext)
 		{
 			var results = new List<string> ();
 			ParseTypeSymbol (id, ref index, typeParameterContext, results);
@@ -274,7 +274,7 @@ namespace Mono.Linker
 			return null;
 		}
 
-		static void ParseTypeSymbol (string id, ref int index, IGenericParameterProvider? typeParameterContext, List<string> results)
+		private static void ParseTypeSymbol (string id, ref int index, IGenericParameterProvider? typeParameterContext, List<string> results)
 		{
 			// Note: Roslyn has a special case that deviates from the language spec, which
 			// allows context expressions embedded in a type reference => <context-definition>:<type-parameter>
@@ -330,7 +330,7 @@ namespace Mono.Linker
 			index = endIndex;
 		}
 
-		static void ParseTypeParameterSymbol (string id, ref int index, IGenericParameterProvider? typeParameterContext, List<string> results)
+		private static void ParseTypeParameterSymbol (string id, ref int index, IGenericParameterProvider? typeParameterContext, List<string> results)
 		{
 			// skip the first `
 			Debug.Assert (PeekNextChar (id, index) == '`');
@@ -369,14 +369,14 @@ namespace Mono.Linker
 			}
 		}
 
-		static void ParseNamedTypeSymbol (string id, ref int index, IGenericParameterProvider? typeParameterContext, List<string> results)
+		private static void ParseNamedTypeSymbol (string id, ref int index, IGenericParameterProvider? typeParameterContext, List<string> results)
 		{
 			Debug.Assert (results.Count == 0);
 			var nameBuilder = new StringBuilder ();
 			// loop for dotted names
 			while (true) {
 				var name = ParseName (id, ref index);
-				if (String.IsNullOrEmpty (name))
+				if (string.IsNullOrEmpty (name))
 					return;
 
 				nameBuilder.Append (name);
@@ -418,7 +418,7 @@ namespace Mono.Linker
 			results.Add (nameBuilder.ToString ());
 		}
 
-		static int ParseArrayBounds (string id, ref int index)
+		private static int ParseArrayBounds (string id, ref int index)
 		{
 			index++; // skip '['
 
@@ -458,7 +458,7 @@ namespace Mono.Linker
 			return bounds;
 		}
 
-		static bool ParseTypeArguments (string id, ref int index, IGenericParameterProvider? typeParameterContext, List<string> typeArguments)
+		private static bool ParseTypeArguments (string id, ref int index, IGenericParameterProvider? typeParameterContext, List<string> typeArguments)
 		{
 			index++; // skip over {
 
@@ -489,7 +489,7 @@ namespace Mono.Linker
 			return true;
 		}
 
-		static void GetMatchingTypes (ModuleDefinition module, TypeDefinition? declaringType, string name, int arity, List<IMemberDefinition> results, ITryResolveMetadata resolver)
+		private static void GetMatchingTypes (ModuleDefinition module, TypeDefinition? declaringType, string name, int arity, List<IMemberDefinition> results, ITryResolveMetadata resolver)
 		{
 			Debug.Assert (module != null);
 
@@ -505,7 +505,7 @@ namespace Mono.Linker
 				return;
 
 			foreach (var nestedType in declaringType.NestedTypes) {
-				Debug.Assert (String.IsNullOrEmpty (nestedType.Namespace));
+				Debug.Assert (string.IsNullOrEmpty (nestedType.Namespace));
 				if (nestedType.Name != name)
 					continue;
 
@@ -521,7 +521,7 @@ namespace Mono.Linker
 			}
 		}
 
-		static void GetMatchingMethods (string id, ref int index, TypeDefinition? type, string memberName, int arity, List<IMemberDefinition> results, ITryResolveMetadata resolver, bool acceptName = false)
+		private static void GetMatchingMethods (string id, ref int index, TypeDefinition? type, string memberName, int arity, List<IMemberDefinition> results, ITryResolveMetadata resolver, bool acceptName = false)
 		{
 			if (type == null)
 				return;
@@ -574,7 +574,7 @@ namespace Mono.Linker
 			index = endIndex;
 		}
 
-		static void GetMatchingProperties (string id, ref int index, TypeDefinition? type, string memberName, List<IMemberDefinition> results, ITryResolveMetadata resolver, bool acceptName = false)
+		private static void GetMatchingProperties (string id, ref int index, TypeDefinition? type, string memberName, List<IMemberDefinition> results, ITryResolveMetadata resolver, bool acceptName = false)
 		{
 			if (type == null)
 				return;
@@ -610,7 +610,7 @@ namespace Mono.Linker
 			index = endIndex;
 		}
 
-		static void GetMatchingFields (TypeDefinition? type, string memberName, List<IMemberDefinition> results)
+		private static void GetMatchingFields (TypeDefinition? type, string memberName, List<IMemberDefinition> results)
 		{
 			if (type == null)
 				return;
@@ -621,7 +621,7 @@ namespace Mono.Linker
 			}
 		}
 
-		static void GetMatchingEvents (TypeDefinition? type, string memberName, List<IMemberDefinition> results)
+		private static void GetMatchingEvents (TypeDefinition? type, string memberName, List<IMemberDefinition> results)
 		{
 			if (type == null)
 				return;
@@ -632,7 +632,7 @@ namespace Mono.Linker
 			}
 		}
 
-		static bool AllParametersMatch (Collection<ParameterDefinition> methodParameters, List<string> expectedParameters, ITryResolveMetadata resolver)
+		private static bool AllParametersMatch (Collection<ParameterDefinition> methodParameters, List<string> expectedParameters, ITryResolveMetadata resolver)
 		{
 			if (methodParameters.Count != expectedParameters.Count)
 				return false;
@@ -645,7 +645,7 @@ namespace Mono.Linker
 			return true;
 		}
 
-		static bool ParseParameterList (string id, ref int index, IGenericParameterProvider typeParameterContext, List<string> parameters)
+		private static bool ParseParameterList (string id, ref int index, IGenericParameterProvider typeParameterContext, List<string> parameters)
 		{
 			System.Diagnostics.Debug.Assert (typeParameterContext != null);
 
@@ -681,14 +681,14 @@ namespace Mono.Linker
 			return true;
 		}
 
-		static char PeekNextChar (string id, int index)
+		private static char PeekNextChar (string id, int index)
 		{
 			return index >= id.Length ? '\0' : id[index];
 		}
 
-		static readonly char[] s_nameDelimiters = { ':', '.', '(', ')', '{', '}', '[', ']', ',', '\'', '@', '*', '`', '~' };
+		private static readonly char[] s_nameDelimiters = { ':', '.', '(', ')', '{', '}', '[', ']', ',', '\'', '@', '*', '`', '~' };
 
-		static string ParseName (string id, ref int index)
+		private static string ParseName (string id, ref int index)
 		{
 			string name;
 
@@ -705,12 +705,12 @@ namespace Mono.Linker
 		}
 
 		// undoes dot encodings within names...
-		static string DecodeName (string name)
+		private static string DecodeName (string name)
 		{
 			return name.Replace ('#', '.');
 		}
 
-		static int ReadNextInteger (string id, ref int index)
+		private static int ReadNextInteger (string id, ref int index)
 		{
 			int n = 0;
 

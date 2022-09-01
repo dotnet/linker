@@ -140,13 +140,13 @@ namespace Mono.Linker
 
 		private int _nodeIndex = 0;
 
-		void AddNode (string node)
+		private void AddNode (string node)
 		{
 			nodeList.Add (node, _nodeIndex);
 			_nodeIndex++;
 		}
 
-		void AddLink (string source, string target, object? kind)
+		private void AddLink (string source, string target, object? kind)
 		{
 			linkList.Add ((source, target, DependencyRecorderHelper.TokenString (context, kind)));
 		}

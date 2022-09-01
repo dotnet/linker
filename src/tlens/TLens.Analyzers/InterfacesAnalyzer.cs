@@ -7,7 +7,7 @@ using Mono.Cecil.Cil;
 
 namespace TLens.Analyzers
 {
-	abstract class InterfacesAnalyzer : Analyzer
+	internal abstract class InterfacesAnalyzer : Analyzer
 	{
 		protected readonly Dictionary<TypeDefinition, List<TypeDefinition>> interfaces = new Dictionary<TypeDefinition, List<TypeDefinition>> ();
 		protected readonly Dictionary<TypeDefinition, HashSet<MethodDefinition>> usage = new Dictionary<TypeDefinition, HashSet<MethodDefinition>> ();

@@ -6,7 +6,7 @@ using Mono.Cecil;
 
 namespace TLens
 {
-	static class MethodDefinitionExtensions
+	internal static class MethodDefinitionExtensions
 	{
 		public static string ToDisplay (this MethodDefinition method, bool showSize = false)
 		{
@@ -17,7 +17,7 @@ namespace TLens
 			if (showSize) {
 				str.Append (" [size: ");
 				str.Append (method.GetEstimatedSize ());
-				str.Append ("]");
+				str.Append (']');
 			}
 
 			return str.ToString ();

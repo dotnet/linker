@@ -7,7 +7,7 @@ using Mono.Cecil.Cil;
 
 namespace Mono.Linker.Dataflow
 {
-	static class ScannerExtensions
+	internal static class ScannerExtensions
 	{
 		public static bool IsControlFlowInstruction (in this OpCode opcode)
 		{
@@ -22,7 +22,7 @@ namespace Mono.Linker.Dataflow
 			foreach (Instruction operation in methodBody.Instructions) {
 				if (!operation.OpCode.IsControlFlowInstruction ())
 					continue;
-				Object value = operation.Operand;
+				object value = operation.Operand;
 				if (value is Instruction inst) {
 					branchTargets.Add (inst.Offset);
 				} else if (value is Instruction[] instructions) {

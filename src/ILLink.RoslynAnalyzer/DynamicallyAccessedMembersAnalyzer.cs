@@ -104,7 +104,7 @@ namespace ILLink.RoslynAnalyzer
 			});
 		}
 
-		static void ProcessGenericParameters (SyntaxNodeAnalysisContext context)
+		private static void ProcessGenericParameters (SyntaxNodeAnalysisContext context)
 		{
 			// RUC on the containing symbol normally silences warnings, but when examining a generic base type,
 			// the containing symbol is the declared derived type. RUC on the derived type does not silence
@@ -164,7 +164,7 @@ namespace ILLink.RoslynAnalyzer
 			}
 		}
 
-		static IEnumerable<Diagnostic> GetDynamicallyAccessedMembersDiagnostics (SingleValue sourceValue, SingleValue targetValue, Location location)
+		private static IEnumerable<Diagnostic> GetDynamicallyAccessedMembersDiagnostics (SingleValue sourceValue, SingleValue targetValue, Location location)
 		{
 			// The target should always be an annotated value, but the visitor design currently prevents
 			// declaring this in the type system.
@@ -172,13 +172,13 @@ namespace ILLink.RoslynAnalyzer
 				throw new NotImplementedException ();
 
 			var diagnosticContext = new DiagnosticContext (location);
-			var requireDynamicallyAccessedMembersAction = new RequireDynamicallyAccessedMembersAction (diagnosticContext, new ReflectionAccessAnalyzer ());
+			var requireDynamicallyAccessedMembersAction = new RequireDynamicallyAccessedMembersAction (diagnosticContext, default (ReflectionAccessAnalyzer));
 			requireDynamicallyAccessedMembersAction.Invoke (sourceValue, targetWithDynamicallyAccessedMembers);
 
 			return diagnosticContext.Diagnostics;
 		}
 
-		static void VerifyMemberOnlyApplyToTypesOrStrings (SymbolAnalysisContext context, ISymbol member)
+		private static void VerifyMemberOnlyApplyToTypesOrStrings (SymbolAnalysisContext context, ISymbol member)
 		{
 			if (member is IFieldSymbol field && field.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None && !field.Type.IsTypeInterestingForDataflow ())
 				context.ReportDiagnostic (Diagnostic.Create (DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.DynamicallyAccessedMembersOnFieldCanOnlyApplyToTypesOrStrings), member.Locations[0], member.GetDisplayName ()));
@@ -196,7 +196,7 @@ namespace ILLink.RoslynAnalyzer
 			}
 		}
 
-		static void VerifyDamOnDerivedAndBaseMethodsMatch (SymbolAnalysisContext context, IMethodSymbol methodSymbol)
+		private static void VerifyDamOnDerivedAndBaseMethodsMatch (SymbolAnalysisContext context, IMethodSymbol methodSymbol)
 		{
 			if (methodSymbol.TryGetOverriddenMember (out var overriddenSymbol) && overriddenSymbol is IMethodSymbol overriddenMethod
 				&& context.Symbol is IMethodSymbol method) {
@@ -204,7 +204,7 @@ namespace ILLink.RoslynAnalyzer
 			}
 		}
 
-		static void VerifyDamOnMethodsMatch (SymbolAnalysisContext context, IMethodSymbol method, IMethodSymbol overriddenMethod)
+		private static void VerifyDamOnMethodsMatch (SymbolAnalysisContext context, IMethodSymbol method, IMethodSymbol overriddenMethod)
 		{
 			var methodReturnAnnotations = FlowAnnotations.GetMethodReturnValueAnnotation (method);
 			var overriddenMethodReturnAnnotations = FlowAnnotations.GetMethodReturnValueAnnotation (overriddenMethod);
@@ -279,7 +279,7 @@ namespace ILLink.RoslynAnalyzer
 					method.GetDisplayName (), overriddenMethod.GetDisplayName ()));
 		}
 
-		static void VerifyDamOnInterfaceAndImplementationMethodsMatch (SymbolAnalysisContext context, INamedTypeSymbol type)
+		private static void VerifyDamOnInterfaceAndImplementationMethodsMatch (SymbolAnalysisContext context, INamedTypeSymbol type)
 		{
 			foreach (var (interfaceMember, implementationMember) in type.GetMemberInterfaceImplementationPairs ()) {
 				if (implementationMember is IMethodSymbol implementationMethod
@@ -288,7 +288,7 @@ namespace ILLink.RoslynAnalyzer
 			}
 		}
 
-		static void VerifyDamOnPropertyAndAccessorMatch (SymbolAnalysisContext context, IMethodSymbol methodSymbol)
+		private static void VerifyDamOnPropertyAndAccessorMatch (SymbolAnalysisContext context, IMethodSymbol methodSymbol)
 		{
 			if ((methodSymbol.MethodKind != MethodKind.PropertyGet && methodSymbol.MethodKind != MethodKind.PropertySet)
 				|| (methodSymbol.AssociatedSymbol?.GetDynamicallyAccessedMemberTypes () == DynamicallyAccessedMemberTypes.None))

@@ -51,12 +51,12 @@ namespace Mono.Linker
 
 	public class SerializationMarker
 	{
-		readonly LinkContext _context;
+		private readonly LinkContext _context;
 
-		SerializerKind ActiveSerializers { get; set; }
+		private SerializerKind ActiveSerializers { get; set; }
 
-		Dictionary<SerializerKind, HashSet<ICustomAttributeProvider>>? _trackedRoots;
-		Dictionary<SerializerKind, HashSet<ICustomAttributeProvider>> TrackedRoots {
+		private Dictionary<SerializerKind, HashSet<ICustomAttributeProvider>>? _trackedRoots;
+		private Dictionary<SerializerKind, HashSet<ICustomAttributeProvider>> TrackedRoots {
 			get {
 				if (_trackedRoots == null)
 					_trackedRoots = new Dictionary<SerializerKind, HashSet<ICustomAttributeProvider>> ();
@@ -65,8 +65,8 @@ namespace Mono.Linker
 			}
 		}
 
-		HashSet<TypeDefinition>? _recursiveTypes;
-		HashSet<TypeDefinition> RecursiveTypes {
+		private HashSet<TypeDefinition>? _recursiveTypes;
+		private HashSet<TypeDefinition> RecursiveTypes {
 			get {
 				if (_recursiveTypes == null)
 					_recursiveTypes = new HashSet<TypeDefinition> ();
@@ -82,7 +82,7 @@ namespace Mono.Linker
 
 		public bool IsActive (SerializerKind serializerKind) => ActiveSerializers.HasFlag (serializerKind);
 
-		static DependencyKind ToDependencyKind (SerializerKind serializerKind) => serializerKind switch {
+		private static DependencyKind ToDependencyKind (SerializerKind serializerKind) => serializerKind switch {
 			SerializerKind.DataContractSerializer => DependencyKind.DataContractSerialized,
 			SerializerKind.XmlSerializer => DependencyKind.XmlSerialized,
 			_ => throw new ArgumentException (nameof (SerializerKind))
@@ -168,7 +168,7 @@ namespace Mono.Linker
 			MarkRecursiveMembersInternal (type, reason);
 		}
 
-		void MarkRecursiveMembersInternal (TypeReference typeRef, in DependencyInfo reason)
+		private void MarkRecursiveMembersInternal (TypeReference typeRef, in DependencyInfo reason)
 		{
 			if (typeRef == null)
 				return;

@@ -21,7 +21,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		static void ProcessType (TypeDefinition type)
+		private static void ProcessType (TypeDefinition type)
 		{
 			ClearSecurityDeclarations (type);
 			RemoveCustomAttributesThatAreForSecurity (type);
@@ -40,7 +40,7 @@ namespace Mono.Linker.Steps
 				ProcessType (nested);
 		}
 
-		static void ClearSecurityDeclarations (ISecurityDeclarationProvider provider)
+		private static void ClearSecurityDeclarations (ISecurityDeclarationProvider provider)
 		{
 			if (provider.HasSecurityDeclarations)
 				provider.SecurityDeclarations.Clear ();
@@ -50,7 +50,7 @@ namespace Mono.Linker.Steps
 		/// We have to remove some security attributes, otherwise pe verify will complain that a type has HasSecurity = false
 		/// </summary>
 		/// <param name="provider"></param>
-		static void RemoveCustomAttributesThatAreForSecurity (ICustomAttributeProvider provider)
+		private static void RemoveCustomAttributesThatAreForSecurity (ICustomAttributeProvider provider)
 		{
 			if (!provider.HasCustomAttributes)
 				return;
@@ -60,7 +60,7 @@ namespace Mono.Linker.Steps
 				provider.CustomAttributes.Remove (remove);
 		}
 
-		static bool IsCustomAttributeForSecurity (CustomAttribute attr)
+		private static bool IsCustomAttributeForSecurity (CustomAttribute attr)
 		{
 			var attr_type = attr.AttributeType;
 			if (attr_type.Namespace == "System.Security") {

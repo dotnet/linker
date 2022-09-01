@@ -8,9 +8,9 @@ using Mono.Cecil;
 
 namespace TLens.Analyzers
 {
-	sealed class LargeStaticCtorAnalyzer : Analyzer
+	internal sealed class LargeStaticCtorAnalyzer : Analyzer
 	{
-		readonly List<MethodDefinition> cctors = new List<MethodDefinition> ();
+		private readonly List<MethodDefinition> cctors = new List<MethodDefinition> ();
 
 		protected override void ProcessMethod (MethodDefinition method)
 		{

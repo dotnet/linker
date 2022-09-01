@@ -51,7 +51,7 @@ namespace ILLink.Tasks
 		[Required]
 		public ITaskItem RuntimeRootDescriptorFilePath { get; set; }
 
-		sealed class ClassMembers
+		private sealed class ClassMembers
 		{
 			public bool keepAllFields;
 			public HashSet<string> methods;
@@ -62,13 +62,13 @@ namespace ILLink.Tasks
 		/// Helper utility to track feature switch macros in header file
 		/// This type is used in a dictionary as a key
 		/// </summary>
-		readonly struct FeatureSwitchMembers
+		private readonly struct FeatureSwitchMembers : IEquatable<FeatureSwitchMembers>
 		{
 			public string Feature { get; }
 			public string FeatureValue { get; }
 			public string FeatureDefault { get; }
 			// Unique value to track the key
-			private readonly String _key;
+			private readonly string _key;
 
 			public FeatureSwitchMembers (string feature, string featureValue, string featureDefault)
 			{
@@ -89,13 +89,18 @@ namespace ILLink.Tasks
 				FeatureSwitchMembers other = (FeatureSwitchMembers) obj;
 				return other._key.Equals (_key);
 			}
+
+			public bool Equals (FeatureSwitchMembers other)
+			{
+				return other._key.Equals (_key);
+			}
 		}
 
-		readonly Dictionary<string, string> namespaceDictionary = new Dictionary<string, string> ();
-		readonly Dictionary<string, string> classIdsToClassNames = new Dictionary<string, string> ();
-		readonly Dictionary<string, ClassMembers> classNamesToClassMembers = new Dictionary<string, ClassMembers> ();
-		readonly Dictionary<FeatureSwitchMembers, Dictionary<string, ClassMembers>> featureSwitchMembers = new ();
-		readonly HashSet<string> defineConstants = new HashSet<string> (StringComparer.Ordinal);
+		private readonly Dictionary<string, string> namespaceDictionary = new Dictionary<string, string> ();
+		private readonly Dictionary<string, string> classIdsToClassNames = new Dictionary<string, string> ();
+		private readonly Dictionary<string, ClassMembers> classNamesToClassMembers = new Dictionary<string, ClassMembers> ();
+		private readonly Dictionary<FeatureSwitchMembers, Dictionary<string, ClassMembers>> featureSwitchMembers = new ();
+		private readonly HashSet<string> defineConstants = new HashSet<string> (StringComparer.Ordinal);
 
 		public override bool Execute ()
 		{
@@ -144,7 +149,7 @@ namespace ILLink.Tasks
 			return true;
 		}
 
-		void ProcessNamespaces (string namespaceFile)
+		private void ProcessNamespaces (string namespaceFile)
 		{
 			string[] namespaces = File.ReadAllLines (namespaceFile);
 
@@ -172,7 +177,7 @@ namespace ILLink.Tasks
 			}
 		}
 
-		void ProcessMscorlib (string typeFile)
+		private void ProcessMscorlib (string typeFile)
 		{
 			string[] types = File.ReadAllLines (typeFile);
 			DefineTracker defineTracker = new DefineTracker (defineConstants, Log, typeFile);
@@ -298,7 +303,7 @@ namespace ILLink.Tasks
 			}
 		}
 
-		void OutputXml (string iLLinkTrimXmlFilePath, string outputFileName)
+		private void OutputXml (string iLLinkTrimXmlFilePath, string outputFileName)
 		{
 			XmlDocument doc = new XmlDocument ();
 			doc.Load (iLLinkTrimXmlFilePath);
@@ -342,7 +347,7 @@ namespace ILLink.Tasks
 			doc.Save (outputFileName);
 		}
 
-		static void AddXmlTypeNode (XmlDocument doc, XmlNode assemblyNode, string typeName, ClassMembers members)
+		private static void AddXmlTypeNode (XmlDocument doc, XmlNode assemblyNode, string typeName, ClassMembers members)
 		{
 			XmlNode typeNode = doc.CreateElement ("type");
 			XmlAttribute typeFullName = doc.CreateAttribute ("fullname");
@@ -387,7 +392,7 @@ namespace ILLink.Tasks
 		}
 
 
-		void AddClass (string classNamespace, string className, string classId, bool keepAllFields = false, FeatureSwitchMembers? featureSwitch = null)
+		private void AddClass (string classNamespace, string className, string classId, bool keepAllFields = false, FeatureSwitchMembers? featureSwitch = null)
 		{
 			string fullClassName = GetFullClassName (classNamespace, className);
 			if (fullClassName != null) {
@@ -412,7 +417,7 @@ namespace ILLink.Tasks
 			}
 		}
 
-		void AddField (string fieldName, string classId, FeatureSwitchMembers? featureSwitch = null)
+		private void AddField (string fieldName, string classId, FeatureSwitchMembers? featureSwitch = null)
 		{
 			string className = classIdsToClassNames[classId];
 			ClassMembers members;
@@ -429,7 +434,7 @@ namespace ILLink.Tasks
 			members.fields.Add (fieldName);
 		}
 
-		void AddMethod (string methodName, string classId, string classNamespace = null, string className = null, FeatureSwitchMembers? featureSwitch = null)
+		private void AddMethod (string methodName, string classId, string classNamespace = null, string className = null, FeatureSwitchMembers? featureSwitch = null)
 		{
 			string fullClassName;
 			if (classId != null) {
@@ -452,7 +457,7 @@ namespace ILLink.Tasks
 			members.methods.Add (methodName);
 		}
 
-		string GetFullClassName (string classNamespace, string className)
+		private string GetFullClassName (string classNamespace, string className)
 		{
 			string prefixToRemove = "g_";
 			if (classNamespace.StartsWith (prefixToRemove)) {
@@ -474,7 +479,7 @@ namespace ILLink.Tasks
 			return namespaceDictionary[classNamespace] + "." + className;
 		}
 
-		void InitializeDefineConstants ()
+		private void InitializeDefineConstants ()
 		{
 			if (DefineConstants is null)
 				return;
@@ -483,13 +488,13 @@ namespace ILLink.Tasks
 				defineConstants.Add (item.ItemSpec.Trim ());
 		}
 
-		sealed class DefineTracker
+		private sealed class DefineTracker
 		{
-			readonly HashSet<string> defineConstants;
-			readonly TaskLoggingHelper log;
-			readonly string filePath;
-			readonly Stack<bool?> activeSections = new Stack<bool?> ();
-			int linenum;
+			private readonly HashSet<string> defineConstants;
+			private readonly TaskLoggingHelper log;
+			private readonly string filePath;
+			private readonly Stack<bool?> activeSections = new Stack<bool?> ();
+			private int linenum;
 
 			public DefineTracker (HashSet<string> defineConstants, TaskLoggingHelper log, string filePath)
 			{

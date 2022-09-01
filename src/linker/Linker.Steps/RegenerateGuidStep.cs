@@ -45,7 +45,7 @@ namespace Mono.Linker.Steps
 				RegenerateGuid (assembly);
 		}
 
-		static void RegenerateGuid (AssemblyDefinition asm)
+		private static void RegenerateGuid (AssemblyDefinition asm)
 		{
 			asm.MainModule.Mvid = Guid.NewGuid ();
 		}

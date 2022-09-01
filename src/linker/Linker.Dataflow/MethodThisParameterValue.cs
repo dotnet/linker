@@ -16,7 +16,7 @@ namespace ILLink.Shared.TrimAnalysis
 	/// <summary>
 	/// A value that came from the implicit this parameter of a method
 	/// </summary>
-	partial record MethodThisParameterValue : IValueWithStaticType
+	internal partial record MethodThisParameterValue : IValueWithStaticType
 	{
 		public MethodThisParameterValue (MethodDefinition method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 		{

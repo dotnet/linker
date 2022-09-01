@@ -36,10 +36,10 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 
 		public InterproceduralState<TValue, TValueLattice> InterproceduralState;
 
-		bool IsLValueFlowCapture (CaptureId captureId)
+		private bool IsLValueFlowCapture (CaptureId captureId)
 			=> lValueFlowCaptures.ContainsKey (captureId);
 
-		bool IsRValueFlowCapture (CaptureId captureId)
+		private bool IsRValueFlowCapture (CaptureId captureId)
 			=> !lValueFlowCaptures.TryGetValue (captureId, out var captureKind) || captureKind != FlowCaptureKind.LValueCapture;
 
 		public LocalDataFlowVisitor (
@@ -115,7 +115,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			return GetLocal (operation, state);
 		}
 
-		bool IsReferenceToCapturedVariable (ILocalReferenceOperation localReference)
+		private bool IsReferenceToCapturedVariable (ILocalReferenceOperation localReference)
 		{
 			var local = localReference.Local;
 
@@ -126,7 +126,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			return !ReferenceEquals (declaringSymbol, Method);
 		}
 
-		TValue GetLocal (ILocalReferenceOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
+		private TValue GetLocal (ILocalReferenceOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
 		{
 			var local = new LocalKey (operation.Local);
 			if (IsReferenceToCapturedVariable (operation))
@@ -139,7 +139,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			return state.Get (local);
 		}
 
-		void SetLocal (ILocalReferenceOperation operation, TValue value, LocalDataFlowState<TValue, TValueLattice> state)
+		private void SetLocal (ILocalReferenceOperation operation, TValue value, LocalDataFlowState<TValue, TValueLattice> state)
 		{
 			var local = new LocalKey (operation.Local);
 			if (IsReferenceToCapturedVariable (operation))
@@ -275,7 +275,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 				// (don't have specific I*Operation types), such as pointer dereferences.
 				if (targetOperation.Kind is OperationKind.None)
 					break;
-				throw new NotImplementedException ($"{targetOperation.GetType ().ToString ()}: {targetOperation.Syntax.GetLocation ().GetLineSpan ()}");
+				throw new NotImplementedException ($"{targetOperation.GetType ()}: {targetOperation.Syntax.GetLocation ().GetLineSpan ()}");
 			}
 			return Visit (operation.Value, state);
 		}
@@ -286,7 +286,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			if (!operation.GetValueUsageInfo (Method).HasFlag (ValueUsageInfo.Read)) {
 				// There are known cases where this assert doesn't hold, because LValueFlowCaptureProvider
 				// produces the wrong result in some cases for flow captures with IsInitialization = true.
-				// https://github.com/dotnet/linker/issues/2749 
+				// https://github.com/dotnet/linker/issues/2749
 				// Debug.Assert (IsLValueFlowCapture (operation.Id));
 				return TopValue;
 			}
@@ -416,7 +416,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			return TopValue;
 		}
 
-		TValue ProcessMethodCall (
+		private TValue ProcessMethodCall (
 			IOperation operation,
 			IMethodSymbol method,
 			IOperation? instance,

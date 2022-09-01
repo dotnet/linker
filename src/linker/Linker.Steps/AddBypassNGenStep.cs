@@ -12,8 +12,8 @@ namespace Mono.Linker.Steps
 	public class AddBypassNGenStep : BaseStep
 	{
 
-		AssemblyDefinition? coreLibAssembly;
-		CustomAttribute? bypassNGenAttribute;
+		private AssemblyDefinition? coreLibAssembly;
+		private CustomAttribute? bypassNGenAttribute;
 
 		protected override void ProcessAssembly (AssemblyDefinition assembly)
 		{
@@ -31,7 +31,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void ProcessType (TypeDefinition type)
+		private void ProcessType (TypeDefinition type)
 		{
 			if (type.HasMethods)
 				ProcessMethods (type.Methods, type.Module);
@@ -40,7 +40,7 @@ namespace Mono.Linker.Steps
 				ProcessNestedTypes (type);
 		}
 
-		void ProcessMethods (Collection<MethodDefinition> methods, ModuleDefinition module)
+		private void ProcessMethods (Collection<MethodDefinition> methods, ModuleDefinition module)
 		{
 			foreach (var method in methods)
 				if (!Annotations.IsMarked (method)) {
@@ -49,7 +49,7 @@ namespace Mono.Linker.Steps
 				}
 		}
 
-		void ProcessNestedTypes (TypeDefinition type)
+		private void ProcessNestedTypes (TypeDefinition type)
 		{
 			for (int i = 0; i < type.NestedTypes.Count; i++) {
 				var nested = type.NestedTypes[i];

@@ -6,7 +6,7 @@ using Mono.Cecil;
 
 namespace TLens
 {
-	static class SizeStatistics
+	internal static class SizeStatistics
 	{
 		public static int GetEstimatedSize (this TypeDefinition type)
 		{

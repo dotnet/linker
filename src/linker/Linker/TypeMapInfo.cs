@@ -37,8 +37,8 @@ namespace Mono.Linker
 
 	public class TypeMapInfo
 	{
-		readonly HashSet<AssemblyDefinition> assemblies = new HashSet<AssemblyDefinition> ();
-		readonly LinkContext context;
+		private readonly HashSet<AssemblyDefinition> assemblies = new HashSet<AssemblyDefinition> ();
+		private readonly LinkContext context;
 		protected readonly Dictionary<MethodDefinition, List<MethodDefinition>> base_methods = new Dictionary<MethodDefinition, List<MethodDefinition>> ();
 		protected readonly Dictionary<MethodDefinition, List<OverrideInformation>> override_methods = new Dictionary<MethodDefinition, List<OverrideInformation>> ();
 		protected readonly Dictionary<MethodDefinition, List<(TypeDefinition InstanceType, InterfaceImplementation ImplementationProvider)>> default_interface_implementations = new Dictionary<MethodDefinition, List<(TypeDefinition, InterfaceImplementation)>> ();
@@ -48,7 +48,7 @@ namespace Mono.Linker
 			this.context = context;
 		}
 
-		void EnsureProcessed (AssemblyDefinition assembly)
+		private void EnsureProcessed (AssemblyDefinition assembly)
 		{
 			if (!assemblies.Add (assembly))
 				return;
@@ -119,7 +119,7 @@ namespace Mono.Linker
 				MapType (nested);
 		}
 
-		void MapInterfaceMethodsInTypeHierarchy (TypeDefinition type)
+		private void MapInterfaceMethodsInTypeHierarchy (TypeDefinition type)
 		{
 			if (!type.HasInterfaces)
 				return;
@@ -163,7 +163,7 @@ namespace Mono.Linker
 			}
 		}
 
-		void MapVirtualMethods (TypeDefinition type)
+		private void MapVirtualMethods (TypeDefinition type)
 		{
 			if (!type.HasMethods)
 				return;
@@ -182,7 +182,7 @@ namespace Mono.Linker
 			}
 		}
 
-		void MapVirtualMethod (MethodDefinition method)
+		private void MapVirtualMethod (MethodDefinition method)
 		{
 			MethodDefinition? @base = GetBaseMethodInTypeHierarchy (method);
 			if (@base == null)
@@ -191,7 +191,7 @@ namespace Mono.Linker
 			AnnotateMethods (@base, method);
 		}
 
-		void MapOverrides (MethodDefinition method)
+		private void MapOverrides (MethodDefinition method)
 		{
 			foreach (MethodReference override_ref in method.Overrides) {
 				MethodDefinition? @override = context.TryResolve (override_ref);
@@ -202,18 +202,18 @@ namespace Mono.Linker
 			}
 		}
 
-		void AnnotateMethods (MethodDefinition @base, MethodDefinition @override, InterfaceImplementation? matchingInterfaceImplementation = null)
+		private void AnnotateMethods (MethodDefinition @base, MethodDefinition @override, InterfaceImplementation? matchingInterfaceImplementation = null)
 		{
 			AddBaseMethod (@override, @base);
 			AddOverride (@base, @override, matchingInterfaceImplementation);
 		}
 
-		MethodDefinition? GetBaseMethodInTypeHierarchy (MethodDefinition method)
+		private MethodDefinition? GetBaseMethodInTypeHierarchy (MethodDefinition method)
 		{
 			return GetBaseMethodInTypeHierarchy (method.DeclaringType, method);
 		}
 
-		MethodDefinition? GetBaseMethodInTypeHierarchy (TypeDefinition type, MethodReference method)
+		private MethodDefinition? GetBaseMethodInTypeHierarchy (TypeDefinition type, MethodReference method)
 		{
 			TypeReference? @base = GetInflatedBaseType (type);
 			while (@base != null) {
@@ -227,7 +227,7 @@ namespace Mono.Linker
 			return null;
 		}
 
-		TypeReference? GetInflatedBaseType (TypeReference type)
+		private TypeReference? GetInflatedBaseType (TypeReference type)
 		{
 			if (type == null)
 				return null;
@@ -260,7 +260,7 @@ namespace Mono.Linker
 		// Note that this returns a list to potentially cover the diamond case (more than one
 		// most specific implementation of the given interface methods). Linker needs to preserve
 		// all the implementations so that the proper exception can be thrown at runtime.
-		IEnumerable<InterfaceImplementation> GetDefaultInterfaceImplementations (TypeDefinition type, MethodDefinition interfaceMethod)
+		private IEnumerable<InterfaceImplementation> GetDefaultInterfaceImplementations (TypeDefinition type, MethodDefinition interfaceMethod)
 		{
 			// Go over all interfaces, trying to find a method that is an explicit MethodImpl of the
 			// interface method in question.
@@ -303,7 +303,7 @@ namespace Mono.Linker
 			}
 		}
 
-		MethodDefinition? TryMatchMethod (TypeReference type, MethodReference method)
+		private MethodDefinition? TryMatchMethod (TypeReference type, MethodReference method)
 		{
 			foreach (var candidate in type.GetMethods (context)) {
 				var md = context.TryResolve (candidate);
@@ -317,7 +317,7 @@ namespace Mono.Linker
 			return null;
 		}
 
-		bool MethodMatch (MethodReference candidate, MethodReference method)
+		private bool MethodMatch (MethodReference candidate, MethodReference method)
 		{
 			if (candidate.HasParameters != method.HasParameters)
 				return false;
@@ -356,7 +356,7 @@ namespace Mono.Linker
 			return true;
 		}
 
-		static bool TypeMatch (IModifierType a, IModifierType b)
+		private static bool TypeMatch (IModifierType a, IModifierType b)
 		{
 			if (!TypeMatch (a.ModifierType, b.ModifierType))
 				return false;
@@ -364,7 +364,7 @@ namespace Mono.Linker
 			return TypeMatch (a.ElementType, b.ElementType);
 		}
 
-		static bool TypeMatch (TypeSpecification a, TypeSpecification b)
+		private static bool TypeMatch (TypeSpecification a, TypeSpecification b)
 		{
 			if (a is GenericInstanceType gita)
 				return TypeMatch (gita, (GenericInstanceType) b);
@@ -378,7 +378,7 @@ namespace Mono.Linker
 			return TypeMatch (a.ElementType, b.ElementType);
 		}
 
-		static bool TypeMatch (GenericInstanceType a, GenericInstanceType b)
+		private static bool TypeMatch (GenericInstanceType a, GenericInstanceType b)
 		{
 			if (!TypeMatch (a.ElementType, b.ElementType))
 				return false;
@@ -402,7 +402,7 @@ namespace Mono.Linker
 			return true;
 		}
 
-		static bool TypeMatch (GenericParameter a, GenericParameter b)
+		private static bool TypeMatch (GenericParameter a, GenericParameter b)
 		{
 			if (a.Position != b.Position)
 				return false;
@@ -413,7 +413,7 @@ namespace Mono.Linker
 			return true;
 		}
 
-		static bool TypeMatch (FunctionPointerType a, FunctionPointerType b)
+		private static bool TypeMatch (FunctionPointerType a, FunctionPointerType b)
 		{
 			if (a.HasParameters != b.HasParameters)
 				return false;
@@ -446,7 +446,7 @@ namespace Mono.Linker
 			return true;
 		}
 
-		static bool TypeMatch (TypeReference a, TypeReference b)
+		private static bool TypeMatch (TypeReference a, TypeReference b)
 		{
 			if (a is TypeSpecification || b is TypeSpecification) {
 				if (a.GetType () != b.GetType ())

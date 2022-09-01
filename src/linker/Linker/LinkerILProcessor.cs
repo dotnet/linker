@@ -8,11 +8,11 @@ using Mono.Cecil.Cil;
 namespace Mono.Linker
 {
 #pragma warning disable RS0030
-	sealed class LinkerILProcessor
+	internal sealed class LinkerILProcessor
 	{
-		readonly ILProcessor _ilProcessor;
+		private readonly ILProcessor _ilProcessor;
 
-		Collections.Generic.Collection<Instruction> Instructions => _ilProcessor.Body.Instructions;
+		private Collections.Generic.Collection<Instruction> Instructions => _ilProcessor.Body.Instructions;
 
 		internal LinkerILProcessor (MethodBody body)
 		{
@@ -75,7 +75,7 @@ namespace Mono.Linker
 
 		public void RemoveAt (int index) => Remove (Instructions[index]);
 
-		void RedirectScopeStart (Instruction oldTarget, Instruction? newTarget)
+		private void RedirectScopeStart (Instruction oldTarget, Instruction? newTarget)
 		{
 			// In Cecil "start" pointers point to the first instruction in a given scope
 			// and the "end" pointers point to the first instruction after the given block
@@ -96,14 +96,14 @@ namespace Mono.Linker
 		}
 
 #pragma warning disable IDE0060 // Remove unused parameter
-		static void RedirectScopeEnd (Instruction? oldTarget, Instruction? newTarget)
+		private static void RedirectScopeEnd (Instruction? oldTarget, Instruction? newTarget)
 #pragma warning restore IDE0060 // Remove unused parameter
 		{
 			// Currently Cecil treats all block boundaries as "starts"
 			// so nothing to do here.
 		}
 
-		void ReplaceInstructionReference (Instruction oldTarget, Instruction? newTarget)
+		private void ReplaceInstructionReference (Instruction oldTarget, Instruction? newTarget)
 		{
 			foreach (var instr in Instructions) {
 				switch (instr.OpCode.FlowControl) {
@@ -129,7 +129,7 @@ namespace Mono.Linker
 #pragma warning disable RS0030
 	}
 
-	static class ILProcessorExtensions
+	internal static class ILProcessorExtensions
 	{
 		public static LinkerILProcessor GetLinkerILProcessor (this MethodBody body)
 		{

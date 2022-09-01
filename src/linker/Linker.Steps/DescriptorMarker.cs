@@ -14,14 +14,14 @@ namespace Mono.Linker.Steps
 {
 	public class DescriptorMarker : ProcessLinkerXmlBase
 	{
-		const string NamespaceElementName = "namespace";
+		private const string NamespaceElementName = "namespace";
 
-		const string _required = "required";
-		const string _preserve = "preserve";
-		const string _accessors = "accessors";
+		private const string _required = "required";
+		private const string _preserve = "preserve";
+		private const string _accessors = "accessors";
 
-		static readonly string[] _accessorsAll = new string[] { "all" };
-		static readonly char[] _accessorsSep = new char[] { ';' };
+		private static readonly string[] _accessorsAll = new string[] { "all" };
+		private static readonly char[] _accessorsSep = new char[] { ';' };
 
 		public DescriptorMarker (LinkContext context, Stream documentStream, string xmlDocumentLocation)
 			: base (context, documentStream, xmlDocumentLocation)
@@ -55,7 +55,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void ProcessNamespaces (AssemblyDefinition assembly, XPathNavigator nav)
+		private void ProcessNamespaces (AssemblyDefinition assembly, XPathNavigator nav)
 		{
 			foreach (XPathNavigator namespaceNav in nav.SelectChildren (NamespaceElementName, XmlNamespace)) {
 				if (!ShouldProcessElement (namespaceNav))
@@ -77,7 +77,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void MarkAndPreserveAll (TypeDefinition type, XPathNavigator nav)
+		private void MarkAndPreserveAll (TypeDefinition type, XPathNavigator nav)
 		{
 			_context.Annotations.Mark (type, new DependencyInfo (DependencyKind.XmlDescriptor, _xmlDocumentLocation), GetMessageOriginForPosition (nav));
 			_context.Annotations.SetPreserve (type, TypePreserve.All);
@@ -168,7 +168,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void ProcessMethodIfNotNull (TypeDefinition type, MethodDefinition method, XPathNavigator nav, object? customData)
+		private void ProcessMethodIfNotNull (TypeDefinition type, MethodDefinition method, XPathNavigator nav, object? customData)
 		{
 			if (method == null)
 				return;
@@ -190,23 +190,23 @@ namespace Mono.Linker.Steps
 		{
 			StringBuilder sb = new StringBuilder ();
 			sb.Append (meth.ReturnType.FullName);
-			sb.Append (" ");
+			sb.Append (' ');
 			sb.Append (meth.Name);
 			if (includeGenericParameters && meth.HasGenericParameters) {
-				sb.Append ("`");
+				sb.Append ('`');
 				sb.Append (meth.GenericParameters.Count);
 			}
 
-			sb.Append ("(");
+			sb.Append ('(');
 			if (meth.HasParameters) {
 				for (int i = 0; i < meth.Parameters.Count; i++) {
 					if (i > 0)
-						sb.Append (",");
+						sb.Append (',');
 
 					sb.Append (meth.Parameters[i].ParameterType.FullName);
 				}
 			}
-			sb.Append (")");
+			sb.Append (')');
 			return sb.ToString ();
 		}
 
@@ -244,7 +244,7 @@ namespace Mono.Linker.Steps
 				LogWarning (nav, DiagnosticId.XmlCouldNotFindSetAccesorOfPropertyOnType, property.Name, type.FullName);
 		}
 
-		static bool IsRequired (XPathNavigator nav)
+		private static bool IsRequired (XPathNavigator nav)
 		{
 			string attribute = GetAttribute (nav, _required);
 			if (attribute == null || attribute.Length == 0)
@@ -263,7 +263,7 @@ namespace Mono.Linker.Steps
 
 				if (accessors.Length > 0) {
 					for (int i = 0; i < accessors.Length; ++i)
-						accessors[i] = accessors[i].ToLower ();
+						accessors[i] = accessors[i].ToLowerInvariant ();
 
 					return accessors;
 				}

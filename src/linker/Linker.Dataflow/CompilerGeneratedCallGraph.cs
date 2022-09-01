@@ -7,13 +7,13 @@ using Mono.Cecil;
 
 namespace Mono.Linker.Dataflow
 {
-	sealed class CompilerGeneratedCallGraph
+	internal sealed class CompilerGeneratedCallGraph
 	{
-		readonly Dictionary<IMemberDefinition, HashSet<IMemberDefinition>> _callGraph;
+		private readonly Dictionary<IMemberDefinition, HashSet<IMemberDefinition>> _callGraph;
 
 		public CompilerGeneratedCallGraph () => _callGraph = new Dictionary<IMemberDefinition, HashSet<IMemberDefinition>> ();
 
-		void TrackCallInternal (IMemberDefinition fromMember, IMemberDefinition toMember)
+		private void TrackCallInternal (IMemberDefinition fromMember, IMemberDefinition toMember)
 		{
 			if (!_callGraph.TryGetValue (fromMember, out HashSet<IMemberDefinition>? toMembers)) {
 				toMembers = new HashSet<IMemberDefinition> ();

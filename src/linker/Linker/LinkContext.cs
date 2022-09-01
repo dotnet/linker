@@ -66,20 +66,20 @@ namespace Mono.Linker
 	public class LinkContext : IMetadataResolver, ITryResolveMetadata, IDisposable
 	{
 
-		readonly Pipeline _pipeline;
-		readonly Dictionary<string, AssemblyAction> _actions;
-		readonly Dictionary<string, string> _parameters;
-		int? _targetRuntime;
+		private readonly Pipeline _pipeline;
+		private readonly Dictionary<string, AssemblyAction> _actions;
+		private readonly Dictionary<string, string> _parameters;
+		private int? _targetRuntime;
 
-		readonly AssemblyResolver _resolver;
-		readonly TypeNameResolver _typeNameResolver;
+		private readonly AssemblyResolver _resolver;
+		private readonly TypeNameResolver _typeNameResolver;
 
-		readonly AnnotationStore _annotations;
-		readonly CustomAttributeSource _customAttributes;
-		readonly CompilerGeneratedState _compilerGeneratedState;
-		readonly List<MessageContainer> _cachedWarningMessageContainers;
-		readonly ILogger _logger;
-		readonly Dictionary<AssemblyDefinition, bool> _isTrimmable;
+		private readonly AnnotationStore _annotations;
+		private readonly CustomAttributeSource _customAttributes;
+		private readonly CompilerGeneratedState _compilerGeneratedState;
+		private readonly List<MessageContainer> _cachedWarningMessageContainers;
+		private readonly ILogger _logger;
+		private readonly Dictionary<AssemblyDefinition, bool> _isTrimmable;
 
 		public Pipeline Pipeline {
 			get { return _pipeline; }
@@ -246,7 +246,7 @@ namespace Mono.Linker
 
 		public void SetFeatureValue (string feature, bool value)
 		{
-			Debug.Assert (!String.IsNullOrEmpty (feature));
+			Debug.Assert (!string.IsNullOrEmpty (feature));
 			FeatureSettings[feature] = value;
 		}
 
@@ -352,7 +352,7 @@ namespace Mono.Linker
 			return references;
 		}
 
-		static AssemblyNameReference GetReference (IMetadataScope scope)
+		private static AssemblyNameReference GetReference (IMetadataScope scope)
 		{
 			AssemblyNameReference reference;
 			if (scope is ModuleDefinition moduleDefinition) {
@@ -735,7 +735,7 @@ namespace Mono.Linker
 			return SingleWarn.TryGetValue (assemblyName, out value) && value;
 		}
 
-		static WarnVersion GetWarningVersion ()
+		private static WarnVersion GetWarningVersion ()
 		{
 			// This should return an increasing WarnVersion for new warning waves.
 			return WarnVersion.ILLink5;
@@ -752,9 +752,9 @@ namespace Mono.Linker
 			return _targetRuntime.Value;
 		}
 
-		readonly Dictionary<MethodReference, MethodDefinition?> methodresolveCache = new ();
-		readonly Dictionary<FieldReference, FieldDefinition?> fieldresolveCache = new ();
-		readonly Dictionary<TypeReference, TypeDefinition?> typeresolveCache = new ();
+		private readonly Dictionary<MethodReference, MethodDefinition?> methodresolveCache = new ();
+		private readonly Dictionary<FieldReference, FieldDefinition?> fieldresolveCache = new ();
+		private readonly Dictionary<TypeReference, TypeDefinition?> typeresolveCache = new ();
 
 		public MethodDefinition? Resolve (MethodReference methodReference)
 		{
@@ -891,7 +891,7 @@ namespace Mono.Linker
 				: null;
 		}
 
-		readonly HashSet<MemberReference> unresolved_reported = new ();
+		private readonly HashSet<MemberReference> unresolved_reported = new ();
 
 		protected virtual void ReportUnresolved (FieldReference fieldReference)
 		{
@@ -914,7 +914,7 @@ namespace Mono.Linker
 
 	public class CodeOptimizationsSettings
 	{
-		sealed class Pair
+		private sealed class Pair
 		{
 			public Pair (CodeOptimizations set, CodeOptimizations values)
 			{
@@ -926,7 +926,7 @@ namespace Mono.Linker
 			public CodeOptimizations Values;
 		}
 
-		readonly Dictionary<string, Pair> perAssembly = new ();
+		private readonly Dictionary<string, Pair> perAssembly = new ();
 
 		public CodeOptimizationsSettings (CodeOptimizations globalOptimizations)
 		{

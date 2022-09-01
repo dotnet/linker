@@ -9,7 +9,7 @@ using Mono.Collections.Generic;
 
 namespace Mono.Linker
 {
-	abstract class TypeReferenceWalker
+	internal abstract class TypeReferenceWalker
 	{
 		protected readonly AssemblyDefinition assembly;
 
@@ -49,7 +49,7 @@ namespace Mono.Linker
 
 		protected virtual void ProcessExtra () { }
 
-		void WalkScopes (TypeDefinition typeDefinition)
+		private void WalkScopes (TypeDefinition typeDefinition)
 		{
 			WalkCustomAttributesTypesScopes (typeDefinition);
 			WalkSecurityAttributesTypesScopes (typeDefinition);
@@ -119,7 +119,7 @@ namespace Mono.Linker
 			}
 		}
 
-		void WalkTypeScope (Collection<GenericParameter> genericParameters)
+		private void WalkTypeScope (Collection<GenericParameter> genericParameters)
 		{
 			foreach (var gp in genericParameters) {
 				WalkCustomAttributesTypesScopes (gp);
@@ -128,7 +128,7 @@ namespace Mono.Linker
 			}
 		}
 
-		void WalkTypeScope (Collection<GenericParameterConstraint> constraints)
+		private void WalkTypeScope (Collection<GenericParameterConstraint> constraints)
 		{
 			foreach (var gc in constraints) {
 				WalkCustomAttributesTypesScopes (gc);
@@ -136,7 +136,7 @@ namespace Mono.Linker
 			}
 		}
 
-		void WalkTypeScope (Collection<ParameterDefinition> parameters)
+		private void WalkTypeScope (Collection<ParameterDefinition> parameters)
 		{
 			foreach (var p in parameters) {
 				WalkCustomAttributesTypesScopes (p);
@@ -145,13 +145,13 @@ namespace Mono.Linker
 			}
 		}
 
-		void WalkTypeScope (Collection<ExportedType> forwarders)
+		private void WalkTypeScope (Collection<ExportedType> forwarders)
 		{
 			foreach (var f in forwarders)
 				ProcessExportedType (f);
 		}
 
-		void WalkTypeScope (MethodBody body)
+		private void WalkTypeScope (MethodBody body)
 		{
 			if (body.HasVariables) {
 				foreach (var v in body.Variables) {
@@ -206,7 +206,7 @@ namespace Mono.Linker
 			}
 		}
 
-		void WalkMethodReference (MethodReference mr)
+		private void WalkMethodReference (MethodReference mr)
 		{
 			WalkScopeOfTypeReference (mr.ReturnType);
 			WalkScopeOfTypeReference (mr.DeclaringType);
@@ -221,13 +221,13 @@ namespace Mono.Linker
 			}
 		}
 
-		void WalkFieldReference (FieldReference fr)
+		private void WalkFieldReference (FieldReference fr)
 		{
 			WalkScopeOfTypeReference (fr.FieldType);
 			WalkScopeOfTypeReference (fr.DeclaringType);
 		}
 
-		void WalkMarshalInfoTypeScope (IMarshalInfoProvider provider)
+		private void WalkMarshalInfoTypeScope (IMarshalInfoProvider provider)
 		{
 			if (!provider.HasMarshalInfo)
 				return;
@@ -236,7 +236,7 @@ namespace Mono.Linker
 				WalkScopeOfTypeReference (cmi.ManagedType);
 		}
 
-		void WalkCustomAttributesTypesScopes (ICustomAttributeProvider customAttributeProvider)
+		private void WalkCustomAttributesTypesScopes (ICustomAttributeProvider customAttributeProvider)
 		{
 			if (!customAttributeProvider.HasCustomAttributes)
 				return;
@@ -245,7 +245,7 @@ namespace Mono.Linker
 				WalkForwardedTypesScope (ca);
 		}
 
-		void WalkSecurityAttributesTypesScopes (ISecurityDeclarationProvider securityAttributeProvider)
+		private void WalkSecurityAttributesTypesScopes (ISecurityDeclarationProvider securityAttributeProvider)
 		{
 			if (!securityAttributeProvider.HasSecurityDeclarations)
 				return;
@@ -259,7 +259,7 @@ namespace Mono.Linker
 			}
 		}
 
-		void WalkForwardedTypesScope (CustomAttribute attribute)
+		private void WalkForwardedTypesScope (CustomAttribute attribute)
 		{
 			WalkMethodReference (attribute.Constructor);
 
@@ -279,7 +279,7 @@ namespace Mono.Linker
 			}
 		}
 
-		void WalkForwardedTypesScope (SecurityAttribute attribute)
+		private void WalkForwardedTypesScope (SecurityAttribute attribute)
 		{
 			if (attribute.HasFields) {
 				foreach (var field in attribute.Fields)
@@ -292,7 +292,7 @@ namespace Mono.Linker
 			}
 		}
 
-		void WalkForwardedTypesScope (CustomAttributeArgument attributeArgument)
+		private void WalkForwardedTypesScope (CustomAttributeArgument attributeArgument)
 		{
 			WalkScopeOfTypeReference (attributeArgument.Type);
 
@@ -310,7 +310,7 @@ namespace Mono.Linker
 			}
 		}
 
-		void WalkScopeOfTypeReference (TypeReference type)
+		private void WalkScopeOfTypeReference (TypeReference type)
 		{
 			if (type == null)
 				return;

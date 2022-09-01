@@ -21,9 +21,9 @@ namespace ILLink.Shared.DataFlow
 		where TKey : IEquatable<TKey>
 		where TValue : IEquatable<TValue>
 	{
-		Dictionary<TKey, TValue>? Dictionary;
+		private Dictionary<TKey, TValue>? Dictionary;
 
-		readonly TValue DefaultValue;
+		private readonly TValue DefaultValue;
 
 		public DefaultValueDictionary (TValue defaultValue) => (Dictionary, DefaultValue) = (null, defaultValue);
 
@@ -81,13 +81,13 @@ namespace ILLink.Shared.DataFlow
 		public override string ToString ()
 		{
 			StringBuilder sb = new ();
-			sb.Append ("{");
+			sb.Append ('{');
 			if (Dictionary != null) {
 				foreach (var kvp in Dictionary)
 					sb.Append (Environment.NewLine).Append ('\t').Append (kvp.Key.ToString ()).Append (" -> ").Append (kvp.Value.ToString ());
 			}
 			sb.Append (Environment.NewLine).Append ("\t_ -> ").Append (DefaultValue.ToString ());
-			sb.Append (Environment.NewLine).Append ("}");
+			sb.Append (Environment.NewLine).Append ('}');
 			return sb.ToString ();
 		}
 

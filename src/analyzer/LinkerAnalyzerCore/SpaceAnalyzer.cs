@@ -36,16 +36,16 @@ namespace LinkerAnalyzer.Core
 {
 	public class SpaceAnalyzer
 	{
-		readonly string assembliesDirectory;
-		readonly List<AssemblyDefinition> assemblies = new List<AssemblyDefinition> ();
-		readonly Dictionary<string, int> sizes = new Dictionary<string, int> ();
+		private readonly string assembliesDirectory;
+		private readonly List<AssemblyDefinition> assemblies = new List<AssemblyDefinition> ();
+		private readonly Dictionary<string, int> sizes = new Dictionary<string, int> ();
 
 		public SpaceAnalyzer (string assembliesDirectory)
 		{
 			this.assembliesDirectory = assembliesDirectory;
 		}
 
-		static bool IsAssemblyBound (TypeDefinition td)
+		private static bool IsAssemblyBound (TypeDefinition td)
 		{
 			do {
 				if (td.IsNestedPrivate || td.IsNestedAssembly || td.IsNestedFamilyAndAssembly)
@@ -57,7 +57,7 @@ namespace LinkerAnalyzer.Core
 			return false;
 		}
 
-		static string GetTypeKey (TypeDefinition td)
+		private static string GetTypeKey (TypeDefinition td)
 		{
 			if (td == null)
 				return "";
@@ -68,12 +68,12 @@ namespace LinkerAnalyzer.Core
 			return $"{td.MetadataToken.TokenType}:{td}{addition}";
 		}
 
-		static string GetKey (IMetadataTokenProvider provider)
+		private static string GetKey (IMetadataTokenProvider provider)
 		{
 			return $"{provider.MetadataToken.TokenType}:{provider}";
 		}
 
-		int GetMethodSize (MethodDefinition method)
+		private int GetMethodSize (MethodDefinition method)
 		{
 			var key = GetKey (method);
 			int msize;
@@ -89,7 +89,7 @@ namespace LinkerAnalyzer.Core
 			return msize;
 		}
 
-		int ProcessType (TypeDefinition type)
+		private int ProcessType (TypeDefinition type)
 		{
 			int size = type.Name.Length;
 

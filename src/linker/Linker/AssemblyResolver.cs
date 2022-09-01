@@ -40,15 +40,15 @@ namespace Mono.Linker
 {
 	public class AssemblyResolver : IAssemblyResolver
 	{
-		readonly List<string> _references = new ();
-		readonly LinkContext _context;
-		readonly List<string> _directories = new ();
-		readonly Dictionary<AssemblyDefinition, string> _assemblyToPath = new ();
-		readonly List<MemoryMappedViewStream> _viewStreams = new ();
-		readonly ReaderParameters _defaultReaderParameters;
+		private readonly List<string> _references = new ();
+		private readonly LinkContext _context;
+		private readonly List<string> _directories = new ();
+		private readonly Dictionary<AssemblyDefinition, string> _assemblyToPath = new ();
+		private readonly List<MemoryMappedViewStream> _viewStreams = new ();
+		private readonly ReaderParameters _defaultReaderParameters;
 
-		HashSet<string>? _unresolvedAssemblies;
-		HashSet<string>? _reportedUnresolvedAssemblies;
+		private HashSet<string>? _unresolvedAssemblies;
+		private HashSet<string>? _reportedUnresolvedAssemblies;
 
 		public AssemblyResolver (LinkContext context)
 		{
@@ -68,7 +68,7 @@ namespace Mono.Linker
 			throw new InternalErrorException ($"Assembly '{assembly}' was not loaded using linker resolver");
 		}
 
-		AssemblyDefinition? ResolveFromReferences (AssemblyNameReference name)
+		private AssemblyDefinition? ResolveFromReferences (AssemblyNameReference name)
 		{
 			foreach (var reference in _references) {
 				foreach (var extension in Extensions) {
@@ -118,7 +118,7 @@ namespace Mono.Linker
 			return asm;
 		}
 
-		void ReportUnresolvedAssembly (AssemblyNameReference reference)
+		private void ReportUnresolvedAssembly (AssemblyNameReference reference)
 		{
 			if (_reportedUnresolvedAssemblies == null)
 				_reportedUnresolvedAssemblies = new HashSet<string> ();
@@ -174,9 +174,9 @@ namespace Mono.Linker
 			throw new NotSupportedException ();
 		}
 
-		static readonly string[] Extensions = new[] { ".dll", ".exe" };
+		private static readonly string[] Extensions = new[] { ".dll", ".exe" };
 
-		AssemblyDefinition? SearchDirectory (AssemblyNameReference name)
+		private AssemblyDefinition? SearchDirectory (AssemblyNameReference name)
 		{
 			foreach (var directory in _directories) {
 				foreach (var extension in Extensions) {

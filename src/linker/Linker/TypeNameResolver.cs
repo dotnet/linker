@@ -14,7 +14,7 @@ namespace Mono.Linker
 {
 	internal sealed class TypeNameResolver
 	{
-		readonly LinkContext _context;
+		private readonly LinkContext _context;
 
 		public readonly record struct TypeResolutionRecord (AssemblyDefinition ReferringAssembly, TypeDefinition ResolvedType);
 
@@ -115,7 +115,7 @@ namespace Mono.Linker
 			return typeReference != null;
 		}
 
-		TypeReference? ResolveTypeName (AssemblyDefinition assembly, TypeName typeName, List<TypeResolutionRecord> typeResolutionRecords)
+		private TypeReference? ResolveTypeName (AssemblyDefinition assembly, TypeName typeName, List<TypeResolutionRecord> typeResolutionRecords)
 		{
 			if (typeName is AssemblyQualifiedTypeName assemblyQualifiedTypeName) {
 				// In this case we ignore the assembly parameter since the type name has assembly in it

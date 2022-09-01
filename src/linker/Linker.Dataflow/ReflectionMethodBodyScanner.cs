@@ -16,12 +16,12 @@ using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.Single
 
 namespace Mono.Linker.Dataflow
 {
-	sealed class ReflectionMethodBodyScanner : MethodBodyScanner
+	internal sealed class ReflectionMethodBodyScanner : MethodBodyScanner
 	{
-		readonly MarkStep _markStep;
-		MessageOrigin _origin;
-		readonly FlowAnnotations _annotations;
-		readonly ReflectionMarker _reflectionMarker;
+		private readonly MarkStep _markStep;
+		private MessageOrigin _origin;
+		private readonly FlowAnnotations _annotations;
+		private readonly ReflectionMarker _reflectionMarker;
 		public readonly TrimAnalysisPatternStore TrimAnalysisPatterns;
 
 		public static bool RequiresReflectionMethodBodyScannerForCallSite (LinkContext context, MethodReference calledMethod)
@@ -99,7 +99,7 @@ namespace Mono.Linker.Dataflow
 		protected override ValueWithDynamicallyAccessedMembers GetMethodParameterValue (MethodDefinition method, SourceParameterIndex parameterIndex)
 			=> GetMethodParameterValue (method, parameterIndex, _annotations.GetParameterAnnotation (method, parameterIndex));
 
-		ValueWithDynamicallyAccessedMembers GetMethodParameterValue (MethodDefinition method, SourceParameterIndex parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+		private ValueWithDynamicallyAccessedMembers GetMethodParameterValue (MethodDefinition method, SourceParameterIndex parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 		{
 			return _annotations.GetMethodParameterValue (method, parameterIndex, dynamicallyAccessedMemberTypes);
 		}
@@ -128,7 +128,7 @@ namespace Mono.Linker.Dataflow
 
 		public override bool HandleCall (MethodBody callingMethodBody, MethodReference calledMethod, Instruction operation, ValueNodeList methodParams, out MultiValue methodReturnValue)
 		{
-			methodReturnValue = new ();
+			methodReturnValue = default (MultiValue);
 
 			var reflectionProcessed = _markStep.ProcessReflectionDependency (callingMethodBody, operation);
 			if (reflectionProcessed)
@@ -375,7 +375,7 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		static bool IsComInterop (IMarshalInfoProvider marshalInfoProvider, TypeReference parameterType, LinkContext context)
+		private static bool IsComInterop (IMarshalInfoProvider marshalInfoProvider, TypeReference parameterType, LinkContext context)
 		{
 			// This is best effort. One can likely find ways how to get COM without triggering these alarms.
 			// AsAny marshalling of a struct with an object-typed field would be one, for example.
@@ -433,7 +433,7 @@ namespace Mono.Linker.Dataflow
 			return false;
 		}
 
-		void HandleAssignmentPattern (
+		private void HandleAssignmentPattern (
 			in MessageOrigin origin,
 			in MultiValue value,
 			ValueWithDynamicallyAccessedMembers targetValue)

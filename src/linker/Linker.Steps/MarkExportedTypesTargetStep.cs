@@ -17,7 +17,7 @@ namespace Mono.Linker.Steps
 				InitializeExportedType (type, context, assembly);
 		}
 
-		static void InitializeExportedType (ExportedType exportedType, LinkContext context, AssemblyDefinition assembly)
+		private static void InitializeExportedType (ExportedType exportedType, LinkContext context, AssemblyDefinition assembly)
 		{
 			if (!context.Annotations.IsMarked (exportedType))
 				return;

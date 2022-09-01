@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis;
 
 namespace ILLink.Shared.TrimAnalysis
 {
-	partial record MethodParameterValue
+	internal partial record MethodParameterValue
 	{
 		public MethodParameterValue (IParameterSymbol parameterSymbol)
 			: this (parameterSymbol, FlowAnnotations.GetMethodParameterAnnotation (parameterSymbol)) { }

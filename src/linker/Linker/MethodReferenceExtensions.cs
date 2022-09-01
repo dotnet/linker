@@ -40,7 +40,7 @@ namespace Mono.Linker
 			}
 
 			// Append parameters
-			sb.Append ("(");
+			sb.Append ('(');
 			if (method.HasParameters) {
 				for (int i = 0; i < method.Parameters.Count - 1; i++)
 					sb.Append (method.Parameters[i].ParameterType.GetDisplayNameWithoutNamespace ()).Append (", ");
@@ -48,7 +48,7 @@ namespace Mono.Linker
 				sb.Append (method.Parameters[method.Parameters.Count - 1].ParameterType.GetDisplayNameWithoutNamespace ());
 			}
 
-			sb.Append (")");
+			sb.Append (')');
 
 			// Insert generic parameters
 			if (method.HasGenericParameters) {

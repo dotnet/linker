@@ -55,9 +55,9 @@ namespace Mono.Linker
 			return true;
 		}
 	}
-	readonly struct InterfacesOnStackScanner
+	internal readonly struct InterfacesOnStackScanner
 	{
-		readonly LinkContext context;
+		private readonly LinkContext context;
 
 		public InterfacesOnStackScanner (LinkContext context)
 		{
@@ -95,7 +95,7 @@ namespace Mono.Linker
 			return interfaceImplementations;
 		}
 
-		HashSet<TypeDefinition> AllPossibleStackTypes (MethodDefinition method)
+		private HashSet<TypeDefinition> AllPossibleStackTypes (MethodDefinition method)
 		{
 			if (!method.HasBody)
 				throw new ArgumentException ("Method does not have body", nameof (method));
@@ -144,7 +144,7 @@ namespace Mono.Linker
 			return types;
 		}
 
-		void AddMatchingInterfaces (HashSet<(InterfaceImplementation, TypeDefinition)> results, TypeDefinition type, TypeDefinition[] interfaceTypes)
+		private void AddMatchingInterfaces (HashSet<(InterfaceImplementation, TypeDefinition)> results, TypeDefinition type, TypeDefinition[] interfaceTypes)
 		{
 			if (!type.HasInterfaces)
 				return;
@@ -155,7 +155,7 @@ namespace Mono.Linker
 			}
 		}
 
-		bool HasInterface (TypeDefinition type, TypeDefinition interfaceType, [NotNullWhen (true)] out InterfaceImplementation? implementation)
+		private bool HasInterface (TypeDefinition type, TypeDefinition interfaceType, [NotNullWhen (true)] out InterfaceImplementation? implementation)
 		{
 			implementation = null;
 			if (!type.HasInterfaces)
@@ -171,7 +171,7 @@ namespace Mono.Linker
 			return false;
 		}
 
-		void AddFromGenericInstance (HashSet<TypeDefinition> set, IGenericInstance instance)
+		private void AddFromGenericInstance (HashSet<TypeDefinition> set, IGenericInstance instance)
 		{
 			if (!instance.HasGenericArguments)
 				return;
@@ -180,7 +180,7 @@ namespace Mono.Linker
 				AddIfResolved (set, genericArgument);
 		}
 
-		void AddFromGenericParameterProvider (HashSet<TypeDefinition> set, IGenericParameterProvider provider)
+		private void AddFromGenericParameterProvider (HashSet<TypeDefinition> set, IGenericParameterProvider provider)
 		{
 			if (!provider.HasGenericParameters)
 				return;
@@ -191,7 +191,7 @@ namespace Mono.Linker
 			}
 		}
 
-		void AddIfResolved (HashSet<TypeDefinition> set, TypeReference item)
+		private void AddIfResolved (HashSet<TypeDefinition> set, TypeReference item)
 		{
 			var resolved = context.TryResolve (item);
 			if (resolved == null)

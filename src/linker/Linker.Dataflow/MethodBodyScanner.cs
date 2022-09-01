@@ -23,7 +23,7 @@ namespace Mono.Linker.Dataflow
 	/// <summary>
 	/// Tracks information about the contents of a stack slot
 	/// </summary>
-	readonly struct StackSlot
+	internal readonly struct StackSlot
 	{
 		public MultiValue Value { get; }
 
@@ -43,7 +43,7 @@ namespace Mono.Linker.Dataflow
 		}
 	}
 
-	abstract partial class MethodBodyScanner
+	internal abstract partial class MethodBodyScanner
 	{
 		protected readonly LinkContext _context;
 		protected readonly InterproceduralStateLattice InterproceduralStateLattice;
@@ -55,7 +55,7 @@ namespace Mono.Linker.Dataflow
 			this.InterproceduralStateLattice = default;
 		}
 
-		internal MultiValue ReturnValue { private set; get; }
+		internal MultiValue ReturnValue { get; private set; }
 
 		protected virtual void WarnAboutInvalidILInMethod (MethodBody method, int ilOffset)
 		{
@@ -148,9 +148,9 @@ namespace Mono.Linker.Dataflow
 
 		private struct BasicBlockIterator
 		{
-			readonly HashSet<int> _methodBranchTargets;
-			int _currentBlockIndex;
-			bool _foundEndOfPrevBlock;
+			private readonly HashSet<int> _methodBranchTargets;
+			private int _currentBlockIndex;
+			private bool _foundEndOfPrevBlock;
 
 			public BasicBlockIterator (MethodBody methodBody)
 			{
@@ -181,7 +181,7 @@ namespace Mono.Linker.Dataflow
 		}
 
 		[Conditional ("DEBUG")]
-		static void ValidateNoReferenceToReference (LocalVariableStore locals, MethodDefinition method, int ilOffset)
+		private static void ValidateNoReferenceToReference (LocalVariableStore locals, MethodDefinition method, int ilOffset)
 		{
 			foreach (var keyValuePair in locals) {
 				MultiValue localValue = keyValuePair.Value.Value;
@@ -257,14 +257,14 @@ namespace Mono.Linker.Dataflow
 				// Disabled asserts due to a bug
 				// Debug.Assert (interproceduralState.Count == 1 + calleeMethods.Count ());
 				// foreach (var method in calleeMethods)
-				// 	Debug.Assert (interproceduralState.Any (kvp => kvp.Key.Method == method));
+				//  Debug.Assert (interproceduralState.Any (kvp => kvp.Key.Method == method));
 			} else {
 				Debug.Assert (interproceduralState.MethodBodies.Count () == 1);
 			}
 #endif
 		}
 
-		void TrackNestedFunctionReference (MethodReference referencedMethod, ref InterproceduralState interproceduralState)
+		private void TrackNestedFunctionReference (MethodReference referencedMethod, ref InterproceduralState interproceduralState)
 		{
 			if (_context.TryResolve (referencedMethod) is not MethodDefinition method)
 				return;
@@ -288,7 +288,7 @@ namespace Mono.Linker.Dataflow
 
 			BasicBlockIterator blockIterator = new BasicBlockIterator (methodBody);
 
-			ReturnValue = new ();
+			ReturnValue = default (MultiValue);
 			foreach (Instruction operation in methodBody.Instructions) {
 				int curBasicBlock = blockIterator.MoveNext (operation);
 
@@ -658,7 +658,7 @@ namespace Mono.Linker.Dataflow
 						if (hasReturnValue) {
 							StackSlot retValue = PopUnknown (currentStack, 1, methodBody, operation.Offset);
 							// If the return value is a reference, treat it as the value itself for now
-							//	We can handle ref return values better later
+							//  We can handle ref return values better later
 							ReturnValue = MultiValueLattice.Meet (ReturnValue, DereferenceValue (retValue.Value, locals, ref interproceduralState));
 							ValidateNoReferenceToReference (locals, methodBody.Method, operation.Offset);
 						}
@@ -795,7 +795,7 @@ namespace Mono.Linker.Dataflow
 			currentStack.Push (newSlot);
 		}
 
-		void ScanLdtoken (Instruction operation, Stack<StackSlot> currentStack)
+		private void ScanLdtoken (Instruction operation, Stack<StackSlot> currentStack)
 		{
 			switch (operation.Operand) {
 			case GenericParameter genericParameter:

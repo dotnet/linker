@@ -24,12 +24,12 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 	{
 		public readonly TrimAnalysisPatternStore TrimAnalysisPatterns;
 
-		readonly ValueSetLattice<SingleValue> _multiValueLattice;
+		private readonly ValueSetLattice<SingleValue> _multiValueLattice;
 
 		// Limit tracking array values to 32 values for performance reasons.
 		// There are many arrays much longer than 32 elements in .NET,
 		// but the interesting ones for the linker are nearly always less than 32 elements.
-		const int MaxTrackedArrayValues = 32;
+		private const int MaxTrackedArrayValues = 32;
 
 		public TrimAnalysisVisitor (
 			LocalStateLattice<MultiValue, ValueSetLattice<SingleValue>> lattice,
@@ -302,7 +302,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			}
 		}
 
-		static bool TryGetConstantValue (IOperation operation, out MultiValue constValue)
+		private static bool TryGetConstantValue (IOperation operation, out MultiValue constValue)
 		{
 			if (operation.ConstantValue.HasValue) {
 				object? constantValue = operation.ConstantValue.Value;
@@ -326,16 +326,16 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 					case SpecialType.System_Byte when constantValue is byte byteConstantValue:
 						constValue = new ConstIntValue (byteConstantValue);
 						return true;
-					case SpecialType.System_Int16 when constantValue is Int16 int16ConstantValue:
+					case SpecialType.System_Int16 when constantValue is short int16ConstantValue:
 						constValue = new ConstIntValue (int16ConstantValue);
 						return true;
-					case SpecialType.System_UInt16 when constantValue is UInt16 uint16ConstantValue:
+					case SpecialType.System_UInt16 when constantValue is ushort uint16ConstantValue:
 						constValue = new ConstIntValue (uint16ConstantValue);
 						return true;
-					case SpecialType.System_Int32 when constantValue is Int32 int32ConstantValue:
+					case SpecialType.System_Int32 when constantValue is int int32ConstantValue:
 						constValue = new ConstIntValue (int32ConstantValue);
 						return true;
-					case SpecialType.System_UInt32 when constantValue is UInt32 uint32ConstantValue:
+					case SpecialType.System_UInt32 when constantValue is uint uint32ConstantValue:
 						constValue = new ConstIntValue ((int) uint32ConstantValue);
 						return true;
 					}

@@ -11,9 +11,9 @@ using Mono.Cecil;
 
 namespace Mono.Linker
 {
-	readonly struct LinkerAttributesInformation
+	internal readonly struct LinkerAttributesInformation
 	{
-		readonly List<(Type Type, List<Attribute> Attributes)>? _linkerAttributes;
+		private readonly List<(Type Type, List<Attribute> Attributes)>? _linkerAttributes;
 
 		private LinkerAttributesInformation (List<(Type Type, List<Attribute> Attributes)>? cache)
 		{
@@ -107,7 +107,7 @@ namespace Mono.Linker
 			return attributeList.Cast<T> ();
 		}
 
-		static Attribute? ProcessRequiresUnreferencedCodeAttribute (LinkContext context, ICustomAttributeProvider provider, CustomAttribute customAttribute)
+		private static Attribute? ProcessRequiresUnreferencedCodeAttribute (LinkContext context, ICustomAttributeProvider provider, CustomAttribute customAttribute)
 		{
 			if (!(provider is MethodDefinition || provider is TypeDefinition))
 				return null;

@@ -43,13 +43,13 @@ namespace Mono.Linker.Steps
 				CleanAssembly (assembly);
 		}
 
-		static void CleanAssembly (AssemblyDefinition asm)
+		private static void CleanAssembly (AssemblyDefinition asm)
 		{
 			foreach (TypeDefinition type in asm.MainModule.Types)
 				CleanType (type);
 		}
 
-		static void CleanType (TypeDefinition type)
+		private static void CleanType (TypeDefinition type)
 		{
 			if (type.HasProperties)
 				CleanProperties (type);
@@ -61,7 +61,7 @@ namespace Mono.Linker.Steps
 					CleanType (nested);
 		}
 
-		static MethodDefinition? CheckMethod (TypeDefinition type, MethodDefinition method)
+		private static MethodDefinition? CheckMethod (TypeDefinition type, MethodDefinition method)
 		{
 			if (method == null)
 				return null;
@@ -69,7 +69,7 @@ namespace Mono.Linker.Steps
 			return type.Methods.Contains (method) ? method : null;
 		}
 
-		static void CleanEvents (TypeDefinition type)
+		private static void CleanEvents (TypeDefinition type)
 		{
 			var events = type.Events;
 
@@ -84,12 +84,12 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		static bool IsEventUsed (EventDefinition evt)
+		private static bool IsEventUsed (EventDefinition evt)
 		{
 			return evt.AddMethod != null || evt.InvokeMethod != null || evt.RemoveMethod != null;
 		}
 
-		static void CleanProperties (TypeDefinition type)
+		private static void CleanProperties (TypeDefinition type)
 		{
 			var properties = type.Properties;
 
@@ -103,7 +103,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		static bool IsPropertyUsed (PropertyDefinition prop)
+		private static bool IsPropertyUsed (PropertyDefinition prop)
 		{
 			return prop.GetMethod != null || prop.SetMethod != null;
 		}

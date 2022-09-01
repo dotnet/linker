@@ -10,9 +10,9 @@ using Mono.Cecil.Cil;
 
 namespace TLens.Analyzers
 {
-	sealed class UnusedParametersAnalyzer : Analyzer
+	internal sealed class UnusedParametersAnalyzer : Analyzer
 	{
-		readonly List<(MethodDefinition, int)> methods = new List<(MethodDefinition, int)> ();
+		private readonly List<(MethodDefinition, int)> methods = new List<(MethodDefinition, int)> ();
 
 		protected override void ProcessMethod (MethodDefinition method)
 		{

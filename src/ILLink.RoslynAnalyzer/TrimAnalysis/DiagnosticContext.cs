@@ -9,11 +9,11 @@ using Microsoft.CodeAnalysis;
 
 namespace ILLink.Shared.TrimAnalysis
 {
-	readonly partial struct DiagnosticContext
+	public readonly partial struct DiagnosticContext
 	{
 		public List<Diagnostic> Diagnostics { get; } = new ();
 
-		readonly Location? Location { get; init; }
+		private readonly Location? Location { get; init; }
 
 		public DiagnosticContext (Location location)
 		{

@@ -33,7 +33,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 
 		protected readonly OperationBlockAnalysisContext Context;
 
-		readonly IOperation OperationBlock;
+		private readonly IOperation OperationBlock;
 
 		protected LocalDataFlowAnalysis (OperationBlockAnalysisContext context, IOperation operationBlock)
 		{
@@ -44,8 +44,8 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 
 		public void InterproceduralAnalyze ()
 		{
-			var methodGroupLattice = new ValueSetLattice<MethodBodyValue> ();
-			var hoistedLocalLattice = new DictionaryLattice<LocalKey, Maybe<TValue>, MaybeLattice<TValue, TLattice>> ();
+			var methodGroupLattice = default (ValueSetLattice<MethodBodyValue>);
+			var hoistedLocalLattice = default (DictionaryLattice<LocalKey, Maybe<TValue>, MaybeLattice<TValue, TLattice>>);
 			var interproceduralStateLattice = new InterproceduralStateLattice<TValue, TLattice> (
 				methodGroupLattice, hoistedLocalLattice);
 			var interproceduralState = interproceduralStateLattice.Top;
@@ -71,7 +71,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			}
 		}
 
-		void AnalyzeMethod (MethodBodyValue method, ref InterproceduralState<TValue, TLattice> interproceduralState)
+		private void AnalyzeMethod (MethodBodyValue method, ref InterproceduralState<TValue, TLattice> interproceduralState)
 		{
 			var cfg = method.ControlFlowGraph;
 			var lValueFlowCaptures = LValueFlowCapturesProvider.CreateLValueFlowCaptures (cfg);

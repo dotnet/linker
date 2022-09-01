@@ -10,11 +10,11 @@ using Microsoft.CodeAnalysis;
 
 namespace ILLink.Shared.TrimAnalysis
 {
-	sealed partial class FlowAnnotations
+	internal sealed partial class FlowAnnotations
 	{
 		// In the analyzer there's no stateful data the flow annotations need to store
 		// so we just create a singleton on demand.
-		static readonly Lazy<FlowAnnotations> _instance = new (() => new FlowAnnotations (), isThreadSafe: true);
+		private static readonly Lazy<FlowAnnotations> _instance = new (() => new FlowAnnotations (), isThreadSafe: true);
 
 		public static FlowAnnotations Instance { get => _instance.Value; }
 

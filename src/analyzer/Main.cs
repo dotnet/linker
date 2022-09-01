@@ -16,9 +16,9 @@ using Mono.Options;
 
 namespace LinkerAnalyzer
 {
-	static class MainClass
+	internal static class MainClass
 	{
-		static void Main (string[] args)
+		private static void Main (string[] args)
 		{
 			bool showUsage = true;
 			bool showAllDeps = false;

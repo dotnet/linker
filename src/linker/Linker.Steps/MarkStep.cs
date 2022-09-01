@@ -50,7 +50,7 @@ namespace Mono.Linker.Steps
 
 	public partial class MarkStep : IStep
 	{
-		LinkContext? _context;
+		private LinkContext? _context;
 		protected LinkContext Context {
 			get {
 				Debug.Assert (_context != null);
@@ -61,7 +61,7 @@ namespace Mono.Linker.Steps
 		protected Queue<(MethodDefinition, DependencyInfo, MessageOrigin)> _methods;
 		protected HashSet<(MethodDefinition, MarkScopeStack.Scope)> _virtual_methods;
 		protected Queue<AttributeProviderPair> _assemblyLevelAttributes;
-		readonly List<AttributeProviderPair> _ivt_attributes;
+		private readonly List<AttributeProviderPair> _ivt_attributes;
 		protected Queue<(AttributeProviderPair, DependencyInfo, MarkScopeStack.Scope)> _lateMarkedAttributes;
 		protected List<(TypeDefinition, MarkScopeStack.Scope)> _typesWithInterfaces;
 		protected HashSet<(OverrideInformation, MarkScopeStack.Scope)> _interfaceOverrides;
@@ -69,30 +69,30 @@ namespace Mono.Linker.Steps
 		protected List<TypeDefinition> _dynamicInterfaceCastableImplementationTypes;
 		protected List<(MethodBody, MarkScopeStack.Scope)> _unreachableBodies;
 
-		readonly List<(TypeDefinition Type, MethodBody Body, Instruction Instr)> _pending_isinst_instr;
+		private readonly List<(TypeDefinition Type, MethodBody Body, Instruction Instr)> _pending_isinst_instr;
 
 		// Stores, for compiler-generated methods only, whether they require the reflection
 		// method body scanner.
-		readonly Dictionary<MethodBody, bool> _compilerGeneratedMethodRequiresScanner;
+		private readonly Dictionary<MethodBody, bool> _compilerGeneratedMethodRequiresScanner;
 
-		UnreachableBlocksOptimizer? _unreachableBlocksOptimizer;
-		UnreachableBlocksOptimizer UnreachableBlocksOptimizer {
+		private UnreachableBlocksOptimizer? _unreachableBlocksOptimizer;
+		private UnreachableBlocksOptimizer UnreachableBlocksOptimizer {
 			get {
 				Debug.Assert (_unreachableBlocksOptimizer != null);
 				return _unreachableBlocksOptimizer;
 			}
 		}
-		MarkStepContext? _markContext;
-		MarkStepContext MarkContext {
+		private MarkStepContext? _markContext;
+		private MarkStepContext MarkContext {
 			get {
 				Debug.Assert (_markContext != null);
 				return _markContext;
 			}
 		}
-		readonly HashSet<TypeDefinition> _entireTypesMarked;
-		DynamicallyAccessedMembersTypeHierarchy? _dynamicallyAccessedMembersTypeHierarchy;
-		MarkScopeStack? _scopeStack;
-		MarkScopeStack ScopeStack {
+		private readonly HashSet<TypeDefinition> _entireTypesMarked;
+		private DynamicallyAccessedMembersTypeHierarchy? _dynamicallyAccessedMembersTypeHierarchy;
+		private MarkScopeStack? _scopeStack;
+		private MarkScopeStack ScopeStack {
 			get {
 				Debug.Assert (_scopeStack != null);
 				return _scopeStack;
@@ -107,7 +107,7 @@ namespace Mono.Linker.Steps
 		}
 
 #if DEBUG
-		static readonly DependencyKind[] _entireTypeReasons = new DependencyKind[] {
+		private static readonly DependencyKind[] _entireTypeReasons = new DependencyKind[] {
 			DependencyKind.AccessedViaReflection,
 			DependencyKind.BaseType,
 			DependencyKind.PreservedDependency,
@@ -116,7 +116,7 @@ namespace Mono.Linker.Steps
 			DependencyKind.Unspecified,
 		};
 
-		static readonly DependencyKind[] _fieldReasons = new DependencyKind[] {
+		private static readonly DependencyKind[] _fieldReasons = new DependencyKind[] {
 			DependencyKind.Unspecified,
 			DependencyKind.AccessedViaReflection,
 			DependencyKind.AlreadyMarked,
@@ -136,7 +136,7 @@ namespace Mono.Linker.Steps
 			DependencyKind.XmlDescriptor,
 		};
 
-		static readonly DependencyKind[] _typeReasons = new DependencyKind[] {
+		private static readonly DependencyKind[] _typeReasons = new DependencyKind[] {
 			DependencyKind.Unspecified,
 			DependencyKind.AccessedViaReflection,
 			DependencyKind.AlreadyMarked,
@@ -172,7 +172,7 @@ namespace Mono.Linker.Steps
 			DependencyKind.XmlDescriptor,
 		};
 
-		static readonly DependencyKind[] _methodReasons = new DependencyKind[] {
+		private static readonly DependencyKind[] _methodReasons = new DependencyKind[] {
 			DependencyKind.Unspecified,
 			DependencyKind.AccessedViaReflection,
 			DependencyKind.AlreadyMarked,
@@ -255,7 +255,7 @@ namespace Mono.Linker.Steps
 			Complete ();
 		}
 
-		void Initialize ()
+		private void Initialize ()
 		{
 			InitializeCorelibAttributeXml ();
 			Context.Pipeline.InitializeMarkHandlers (Context, MarkContext);
@@ -263,7 +263,7 @@ namespace Mono.Linker.Steps
 			ProcessMarkedPending ();
 		}
 
-		void InitializeCorelibAttributeXml ()
+		private void InitializeCorelibAttributeXml ()
 		{
 			// Pre-load corelib and process its attribute XML first. This is necessary because the
 			// corelib attribute XML can contain modifications to other assemblies.
@@ -286,14 +286,14 @@ namespace Mono.Linker.Steps
 				Context.CustomAttributes.PrimaryAttributeInfo.CustomAttributesOrigins.Add (ca, origin);
 		}
 
-		void Complete ()
+		private void Complete ()
 		{
 			foreach ((var body, var _) in _unreachableBodies) {
 				Annotations.SetAction (body.Method, MethodAction.ConvertToThrow);
 			}
 		}
 
-		bool ProcessInternalsVisibleAttributes ()
+		private bool ProcessInternalsVisibleAttributes ()
 		{
 			bool marked_any = false;
 			foreach (var attr in _ivt_attributes) {
@@ -329,7 +329,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		static bool TypeIsDynamicInterfaceCastableImplementation (TypeDefinition type)
+		private static bool TypeIsDynamicInterfaceCastableImplementation (TypeDefinition type)
 		{
 			if (!type.IsInterface || !type.HasInterfaces || !type.HasCustomAttributes)
 				return false;
@@ -414,7 +414,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void Process ()
+		private void Process ()
 		{
 			while (ProcessPrimaryQueue () ||
 				ProcessMarkedPending () ||
@@ -426,9 +426,9 @@ namespace Mono.Linker.Steps
 			ProcessPendingTypeChecks ();
 		}
 
-		static bool IsFullyPreservedAction (AssemblyAction action) => action == AssemblyAction.Copy || action == AssemblyAction.Save;
+		private static bool IsFullyPreservedAction (AssemblyAction action) => action == AssemblyAction.Copy || action == AssemblyAction.Save;
 
-		bool MarkFullyPreservedAssemblies ()
+		private bool MarkFullyPreservedAssemblies ()
 		{
 			// Fully mark any assemblies with copy/save action.
 
@@ -473,7 +473,7 @@ namespace Mono.Linker.Steps
 			return markedNewAssembly;
 		}
 
-		bool ProcessPrimaryQueue ()
+		private bool ProcessPrimaryQueue ()
 		{
 			if (QueueIsEmpty ())
 				return false;
@@ -490,7 +490,7 @@ namespace Mono.Linker.Steps
 			return true;
 		}
 
-		bool ProcessMarkedPending ()
+		private bool ProcessMarkedPending ()
 		{
 			using var emptyScope = ScopeStack.PushScope (new MessageOrigin (null as ICustomAttributeProvider));
 
@@ -536,7 +536,7 @@ namespace Mono.Linker.Steps
 			return marked;
 		}
 
-		void ProcessPendingTypeChecks ()
+		private void ProcessPendingTypeChecks ()
 		{
 			for (int i = 0; i < _pending_isinst_instr.Count; ++i) {
 				var item = _pending_isinst_instr[i];
@@ -555,7 +555,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void ProcessQueue ()
+		private void ProcessQueue ()
 		{
 			while (!QueueIsEmpty ()) {
 				(MethodDefinition method, DependencyInfo reason, MessageOrigin origin) = _methods.Dequeue ();
@@ -563,7 +563,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		bool QueueIsEmpty ()
+		private bool QueueIsEmpty ()
 		{
 			return _methods.Count == 0;
 		}
@@ -573,7 +573,7 @@ namespace Mono.Linker.Steps
 			_methods.Enqueue ((method, reason, origin));
 		}
 
-		void ProcessVirtualMethods ()
+		private void ProcessVirtualMethods ()
 		{
 			foreach ((MethodDefinition method, MarkScopeStack.Scope scope) in _virtual_methods) {
 				using (ScopeStack.PushScope (scope))
@@ -586,7 +586,7 @@ namespace Mono.Linker.Steps
 		/// once the linker knows whether a type is instantiated or relevant to variant casting,
 		/// and after interfaces and interface methods have been marked.
 		/// </summary>
-		void ProcessMarkedTypesWithInterfaces ()
+		private void ProcessMarkedTypesWithInterfaces ()
 		{
 			// We may mark an interface type later on.  Which means we need to reprocess any time with one or more interface implementations that have not been marked
 			// and if an interface type is found to be marked and implementation is not marked, then we need to mark that implementation
@@ -627,7 +627,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void DiscoverDynamicCastableImplementationInterfaces ()
+		private void DiscoverDynamicCastableImplementationInterfaces ()
 		{
 			// We could potentially avoid loading all references here: https://github.com/dotnet/linker/issues/1788
 			foreach (var assembly in Context.GetReferencedAssemblies ().ToArray ()) {
@@ -659,7 +659,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void ProcessDynamicCastableImplementationInterfaces ()
+		private void ProcessDynamicCastableImplementationInterfaces ()
 		{
 			DiscoverDynamicCastableImplementationInterfaces ();
 
@@ -690,7 +690,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void ProcessPendingBodies ()
+		private void ProcessPendingBodies ()
 		{
 			for (int i = 0; i < _unreachableBodies.Count; i++) {
 				(var body, var scope) = _unreachableBodies[i];
@@ -703,7 +703,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void ProcessVirtualMethod (MethodDefinition method)
+		private void ProcessVirtualMethod (MethodDefinition method)
 		{
 			Annotations.EnqueueVirtualMethod (method);
 
@@ -721,7 +721,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void ProcessOverride (OverrideInformation overrideInformation)
+		private void ProcessOverride (OverrideInformation overrideInformation)
 		{
 			var method = overrideInformation.Override;
 			var @base = overrideInformation.Base;
@@ -764,7 +764,7 @@ namespace Mono.Linker.Steps
 		/// Returns true if <paramref name="type"/> implements <paramref name="interfaceType"/> and the interface implementation is marked,
 		/// or if any marked interface implementations on <paramref name="type"/> are interfaces that implement <paramref name="interfaceType"/> and that interface implementation is marked
 		/// </summary>
-		bool IsInterfaceImplementationMarkedRecursively (TypeDefinition type, TypeDefinition interfaceType)
+		private bool IsInterfaceImplementationMarkedRecursively (TypeDefinition type, TypeDefinition interfaceType)
 		{
 			if (type.HasInterfaces) {
 				foreach (var intf in type.Interfaces) {
@@ -780,7 +780,7 @@ namespace Mono.Linker.Steps
 			return false;
 		}
 
-		bool RequiresInterfaceRecursively (TypeDefinition typeToExamine, TypeDefinition interfaceType)
+		private bool RequiresInterfaceRecursively (TypeDefinition typeToExamine, TypeDefinition interfaceType)
 		{
 			if (typeToExamine == interfaceType)
 				return true;
@@ -799,7 +799,7 @@ namespace Mono.Linker.Steps
 			return false;
 		}
 
-		void ProcessDefaultImplementation (TypeDefinition typeWithDefaultImplementedInterfaceMethod, InterfaceImplementation implementation)
+		private void ProcessDefaultImplementation (TypeDefinition typeWithDefaultImplementedInterfaceMethod, InterfaceImplementation implementation)
 		{
 			if (!Annotations.IsInstantiated (typeWithDefaultImplementedInterfaceMethod))
 				return;
@@ -807,7 +807,7 @@ namespace Mono.Linker.Steps
 			MarkInterfaceImplementation (implementation);
 		}
 
-		void MarkMarshalSpec (IMarshalInfoProvider spec, in DependencyInfo reason)
+		private void MarkMarshalSpec (IMarshalInfoProvider spec, in DependencyInfo reason)
 		{
 			if (!spec.HasMarshalInfo)
 				return;
@@ -822,7 +822,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void MarkCustomAttributes (ICustomAttributeProvider provider, in DependencyInfo reason)
+		private void MarkCustomAttributes (ICustomAttributeProvider provider, in DependencyInfo reason)
 		{
 			if (provider.HasCustomAttributes) {
 				bool providerInLinkedAssembly = Annotations.GetAction (CustomAttributeSource.GetAssemblyFromCustomAttributeProvider (provider)) == AssemblyAction.Link;
@@ -858,7 +858,7 @@ namespace Mono.Linker.Steps
 					MarkDynamicDependency (dynamicDependency, providerMember);
 		}
 
-		bool IsAttributeRemoved (CustomAttribute ca, TypeDefinition attributeType)
+		private bool IsAttributeRemoved (CustomAttribute ca, TypeDefinition attributeType)
 		{
 			foreach (var attr in Annotations.GetLinkerAttributes<RemoveAttributeInstancesAttribute> (attributeType)) {
 				var args = attr.Arguments;
@@ -905,7 +905,7 @@ namespace Mono.Linker.Steps
 			return true;
 		}
 
-		void MarkDynamicDependency (DynamicDependency dynamicDependency, IMemberDefinition context)
+		private void MarkDynamicDependency (DynamicDependency dynamicDependency, IMemberDefinition context)
 		{
 			Debug.Assert (context is MethodDefinition || context is FieldDefinition);
 			AssemblyDefinition? assembly;
@@ -962,7 +962,7 @@ namespace Mono.Linker.Steps
 			MarkMembersVisibleToReflection (members, new DependencyInfo (DependencyKind.DynamicDependency, dynamicDependency.OriginalAttribute));
 		}
 
-		void MarkMembersVisibleToReflection (IEnumerable<IMetadataTokenProvider> members, in DependencyInfo reason)
+		private void MarkMembersVisibleToReflection (IEnumerable<IMetadataTokenProvider> members, in DependencyInfo reason)
 		{
 			foreach (var member in members) {
 				switch (member) {
@@ -1058,7 +1058,7 @@ namespace Mono.Linker.Steps
 			Context.LogWarning (context, DiagnosticId.CouldNotResolveDependencyMember, member ?? "", td.GetDisplayName ());
 		}
 
-		bool MarkDependencyMethod (TypeDefinition type, string name, string[]? signature, in DependencyInfo reason)
+		private bool MarkDependencyMethod (TypeDefinition type, string name, string[]? signature, in DependencyInfo reason)
 		{
 			bool marked = false;
 
@@ -1104,7 +1104,7 @@ namespace Mono.Linker.Steps
 			return marked;
 		}
 
-		void LazyMarkCustomAttributes (ICustomAttributeProvider provider)
+		private void LazyMarkCustomAttributes (ICustomAttributeProvider provider)
 		{
 			Debug.Assert (provider is ModuleDefinition or AssemblyDefinition);
 			if (!provider.HasCustomAttributes)
@@ -1261,7 +1261,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		PropertyDefinition? GetProperty (TypeDefinition inputType, string propertyname)
+		private PropertyDefinition? GetProperty (TypeDefinition inputType, string propertyname)
 		{
 			TypeDefinition? type = inputType;
 			while (type != null) {
@@ -1298,7 +1298,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		FieldDefinition? GetField (TypeDefinition inputType, string fieldname)
+		private FieldDefinition? GetField (TypeDefinition inputType, string fieldname)
 		{
 			TypeDefinition? type = inputType;
 			while (type != null) {
@@ -1312,7 +1312,7 @@ namespace Mono.Linker.Steps
 			return null;
 		}
 
-		MethodDefinition? GetMethodWithNoParameters (TypeDefinition inputType, string methodname)
+		private MethodDefinition? GetMethodWithNoParameters (TypeDefinition inputType, string methodname)
 		{
 			TypeDefinition? type = inputType;
 			while (type != null) {
@@ -1326,7 +1326,7 @@ namespace Mono.Linker.Steps
 			return null;
 		}
 
-		void MarkCustomAttributeArguments (CustomAttribute ca)
+		private void MarkCustomAttributeArguments (CustomAttribute ca)
 		{
 			if (!ca.HasConstructorArguments)
 				return;
@@ -1341,7 +1341,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void MarkCustomAttributeArgument (CustomAttributeArgument argument, ICustomAttribute ca)
+		private void MarkCustomAttributeArgument (CustomAttributeArgument argument, ICustomAttribute ca)
 		{
 			var at = argument.Type;
 
@@ -1417,7 +1417,7 @@ namespace Mono.Linker.Steps
 				LazyMarkCustomAttributes (module);
 		}
 
-		void MarkEntireAssembly (AssemblyDefinition assembly)
+		private void MarkEntireAssembly (AssemblyDefinition assembly)
 		{
 			Debug.Assert (Annotations.IsProcessed (assembly));
 
@@ -1433,12 +1433,12 @@ namespace Mono.Linker.Steps
 			TypeReferenceMarker.MarkTypeReferences (assembly, MarkingHelpers);
 		}
 
-		sealed class TypeReferenceMarker : TypeReferenceWalker
+		private sealed class TypeReferenceMarker : TypeReferenceWalker
 		{
 
-			readonly MarkingHelpers markingHelpers;
+			private readonly MarkingHelpers markingHelpers;
 
-			TypeReferenceMarker (AssemblyDefinition assembly, MarkingHelpers markingHelpers)
+			private TypeReferenceMarker (AssemblyDefinition assembly, MarkingHelpers markingHelpers)
 				: base (assembly)
 			{
 				this.markingHelpers = markingHelpers;
@@ -1471,7 +1471,7 @@ namespace Mono.Linker.Steps
 				}
 			}
 
-			TypeReference CreateTypeReferenceForExportedTypeTarget (ExportedType exportedType)
+			private TypeReference CreateTypeReferenceForExportedTypeTarget (ExportedType exportedType)
 			{
 				TypeReference? declaringTypeReference = null;
 				if (exportedType.DeclaringType != null) {
@@ -1484,7 +1484,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void ProcessModuleType (AssemblyDefinition assembly)
+		private void ProcessModuleType (AssemblyDefinition assembly)
 		{
 			// The <Module> type may have an initializer, in which case we want to keep it.
 			TypeDefinition? moduleType = assembly.MainModule.Types.FirstOrDefault (t => t.MetadataToken.RID == 1);
@@ -1492,7 +1492,7 @@ namespace Mono.Linker.Steps
 				MarkType (moduleType, new DependencyInfo (DependencyKind.TypeInAssembly, assembly));
 		}
 
-		bool ProcessLazyAttributes ()
+		private bool ProcessLazyAttributes ()
 		{
 			if (Annotations.HasMarkedAnyIndirectlyCalledMethods () && MarkDisablePrivateReflectionAttribute ())
 				return true;
@@ -1557,7 +1557,7 @@ namespace Mono.Linker.Steps
 			return markOccurred;
 		}
 
-		bool ProcessLateMarkedAttributes ()
+		private bool ProcessLateMarkedAttributes ()
 		{
 			var startingQueueCount = _lateMarkedAttributes.Count;
 			if (startingQueueCount == 0)
@@ -1615,7 +1615,7 @@ namespace Mono.Linker.Steps
 			MarkField (field, reason, origin);
 		}
 
-		void ReportWarningsForTypeHierarchyReflectionAccess (IMemberDefinition member, MessageOrigin origin)
+		private void ReportWarningsForTypeHierarchyReflectionAccess (IMemberDefinition member, MessageOrigin origin)
 		{
 			Debug.Assert (member is MethodDefinition or FieldDefinition);
 
@@ -1679,7 +1679,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void MarkField (FieldDefinition field, in DependencyInfo reason, in MessageOrigin origin)
+		private void MarkField (FieldDefinition field, in DependencyInfo reason, in MessageOrigin origin)
 		{
 #if DEBUG
 			if (!_fieldReasons.Contains (reason.Kind))
@@ -1740,7 +1740,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		bool ShouldWarnForReflectionAccessToCompilerGeneratedCode (FieldDefinition field, bool isCoveredByAnnotations)
+		private bool ShouldWarnForReflectionAccessToCompilerGeneratedCode (FieldDefinition field, bool isCoveredByAnnotations)
 		{
 			// No need to warn if it's already covered by the Requires attribute or explicit annotations on the field.
 			if (isCoveredByAnnotations)
@@ -1758,7 +1758,7 @@ namespace Mono.Linker.Steps
 			return Annotations.FlowAnnotations.IsTypeInterestingForDataflow (field.FieldType);
 		}
 
-		void ProcessAnalysisAnnotationsForField (FieldDefinition field, DependencyKind dependencyKind, in MessageOrigin origin)
+		private void ProcessAnalysisAnnotationsForField (FieldDefinition field, DependencyKind dependencyKind, in MessageOrigin origin)
 		{
 			if (origin.Provider != ScopeStack.CurrentScope.Origin.Provider) {
 				Debug.Assert (dependencyKind == DependencyKind.DynamicallyAccessedMemberOnType ||
@@ -1808,7 +1808,7 @@ namespace Mono.Linker.Steps
 			return assembly != null && Annotations.GetAction (assembly) != AssemblyAction.Link;
 		}
 
-		void MarkModule (ModuleDefinition module, DependencyInfo reason)
+		private void MarkModule (ModuleDefinition module, DependencyInfo reason)
 		{
 			if (reason.Kind == DependencyKind.AlreadyMarked) {
 				Debug.Assert (Annotations.IsMarked (module));
@@ -2078,7 +2078,7 @@ namespace Mono.Linker.Steps
 		{
 		}
 
-		TypeDefinition? GetDebuggerAttributeTargetType (CustomAttribute ca, AssemblyDefinition asm)
+		private TypeDefinition? GetDebuggerAttributeTargetType (CustomAttribute ca, AssemblyDefinition asm)
 		{
 			foreach (var property in ca.Properties) {
 				if (property.Name == "Target")
@@ -2099,7 +2099,7 @@ namespace Mono.Linker.Steps
 			return null;
 		}
 
-		void MarkTypeSpecialCustomAttributes (TypeDefinition type)
+		private void MarkTypeSpecialCustomAttributes (TypeDefinition type)
 		{
 			if (!type.HasCustomAttributes)
 				return;
@@ -2133,7 +2133,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void MarkMethodSpecialCustomAttributes (MethodDefinition method)
+		private void MarkMethodSpecialCustomAttributes (MethodDefinition method)
 		{
 			if (!method.HasCustomAttributes)
 				return;
@@ -2147,7 +2147,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void MarkXmlSchemaProvider (TypeDefinition type, CustomAttribute attribute)
+		private void MarkXmlSchemaProvider (TypeDefinition type, CustomAttribute attribute)
 		{
 			if (TryGetStringArgument (attribute, out string? name)) {
 				Tracer.AddDirectDependency (attribute, new DependencyInfo (DependencyKind.CustomAttribute, type), marked: false);
@@ -2155,9 +2155,9 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		static readonly Regex DebuggerDisplayAttributeValueRegex = new Regex ("{[^{}]+}", RegexOptions.Compiled);
+		private static readonly Regex DebuggerDisplayAttributeValueRegex = new Regex ("{[^{}]+}", RegexOptions.Compiled);
 
-		void MarkTypeWithDebuggerDisplayAttribute (TypeDefinition type, CustomAttribute attribute)
+		private void MarkTypeWithDebuggerDisplayAttribute (TypeDefinition type, CustomAttribute attribute)
 		{
 			if (Context.KeepMembersForDebugger) {
 
@@ -2227,7 +2227,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void MarkTypeWithDebuggerTypeProxyAttribute (TypeDefinition type, CustomAttribute attribute)
+		private void MarkTypeWithDebuggerTypeProxyAttribute (TypeDefinition type, CustomAttribute attribute)
 		{
 			if (Context.KeepMembersForDebugger) {
 				object constructorArgument = attribute.ConstructorArguments[0].Value;
@@ -2252,7 +2252,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		static bool TryGetStringArgument (CustomAttribute attribute, [NotNullWhen (true)] out string? argument)
+		private static bool TryGetStringArgument (CustomAttribute attribute, [NotNullWhen (true)] out string? argument)
 		{
 			argument = null;
 
@@ -2281,7 +2281,7 @@ namespace Mono.Linker.Steps
 			return count;
 		}
 
-		void MarkSoapHeader (MethodDefinition method, CustomAttribute attribute)
+		private void MarkSoapHeader (MethodDefinition method, CustomAttribute attribute)
 		{
 			if (!TryGetStringArgument (attribute, out string? member_name))
 				return;
@@ -2290,7 +2290,7 @@ namespace Mono.Linker.Steps
 			MarkNamedProperty (method.DeclaringType, member_name, new DependencyInfo (DependencyKind.ReferencedBySpecialAttribute, attribute));
 		}
 
-		bool MarkNamedField (TypeDefinition type, string field_name, in DependencyInfo reason)
+		private bool MarkNamedField (TypeDefinition type, string field_name, in DependencyInfo reason)
 		{
 			if (!type.HasFields)
 				return false;
@@ -2306,7 +2306,7 @@ namespace Mono.Linker.Steps
 			return false;
 		}
 
-		void MarkNamedProperty (TypeDefinition type, string property_name, in DependencyInfo reason)
+		private void MarkNamedProperty (TypeDefinition type, string property_name, in DependencyInfo reason)
 		{
 			if (!type.HasProperties)
 				return;
@@ -2323,7 +2323,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void MarkInterfaceImplementations (TypeDefinition type)
+		private void MarkInterfaceImplementations (TypeDefinition type)
 		{
 			if (!type.HasInterfaces)
 				return;
@@ -2336,7 +2336,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void MarkGenericParameterProvider (IGenericParameterProvider provider)
+		private void MarkGenericParameterProvider (IGenericParameterProvider provider)
 		{
 			if (!provider.HasGenericParameters)
 				return;
@@ -2345,7 +2345,7 @@ namespace Mono.Linker.Steps
 				MarkGenericParameter (parameter);
 		}
 
-		void MarkGenericParameter (GenericParameter parameter)
+		private void MarkGenericParameter (GenericParameter parameter)
 		{
 			MarkCustomAttributes (parameter, new DependencyInfo (DependencyKind.GenericParameterCustomAttribute, parameter.Owner));
 			if (!parameter.HasConstraints)
@@ -2366,7 +2366,7 @@ namespace Mono.Linker.Steps
 		/// When the unusedinterfaces optimization is off, this will do the same as when on but will also mark interface methods from interfaces defined in a non-link assembly.
 		/// If the containing type is instantiated, the caller should also use <see cref="IsMethodNeededByInstantiatedTypeDueToPreservedScope (MethodDefinition)" />
 		/// </remarks>
-		bool IsMethodNeededByTypeDueToPreservedScope (MethodDefinition method)
+		private bool IsMethodNeededByTypeDueToPreservedScope (MethodDefinition method)
 		{
 			if (Annotations.IsMarked (method))
 				return false;
@@ -2402,7 +2402,7 @@ namespace Mono.Linker.Steps
 		/// <summary>
 		/// Returns true if the override method is required due to the interface that the base method is declared on. See doc at <see href="docs/methods-kept-by-interface.md"/> for explanation of logic.
 		/// </summary>
-		bool IsInterfaceImplementationMethodNeededByTypeDueToInterface (OverrideInformation overrideInformation)
+		private bool IsInterfaceImplementationMethodNeededByTypeDueToInterface (OverrideInformation overrideInformation)
 		{
 			var @base = overrideInformation.Base;
 			var method = overrideInformation.Override;
@@ -2446,9 +2446,9 @@ namespace Mono.Linker.Steps
 		/// </summary>
 		/// <remarks>
 		/// This is very similar to <see cref="IsMethodNeededByTypeDueToPreservedScope (MethodDefinition)"/>,
-		///	but will mark methods from an interface defined in a non-link assembly regardless of the optimization, and does not handle static interface methods.
+		/// but will mark methods from an interface defined in a non-link assembly regardless of the optimization, and does not handle static interface methods.
 		/// </remarks>
-		bool IsMethodNeededByInstantiatedTypeDueToPreservedScope (MethodDefinition method)
+		private bool IsMethodNeededByInstantiatedTypeDueToPreservedScope (MethodDefinition method)
 		{
 			// Any static interface methods are captured by <see cref="IsVirtualNeededByTypeDueToPreservedScope">, which should be called on all relevant methods so no need to check again here.
 			if (!method.IsVirtual)
@@ -2469,7 +2469,7 @@ namespace Mono.Linker.Steps
 			return false;
 		}
 
-		static bool IsSpecialSerializationConstructor (MethodDefinition method)
+		private static bool IsSpecialSerializationConstructor (MethodDefinition method)
 		{
 			if (!method.IsInstanceConstructor ())
 				return false;
@@ -2513,7 +2513,7 @@ namespace Mono.Linker.Steps
 			return MarkMethodIf (type.Methods, MethodDefinitionExtensions.IsDefaultConstructor, reason, ScopeStack.CurrentScope.Origin) != null;
 		}
 
-		void MarkCustomMarshalerGetInstance (TypeDefinition type, in DependencyInfo reason)
+		private void MarkCustomMarshalerGetInstance (TypeDefinition type, in DependencyInfo reason)
 		{
 			if (!type.HasMethods)
 				return;
@@ -2524,7 +2524,7 @@ namespace Mono.Linker.Steps
 				ScopeStack.CurrentScope.Origin);
 		}
 
-		void MarkICustomMarshalerMethods (TypeDefinition inputType, in DependencyInfo reason)
+		private void MarkICustomMarshalerMethods (TypeDefinition inputType, in DependencyInfo reason)
 		{
 			TypeDefinition? type = inputType;
 			do {
@@ -2553,7 +2553,7 @@ namespace Mono.Linker.Steps
 			} while ((type = Context.TryResolve (type.BaseType)) != null);
 		}
 
-		static bool IsNonEmptyStaticConstructor (MethodDefinition method)
+		private static bool IsNonEmptyStaticConstructor (MethodDefinition method)
 		{
 			if (!method.IsStaticConstructor ())
 				return false;
@@ -2567,7 +2567,7 @@ namespace Mono.Linker.Steps
 			return method.Body.Instructions[0].OpCode.Code != Code.Ret;
 		}
 
-		static bool HasOnSerializeOrDeserializeAttribute (MethodDefinition method)
+		private static bool HasOnSerializeOrDeserializeAttribute (MethodDefinition method)
 		{
 			if (!method.HasCustomAttributes)
 				return false;
@@ -2602,7 +2602,7 @@ namespace Mono.Linker.Steps
 			return false;
 		}
 
-		void MarkEventSourceProviders (TypeDefinition td)
+		private void MarkEventSourceProviders (TypeDefinition td)
 		{
 			Debug.Assert (Context.GetTargetRuntimeVersion () < TargetRuntimeVersion.NET6 || !Context.DisableEventSourceSpecialHandling);
 			foreach (var nestedType in td.NestedTypes) {
@@ -2642,7 +2642,7 @@ namespace Mono.Linker.Steps
 			return (type, reason);
 		}
 
-		void MarkParameters (FunctionPointerType fnptr)
+		private void MarkParameters (FunctionPointerType fnptr)
 		{
 			if (!fnptr.HasParameters)
 				return;
@@ -2652,12 +2652,12 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void MarkModifierType (IModifierType mod)
+		private void MarkModifierType (IModifierType mod)
 		{
 			MarkType (mod.ModifierType, new DependencyInfo (DependencyKind.ModifierType, mod));
 		}
 
-		void MarkGenericArguments (IGenericInstance instance)
+		private void MarkGenericArguments (IGenericInstance instance)
 		{
 			var arguments = instance.GenericArguments;
 
@@ -2695,7 +2695,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		IGenericParameterProvider? GetGenericProviderFromInstance (IGenericInstance instance)
+		private IGenericParameterProvider? GetGenericProviderFromInstance (IGenericInstance instance)
 		{
 			if (instance is GenericInstanceMethod method)
 				return Context.TryResolve (method.ElementMethod);
@@ -2706,7 +2706,7 @@ namespace Mono.Linker.Steps
 			return null;
 		}
 
-		void ApplyPreserveInfo (TypeDefinition type)
+		private void ApplyPreserveInfo (TypeDefinition type)
 		{
 			using var typeScope = ScopeStack.PushScope (new MessageOrigin (type));
 
@@ -2773,27 +2773,27 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		static bool IsMethodVisible (MethodDefinition method)
+		private static bool IsMethodVisible (MethodDefinition method)
 		{
 			return method.IsPublic || method.IsFamily || method.IsFamilyOrAssembly;
 		}
 
-		static bool IsMethodInternal (MethodDefinition method)
+		private static bool IsMethodInternal (MethodDefinition method)
 		{
 			return method.IsAssembly || method.IsFamilyAndAssembly;
 		}
 
-		static bool IsFieldVisible (FieldDefinition field)
+		private static bool IsFieldVisible (FieldDefinition field)
 		{
 			return field.IsPublic || field.IsFamily || field.IsFamilyOrAssembly;
 		}
 
-		static bool IsFieldInternal (FieldDefinition field)
+		private static bool IsFieldInternal (FieldDefinition field)
 		{
 			return field.IsAssembly || field.IsFamilyAndAssembly;
 		}
 
-		void ApplyPreserveMethods (TypeDefinition type)
+		private void ApplyPreserveMethods (TypeDefinition type)
 		{
 			var list = Annotations.GetPreservedMethods (type);
 			if (list == null)
@@ -2803,7 +2803,7 @@ namespace Mono.Linker.Steps
 			MarkMethodCollection (list, new DependencyInfo (DependencyKind.PreservedMethod, type));
 		}
 
-		void ApplyPreserveMethods (MethodDefinition method)
+		private void ApplyPreserveMethods (MethodDefinition method)
 		{
 			var list = Annotations.GetPreservedMethods (method);
 			if (list == null)
@@ -2840,7 +2840,7 @@ namespace Mono.Linker.Steps
 			return true;
 		}
 
-		static PropertyDefinition? SearchPropertiesForMatchingFieldDefinition (FieldDefinition field)
+		private static PropertyDefinition? SearchPropertiesForMatchingFieldDefinition (FieldDefinition field)
 		{
 			foreach (var property in field.DeclaringType.Properties) {
 				var instr = property.GetMethod?.Body?.Instructions;
@@ -2876,7 +2876,7 @@ namespace Mono.Linker.Steps
 			return true;
 		}
 
-		void MarkMethodCollection (IList<MethodDefinition> methods, in DependencyInfo reason)
+		private void MarkMethodCollection (IList<MethodDefinition> methods, in DependencyInfo reason)
 		{
 			foreach (MethodDefinition method in methods)
 				MarkMethod (method, reason, ScopeStack.CurrentScope.Origin);
@@ -2926,7 +2926,7 @@ namespace Mono.Linker.Steps
 			return method;
 		}
 
-		bool ShouldWarnForReflectionAccessToCompilerGeneratedCode (MethodDefinition method, bool isCoveredByAnnotations)
+		private bool ShouldWarnForReflectionAccessToCompilerGeneratedCode (MethodDefinition method, bool isCoveredByAnnotations)
 		{
 			// No need to warn if it's already covered by the Requires attribute or explicit annotations on the method.
 			if (isCoveredByAnnotations)
@@ -2942,7 +2942,7 @@ namespace Mono.Linker.Steps
 			return CheckRequiresReflectionMethodBodyScanner (method.Body);
 		}
 
-		void ProcessAnalysisAnnotationsForMethod (MethodDefinition method, DependencyKind dependencyKind, in MessageOrigin origin)
+		private void ProcessAnalysisAnnotationsForMethod (MethodDefinition method, DependencyKind dependencyKind, in MessageOrigin origin)
 		{
 			// There are only two ways to get there such that the origin isn't the same as the top of the scopestack.
 			// - For DAM on type, the current scope is the caller of GetType, while the origin is the type itself.
@@ -3211,7 +3211,7 @@ namespace Mono.Linker.Steps
 		{
 		}
 
-		void MarkImplicitlyUsedFields (TypeDefinition type)
+		private void MarkImplicitlyUsedFields (TypeDefinition type)
 		{
 			if (type?.HasFields != true)
 				return;
@@ -3255,7 +3255,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void MarkExplicitInterfaceImplementation (MethodDefinition method, MethodReference ov)
+		private void MarkExplicitInterfaceImplementation (MethodDefinition method, MethodReference ov)
 		{
 			if (Context.Resolve (ov) is not MethodDefinition resolvedOverride)
 				return;
@@ -3275,7 +3275,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void MarkNewCodeDependencies (MethodDefinition method)
+		private void MarkNewCodeDependencies (MethodDefinition method)
 		{
 			switch (Annotations.GetAction (method)) {
 			case MethodAction.ConvertToStub:
@@ -3322,7 +3322,7 @@ namespace Mono.Linker.Steps
 					throw new LinkerFatalErrorException (MessageContainer.CreateErrorMessage (null, DiagnosticId.CouldNotFindConstructor, objectType.GetDisplayName ()));
 		}
 
-		bool MarkDisablePrivateReflectionAttribute ()
+		private bool MarkDisablePrivateReflectionAttribute ()
 		{
 			if (Context.MarkedKnownMembers.DisablePrivateReflectionAttributeCtor != null)
 				return false;
@@ -3342,7 +3342,7 @@ namespace Mono.Linker.Steps
 			return true;
 		}
 
-		void MarkBaseMethods (MethodDefinition method)
+		private void MarkBaseMethods (MethodDefinition method)
 		{
 			var base_methods = Annotations.GetBaseMethods (method);
 			if (base_methods == null)
@@ -3363,7 +3363,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void ProcessInteropMethod (MethodDefinition method)
+		private void ProcessInteropMethod (MethodDefinition method)
 		{
 			if (method.IsPInvokeImpl && method.PInvokeInfo != null) {
 				var pii = method.PInvokeInfo;
@@ -3495,7 +3495,7 @@ namespace Mono.Linker.Steps
 			MarkReflectionLikeDependencies (body, requiresReflectionMethodBodyScanner);
 		}
 
-		bool CheckRequiresReflectionMethodBodyScanner (MethodBody body)
+		private bool CheckRequiresReflectionMethodBodyScanner (MethodBody body)
 		{
 			// This method is only called on reflection access to compiler-generated methods.
 			// This should be uncommon, so don't cache the result.
@@ -3522,7 +3522,7 @@ namespace Mono.Linker.Steps
 		// It computes the same value, while also marking as it goes, as an optimization.
 		// This should only be called behind a check to IsProcessed for the method or corresponding user method,
 		// to avoid recursion.
-		bool MarkAndCheckRequiresReflectionMethodBodyScanner (MethodBody body)
+		private bool MarkAndCheckRequiresReflectionMethodBodyScanner (MethodBody body)
 		{
 #if DEBUG
 			if (!Annotations.IsProcessed (body.Method)) {
@@ -3564,7 +3564,7 @@ namespace Mono.Linker.Steps
 			return requiresReflectionMethodBodyScanner;
 		}
 
-		bool IsUnreachableBody (MethodBody body)
+		private bool IsUnreachableBody (MethodBody body)
 		{
 			return !body.Method.IsStatic
 				&& !Annotations.IsInstantiated (body.Method.DeclaringType)
@@ -3574,7 +3574,7 @@ namespace Mono.Linker.Steps
 
 		partial void PostMarkMethodBody (MethodBody body);
 
-		void MarkInterfacesNeededByBodyStack (MethodBody body)
+		private void MarkInterfacesNeededByBodyStack (MethodBody body)
 		{
 			// If a type could be on the stack in the body and an interface it implements could be on the stack on the body
 			// then we need to mark that interface implementation.  When this occurs it is not safe to remove the interface implementation from the type
@@ -3587,7 +3587,7 @@ namespace Mono.Linker.Steps
 				MarkInterfaceImplementation (implementation, new MessageOrigin (type));
 		}
 
-		bool InstructionRequiresReflectionMethodBodyScannerForFieldAccess (Instruction instruction)
+		private bool InstructionRequiresReflectionMethodBodyScannerForFieldAccess (Instruction instruction)
 			=> instruction.OpCode.Code switch {
 				// Field stores (Storing value to annotated field must be checked)
 				Code.Stfld or

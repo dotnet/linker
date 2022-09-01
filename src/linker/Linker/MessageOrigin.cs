@@ -19,7 +19,7 @@ namespace Mono.Linker
 		public int SourceColumn { get; }
 		public int? ILOffset { get; }
 
-		const int HiddenLineNumber = 0xfeefee;
+		private const int HiddenLineNumber = 0xfeefee;
 
 		public MessageOrigin (IMemberDefinition? memberDefinition, int? ilOffset = null)
 			: this (memberDefinition as ICustomAttributeProvider, ilOffset)
@@ -106,11 +106,11 @@ namespace Mono.Linker
 
 			StringBuilder sb = new StringBuilder (fileName);
 			if (sourceLine != 0) {
-				sb.Append ("(").Append (sourceLine);
+				sb.Append ('(').Append (sourceLine);
 				if (sourceColumn != 0)
-					sb.Append (",").Append (sourceColumn);
+					sb.Append (',').Append (sourceColumn);
 
-				sb.Append (")");
+				sb.Append (')');
 			}
 
 			return sb.ToString ();

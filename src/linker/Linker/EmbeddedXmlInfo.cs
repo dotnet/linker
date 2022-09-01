@@ -12,7 +12,7 @@ namespace Mono.Linker
 {
 	public static class EmbeddedXmlInfo
 	{
-		static EmbeddedResource? GetEmbeddedXml (AssemblyDefinition assembly, Func<Resource, bool> predicate)
+		private static EmbeddedResource? GetEmbeddedXml (AssemblyDefinition assembly, Func<Resource, bool> predicate)
 		{
 			return assembly.Modules
 				.SelectMany (mod => mod.Resources)
@@ -94,7 +94,7 @@ namespace Mono.Linker
 			return attributeInfo;
 		}
 
-		static string GetAssemblyName (string descriptor)
+		private static string GetAssemblyName (string descriptor)
 		{
 			int pos = descriptor.LastIndexOf ('.');
 			if (pos == -1)
@@ -103,7 +103,7 @@ namespace Mono.Linker
 			return descriptor.Substring (0, pos);
 		}
 
-		static bool ShouldProcessRootDescriptorResource (AssemblyDefinition assembly, LinkContext context, string resourceName)
+		private static bool ShouldProcessRootDescriptorResource (AssemblyDefinition assembly, LinkContext context, string resourceName)
 		{
 			if (resourceName.Equals ("ILLink.Descriptors.xml", StringComparison.OrdinalIgnoreCase))
 				return true;
@@ -122,17 +122,17 @@ namespace Mono.Linker
 			}
 		}
 
-		static DescriptorMarker GetExternalResolveStep (LinkContext context, EmbeddedResource resource, AssemblyDefinition assembly)
+		private static DescriptorMarker GetExternalResolveStep (LinkContext context, EmbeddedResource resource, AssemblyDefinition assembly)
 		{
 			return new DescriptorMarker (context, resource.GetResourceStream (), resource, assembly, "resource " + resource.Name + " in " + assembly.FullName);
 		}
 
-		static BodySubstitutionParser GetExternalSubstitutionParser (LinkContext context, EmbeddedResource resource, AssemblyDefinition assembly)
+		private static BodySubstitutionParser GetExternalSubstitutionParser (LinkContext context, EmbeddedResource resource, AssemblyDefinition assembly)
 		{
 			return new BodySubstitutionParser (context, resource.GetResourceStream (), resource, assembly, "resource " + resource.Name + " in " + assembly.FullName);
 		}
 
-		static LinkAttributesParser GetExternalLinkAttributesParser (LinkContext context, EmbeddedResource resource, AssemblyDefinition assembly)
+		private static LinkAttributesParser GetExternalLinkAttributesParser (LinkContext context, EmbeddedResource resource, AssemblyDefinition assembly)
 		{
 			return new LinkAttributesParser (context, resource.GetResourceStream (), resource, assembly, "resource " + resource.Name + " in " + assembly.FullName);
 		}

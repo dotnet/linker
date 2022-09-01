@@ -22,7 +22,7 @@ namespace Mono.Linker
 			}
 			return aVal.Equals (bVal);
 		}
-		static object BaseValue (this object value)
+		private static object BaseValue (this object value)
 		{
 			while (value is CustomAttributeArgument caa)
 				value = caa.Value;

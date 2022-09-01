@@ -31,9 +31,9 @@ namespace Mono.Linker
 			}
 		}
 
-		readonly LinkContext _context;
-		readonly Dictionary<ICustomAttributeProvider, Dictionary<int, Suppression>> _suppressions;
-		HashSet<AssemblyDefinition> InitializedAssemblies { get; }
+		private readonly LinkContext _context;
+		private readonly Dictionary<ICustomAttributeProvider, Dictionary<int, Suppression>> _suppressions;
+		private HashSet<AssemblyDefinition> InitializedAssemblies { get; }
 
 		public UnconditionalSuppressMessageAttributeState (LinkContext context)
 		{
@@ -42,7 +42,7 @@ namespace Mono.Linker
 			InitializedAssemblies = new HashSet<AssemblyDefinition> ();
 		}
 
-		void AddSuppression (Suppression suppression)
+		private void AddSuppression (Suppression suppression)
 		{
 			var used = false;
 			if (!_suppressions.TryGetValue (suppression.Provider, out var suppressions)) {
@@ -102,7 +102,7 @@ namespace Mono.Linker
 			}
 		}
 
-		bool IsSuppressed (int id, ICustomAttributeProvider warningOrigin, out SuppressMessageInfo info)
+		private bool IsSuppressed (int id, ICustomAttributeProvider warningOrigin, out SuppressMessageInfo info)
 		{
 			info = default;
 
@@ -139,7 +139,7 @@ namespace Mono.Linker
 			return false;
 		}
 
-		bool IsSuppressedOnElement (int id, ICustomAttributeProvider? provider, out SuppressMessageInfo info)
+		private bool IsSuppressedOnElement (int id, ICustomAttributeProvider? provider, out SuppressMessageInfo info)
 		{
 			info = default;
 
@@ -154,7 +154,7 @@ namespace Mono.Linker
 			return false;
 		}
 
-		bool TryGetSuppressionsForProvider (ICustomAttributeProvider? provider, out Dictionary<int, Suppression>? suppressions)
+		private bool TryGetSuppressionsForProvider (ICustomAttributeProvider? provider, out Dictionary<int, Suppression>? suppressions)
 		{
 			suppressions = null;
 			if (provider == null)
@@ -194,7 +194,7 @@ namespace Mono.Linker
 			return _suppressions.TryGetValue (provider, out suppressions);
 		}
 
-		static bool TryDecodeSuppressMessageAttributeData (CustomAttribute attribute, out SuppressMessageInfo info)
+		private static bool TryDecodeSuppressMessageAttributeData (CustomAttribute attribute, out SuppressMessageInfo info)
 		{
 			info = default;
 
@@ -255,7 +255,7 @@ namespace Mono.Linker
 			}
 		}
 
-		IEnumerable<Suppression> DecodeSuppressions (ICustomAttributeProvider provider)
+		private IEnumerable<Suppression> DecodeSuppressions (ICustomAttributeProvider provider)
 		{
 			Debug.Assert (provider is not ModuleDefinition or AssemblyDefinition);
 
@@ -273,7 +273,7 @@ namespace Mono.Linker
 			}
 		}
 
-		IEnumerable<Suppression> DecodeAssemblyAndModuleSuppressions (ModuleDefinition module)
+		private IEnumerable<Suppression> DecodeAssemblyAndModuleSuppressions (ModuleDefinition module)
 		{
 			AssemblyDefinition assembly = module.Assembly;
 			foreach (var suppression in DecodeGlobalSuppressions (module, assembly))
@@ -285,7 +285,7 @@ namespace Mono.Linker
 			}
 		}
 
-		IEnumerable<Suppression> DecodeGlobalSuppressions (ModuleDefinition module, ICustomAttributeProvider provider)
+		private IEnumerable<Suppression> DecodeGlobalSuppressions (ModuleDefinition module, ICustomAttributeProvider provider)
 		{
 			var attributes = _context.CustomAttributes.GetCustomAttributes (provider).
 					Where (a => TypeRefHasUnconditionalSuppressions (a.AttributeType));
@@ -294,7 +294,7 @@ namespace Mono.Linker
 				if (!TryDecodeSuppressMessageAttributeData (instance, out info))
 					continue;
 
-				var scope = info.Scope?.ToLower ();
+				var scope = info.Scope?.ToLowerInvariant ();
 				if (info.Target == null && (scope == "module" || scope == null)) {
 					yield return new Suppression (info, originAttribute: instance, provider);
 					continue;
@@ -321,7 +321,7 @@ namespace Mono.Linker
 			}
 		}
 
-		static bool TypeRefHasUnconditionalSuppressions (TypeReference typeRef)
+		private static bool TypeRefHasUnconditionalSuppressions (TypeReference typeRef)
 		{
 			return typeRef.Name == "UnconditionalSuppressMessageAttribute" &&
 				typeRef.Namespace == "System.Diagnostics.CodeAnalysis";

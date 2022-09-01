@@ -77,7 +77,7 @@ namespace ILLink.Shared.TrimAnalysis
 				break;
 
 			default:
-				throw new Exception (String.Format ("Unknown node type: {0}", node.GetType ().Name));
+				throw new Exception (string.Format ("Unknown node type: {0}", node.GetType ().Name));
 			}
 			seenNodes.Remove (node);
 

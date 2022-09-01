@@ -9,9 +9,9 @@ using Mono.Cecil.Cil;
 
 namespace TLens.Analyzers
 {
-	sealed class LargeStringsAnalyzer : Analyzer
+	internal sealed class LargeStringsAnalyzer : Analyzer
 	{
-		readonly List<(int, MethodDefinition)> ldstrs = new List<(int, MethodDefinition)> ();
+		private readonly List<(int, MethodDefinition)> ldstrs = new List<(int, MethodDefinition)> ();
 
 		protected override void ProcessMethod (MethodDefinition method)
 		{

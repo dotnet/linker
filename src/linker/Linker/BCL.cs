@@ -60,7 +60,7 @@ namespace Mono.Linker
 			return true;
 		}
 
-		static readonly string[] corlibNames = new[] {
+		private static readonly string[] corlibNames = new[] {
 			"System.Private.CoreLib",
 			"mscorlib",
 			"System.Runtime",

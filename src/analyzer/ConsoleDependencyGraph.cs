@@ -44,7 +44,7 @@ namespace LinkerAnalyzer
 				ShowDependencies (vertex);
 		}
 
-		void ShowFlatDependencies (VertexData vertex)
+		private void ShowFlatDependencies (VertexData vertex)
 		{
 			bool first = true;
 			var flatDeps = GetAllDependencies (vertex);
@@ -65,7 +65,7 @@ namespace LinkerAnalyzer
 			}
 		}
 
-		string SizeString (VertexData vertex)
+		private string SizeString (VertexData vertex)
 		{
 			return SpaceAnalyzer == null ?
 				"" : string.Format (" size: {0}", SpaceAnalyzer.GetSize (vertex));
@@ -137,7 +137,7 @@ namespace LinkerAnalyzer
 				ShowDependencies (type);
 		}
 
-		static string Tabs (string key)
+		private static string Tabs (string key)
 		{
 			int count = Math.Max (1, 2 - key.Length / 8);
 
@@ -193,9 +193,9 @@ namespace LinkerAnalyzer
 			ShowDependencies ("TypeDef:" + raw, Types, raw);
 		}
 
-		static readonly string line = new string ('-', 72);
+		private static readonly string line = new string ('-', 72);
 
-		static void Line ()
+		private static void Line ()
 		{
 			Console.Write (line);
 			Console.WriteLine ();

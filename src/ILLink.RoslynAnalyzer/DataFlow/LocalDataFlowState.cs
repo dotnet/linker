@@ -11,7 +11,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		where TValue : struct, IEquatable<TValue>
 		where TValueLattice : ILattice<TValue>
 	{
-		LocalState<TValue> current;
+		private LocalState<TValue> current;
 		public LocalState<TValue> Current {
 			get => current;
 			set => current = value;

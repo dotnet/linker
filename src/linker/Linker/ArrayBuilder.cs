@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace Mono.Linker
 {
-	struct ArrayBuilder<T>
+	internal struct ArrayBuilder<T>
 	{
 		private List<T> _list;
 

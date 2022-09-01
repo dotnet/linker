@@ -37,16 +37,16 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 #if DEBUG
 #pragma warning disable CA1805 // Do not initialize unnecessarily
 		// Set this to a method name to trace the analysis of the method.
-		readonly string? traceMethod = null;
+		private readonly string? traceMethod = null;
 
-		bool trace = false;
+		private bool trace = false;
 
 		// Set this to true to print out the dataflow states encountered during the analysis.
-		readonly bool showStates = false;
+		private readonly bool showStates = false;
 
-		static readonly TracingType tracingMechanism = Debugger.IsAttached ? TracingType.Debug : TracingType.Console;
+		private static readonly TracingType tracingMechanism = Debugger.IsAttached ? TracingType.Debug : TracingType.Console;
 #pragma warning restore CA1805 // Do not initialize unnecessarily
-		ControlFlowGraphProxy cfg;
+		private ControlFlowGraphProxy cfg;
 
 		private enum TracingType
 		{
@@ -123,13 +123,13 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			}
 		}
 
-		static void WriteIndented (string? s, int level)
+		private static void WriteIndented (string? s, int level)
 		{
 			string[]? lines = s?.Trim ().Split (new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
 			if (lines == null)
 				return;
 			foreach (var line in lines) {
-				TraceWrite (new String ('\t', level));
+				TraceWrite (new string ('\t', level));
 				TraceWriteLine (line);
 			}
 		}

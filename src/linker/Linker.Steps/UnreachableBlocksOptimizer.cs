@@ -21,11 +21,11 @@ namespace Mono.Linker.Steps
 	//
 	public class UnreachableBlocksOptimizer
 	{
-		readonly LinkContext _context;
-		readonly Dictionary<MethodDefinition, MethodResult?> _cache_method_results = new (2048);
-		readonly Stack<MethodDefinition> _resursion_guard = new ();
+		private readonly LinkContext _context;
+		private readonly Dictionary<MethodDefinition, MethodResult?> _cache_method_results = new (2048);
+		private readonly Stack<MethodDefinition> _resursion_guard = new ();
 
-		MethodDefinition? IntPtrSize, UIntPtrSize;
+		private MethodDefinition? IntPtrSize, UIntPtrSize;
 
 		public UnreachableBlocksOptimizer (LinkContext context)
 		{
@@ -71,7 +71,7 @@ namespace Mono.Linker.Steps
 			inliner.RewriteBody ();
 		}
 
-		static bool IsMethodSupported (MethodDefinition method)
+		private static bool IsMethodSupported (MethodDefinition method)
 		{
 			if (!method.HasBody)
 				return false;
@@ -88,7 +88,7 @@ namespace Mono.Linker.Steps
 			return true;
 		}
 
-		static bool HasJumpIntoTargetRange (Collection<Instruction> instructions, int firstInstr, int lastInstr, Func<Instruction, int>? mapping = null)
+		private static bool HasJumpIntoTargetRange (Collection<Instruction> instructions, int firstInstr, int lastInstr, Func<Instruction, int>? mapping = null)
 		{
 			foreach (var instr in instructions) {
 				switch (instr.OpCode.FlowControl) {
@@ -113,7 +113,7 @@ namespace Mono.Linker.Steps
 			return false;
 		}
 
-		static bool IsSideEffectFreeLoad (Instruction instr)
+		private static bool IsSideEffectFreeLoad (Instruction instr)
 		{
 			switch (instr.OpCode.Code) {
 			case Code.Ldarg:
@@ -146,7 +146,7 @@ namespace Mono.Linker.Steps
 			return false;
 		}
 
-		static bool IsComparisonAlwaysTrue (OpCode opCode, int left, int right)
+		private static bool IsComparisonAlwaysTrue (OpCode opCode, int left, int right)
 		{
 			switch (opCode.Code) {
 			case Code.Beq:
@@ -187,7 +187,7 @@ namespace Mono.Linker.Steps
 			throw new NotImplementedException (opCode.ToString ());
 		}
 
-		MethodResult? AnalyzeMethodForConstantResult (in CalleePayload callee, Stack<MethodDefinition> callStack)
+		private MethodResult? AnalyzeMethodForConstantResult (in CalleePayload callee, Stack<MethodDefinition> callStack)
 		{
 			MethodDefinition method = callee.Method;
 
@@ -218,7 +218,7 @@ namespace Mono.Linker.Steps
 			return null;
 		}
 
-		static bool HasSideEffects (MethodDefinition method)
+		private static bool HasSideEffects (MethodDefinition method)
 		{
 			return !method.DeclaringType.IsBeforeFieldInit;
 		}
@@ -227,13 +227,13 @@ namespace Mono.Linker.Steps
 		// Return expression with a value when method implementation can be
 		// interpreted during trimming
 		//
-		MethodResult? TryGetMethodCallResult (in CalleePayload callee)
+		private MethodResult? TryGetMethodCallResult (in CalleePayload callee)
 		{
 			_resursion_guard.Clear ();
 			return TryGetMethodCallResult (callee, _resursion_guard);
 		}
 
-		MethodResult? TryGetMethodCallResult (in CalleePayload callee, Stack<MethodDefinition> callStack)
+		private MethodResult? TryGetMethodCallResult (in CalleePayload callee, Stack<MethodDefinition> callStack)
 		{
 			MethodResult? value;
 
@@ -252,7 +252,7 @@ namespace Mono.Linker.Steps
 			static bool IsDeepStack (Stack<MethodDefinition> callStack) => callStack.Count > 100;
 		}
 
-		Instruction? GetSizeOfResult (TypeReference type)
+		private Instruction? GetSizeOfResult (TypeReference type)
 		{
 			MethodDefinition? sizeOfImpl = null;
 
@@ -273,7 +273,7 @@ namespace Mono.Linker.Steps
 			return TryGetMethodCallResult (new CalleePayload (sizeOfImpl, Array.Empty<Instruction> ()))?.Instruction;
 		}
 
-		static Instruction? EvaluateIntrinsicCall (MethodReference method, Instruction[] arguments)
+		private static Instruction? EvaluateIntrinsicCall (MethodReference method, Instruction[] arguments)
 		{
 			//
 			// In theory any pure method could be executed via reflection but
@@ -308,7 +308,7 @@ namespace Mono.Linker.Steps
 			return null;
 		}
 
-		static Instruction[]? GetArgumentsOnStack (MethodDefinition method, Collection<Instruction> instructions, int index)
+		private static Instruction[]? GetArgumentsOnStack (MethodDefinition method, Collection<Instruction> instructions, int index)
 		{
 			if (!method.HasParameters)
 				return Array.Empty<Instruction> ();
@@ -357,7 +357,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		static bool GetConstantValue (Instruction instruction, out object? value)
+		private static bool GetConstantValue (Instruction instruction, out object? value)
 		{
 			switch (instruction.OpCode.Code) {
 			case Code.Ldc_I4_0:
@@ -411,7 +411,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		static MethodDefinition? FindSizeMethod (TypeDefinition? type)
+		private static MethodDefinition? FindSizeMethod (TypeDefinition? type)
 		{
 			if (type == null)
 				return null;
@@ -419,10 +419,10 @@ namespace Mono.Linker.Steps
 			return type.Methods.First (l => !l.HasParameters && l.IsStatic && l.Name == "get_Size");
 		}
 
-		readonly struct CallInliner
+		private readonly struct CallInliner
 		{
-			readonly MethodBody body;
-			readonly UnreachableBlocksOptimizer optimizer;
+			private readonly MethodBody body;
+			private readonly UnreachableBlocksOptimizer optimizer;
 
 			public CallInliner (MethodBody body, UnreachableBlocksOptimizer optimizer)
 			{
@@ -503,7 +503,7 @@ namespace Mono.Linker.Steps
 				return changed;
 			}
 
-			bool CanInlineInstanceCall (Collection<Instruction> instructions, int index)
+			private bool CanInlineInstanceCall (Collection<Instruction> instructions, int index)
 			{
 				//
 				// Instance methods called on `this` have no side-effects
@@ -515,7 +515,7 @@ namespace Mono.Linker.Steps
 				return false;
 			}
 
-			static bool IsCalledWithoutSideEffects (MethodDefinition method, Collection<Instruction> instructions, int index)
+			private static bool IsCalledWithoutSideEffects (MethodDefinition method, Collection<Instruction> instructions, int index)
 			{
 				for (int i = 1; i <= method.Parameters.Count; ++i) {
 					if (!IsSideEffectFreeLoad (instructions[index - i]))
@@ -526,16 +526,16 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		struct BodyReducer
+		private struct BodyReducer
 		{
-			readonly LinkContext context;
-			Dictionary<Instruction, int>? mapping;
+			private readonly LinkContext context;
+			private Dictionary<Instruction, int>? mapping;
 
 			//
 			// Sorted list of body instruction indexes which were
 			// replaced pass-through nop
-			// 
-			List<int>? conditionInstrsToRemove;
+			//
+			private List<int>? conditionInstrsToRemove;
 
 			public BodyReducer (MethodBody body, LinkContext context)
 			{
@@ -552,11 +552,11 @@ namespace Mono.Linker.Steps
 
 			public int InstructionsReplaced { get; set; }
 
-			Collection<Instruction>? FoldedInstructions { get; set; }
+			private Collection<Instruction>? FoldedInstructions { get; set; }
 
 			[MemberNotNull ("FoldedInstructions")]
 			[MemberNotNull ("mapping")]
-			void InitializeFoldedInstruction ()
+			private void InitializeFoldedInstruction ()
 			{
 				FoldedInstructions = new Collection<Instruction> (Body.Instructions);
 				mapping = new Dictionary<Instruction, int> ();
@@ -576,7 +576,7 @@ namespace Mono.Linker.Steps
 				FoldedInstructions[index] = newInstruction;
 			}
 
-			void RewriteConditionToNop (int index)
+			private void RewriteConditionToNop (int index)
 			{
 				if (conditionInstrsToRemove == null)
 					conditionInstrsToRemove = new List<int> ();
@@ -606,7 +606,7 @@ namespace Mono.Linker.Steps
 					RewriteToNop (++start_index);
 			}
 
-			static int GetStackBehaviourDelta (Instruction instruction, out bool unknown)
+			private static int GetStackBehaviourDelta (Instruction instruction, out bool unknown)
 			{
 				int delta = 0;
 				unknown = false;
@@ -693,7 +693,7 @@ namespace Mono.Linker.Steps
 				return delta;
 			}
 
-			void RewriteToNop (int index)
+			private void RewriteToNop (int index)
 			{
 				Rewrite (index, Instruction.Create (OpCodes.Nop));
 			}
@@ -806,10 +806,10 @@ namespace Mono.Linker.Steps
 				return changed;
 			}
 
-			static bool IsConditionalBranch (OpCode opCode)
+			private static bool IsConditionalBranch (OpCode opCode)
 			=> opCode.Code is Code.Brfalse or Code.Brfalse_S or Code.Brtrue or Code.Brtrue_S;
 
-			void RemoveUnreachableInstructions (BitArray reachable)
+			private void RemoveUnreachableInstructions (BitArray reachable)
 			{
 				LinkerILProcessor processor = Body.GetLinkerILProcessor ();
 
@@ -837,7 +837,7 @@ namespace Mono.Linker.Steps
 				}
 			}
 
-			bool RemoveConditions ()
+			private bool RemoveConditions ()
 			{
 				Debug.Assert (FoldedInstructions != null);
 				bool changed = false;
@@ -982,7 +982,7 @@ namespace Mono.Linker.Steps
 				return changed;
 			}
 
-			BitArray GetReachableInstructionsMap (out List<ExceptionHandler>? unreachableHandlers)
+			private BitArray GetReachableInstructionsMap (out List<ExceptionHandler>? unreachableHandlers)
 			{
 				Debug.Assert (FoldedInstructions != null);
 				unreachableHandlers = null;
@@ -1077,7 +1077,7 @@ namespace Mono.Linker.Steps
 				}
 			}
 
-			static bool HasAnyBitSet (BitArray bitArray, int startIndex, int endIndex)
+			private static bool HasAnyBitSet (BitArray bitArray, int startIndex, int endIndex)
 			{
 				for (int i = startIndex; i <= endIndex; ++i) {
 					if (bitArray[i])
@@ -1090,7 +1090,7 @@ namespace Mono.Linker.Steps
 			//
 			// Returns index of instruction in folded instruction body
 			//
-			int GetInstructionIndex (Instruction instruction)
+			private int GetInstructionIndex (Instruction instruction)
 			{
 				Debug.Assert (FoldedInstructions != null && mapping != null);
 				if (mapping.TryGetValue (instruction, out int idx))
@@ -1101,7 +1101,7 @@ namespace Mono.Linker.Steps
 				return idx;
 			}
 
-			bool GetOperandsConstantValues (int index, out object? left, out object? right)
+			private bool GetOperandsConstantValues (int index, out object? left, out object? right)
 			{
 				Debug.Assert (FoldedInstructions != null);
 				left = default;
@@ -1114,7 +1114,7 @@ namespace Mono.Linker.Steps
 					GetConstantValue (FoldedInstructions[index - 1], out right);
 			}
 
-			static bool IsPairedStlocLdloc (Instruction first, Instruction second)
+			private static bool IsPairedStlocLdloc (Instruction first, Instruction second)
 			{
 				switch (first.OpCode.Code) {
 				case Code.Stloc_0:
@@ -1136,7 +1136,7 @@ namespace Mono.Linker.Steps
 				return false;
 			}
 
-			static bool IsConstantBranch (OpCode opCode, int operand)
+			private static bool IsConstantBranch (OpCode opCode, int operand)
 			{
 				switch (opCode.Code) {
 				case Code.Brfalse:
@@ -1150,21 +1150,21 @@ namespace Mono.Linker.Steps
 				throw new NotImplementedException (opCode.ToString ());
 			}
 
-			bool IsJumpTargetRange (int firstInstr, int lastInstr)
+			private bool IsJumpTargetRange (int firstInstr, int lastInstr)
 			{
 				Debug.Assert (FoldedInstructions != null);
 				return HasJumpIntoTargetRange (FoldedInstructions, firstInstr, lastInstr, GetInstructionIndex);
 			}
 		}
 
-		struct BodySweeper
+		private struct BodySweeper
 		{
-			readonly MethodBody body;
-			readonly BitArray reachable;
-			readonly List<ExceptionHandler>? unreachableExceptionHandlers;
-			readonly LinkContext context;
-			LinkerILProcessor? ilprocessor;
-			LinkerILProcessor ILProcessor {
+			private readonly MethodBody body;
+			private readonly BitArray reachable;
+			private readonly List<ExceptionHandler>? unreachableExceptionHandlers;
+			private readonly LinkContext context;
+			private LinkerILProcessor? ilprocessor;
+			private LinkerILProcessor ILProcessor {
 				get {
 					Debug.Assert (ilprocessor != null);
 					return ilprocessor;
@@ -1308,7 +1308,7 @@ namespace Mono.Linker.Steps
 				}
 			}
 
-			void CleanRemovedVariables (List<VariableDefinition> variables)
+			private void CleanRemovedVariables (List<VariableDefinition> variables)
 			{
 				foreach (var instr in body.Instructions) {
 					VariableDefinition? variable = GetVariableReference (instr);
@@ -1342,7 +1342,7 @@ namespace Mono.Linker.Steps
 				}
 			}
 
-			void CleanExceptionHandlers ()
+			private void CleanExceptionHandlers ()
 			{
 				if (unreachableExceptionHandlers == null)
 					return;
@@ -1351,7 +1351,7 @@ namespace Mono.Linker.Steps
 					body.ExceptionHandlers.Remove (eh);
 			}
 
-			VariableDefinition? GetVariableReference (Instruction instruction)
+			private VariableDefinition? GetVariableReference (Instruction instruction)
 			{
 				switch (instruction.OpCode.Code) {
 				case Code.Stloc_0:
@@ -1375,13 +1375,13 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		struct ConstantExpressionMethodAnalyzer
+		private struct ConstantExpressionMethodAnalyzer
 		{
-			readonly LinkContext context;
-			readonly UnreachableBlocksOptimizer optimizer;
+			private readonly LinkContext context;
+			private readonly UnreachableBlocksOptimizer optimizer;
 
-			Stack<Instruction>? stack_instr;
-			Dictionary<int, Instruction>? locals;
+			private Stack<Instruction>? stack_instr;
+			private Dictionary<int, Instruction>? locals;
 
 			public ConstantExpressionMethodAnalyzer (UnreachableBlocksOptimizer optimizer)
 			{
@@ -1741,7 +1741,7 @@ namespace Mono.Linker.Steps
 				return false;
 			}
 
-			bool CanEvaluateInstanceMethodCall (MethodDefinition context)
+			private bool CanEvaluateInstanceMethodCall (MethodDefinition context)
 			{
 				if (stack_instr == null || !stack_instr.TryPop (out Instruction? instr))
 					return false;
@@ -1760,7 +1760,7 @@ namespace Mono.Linker.Steps
 				}
 			}
 
-			bool EvaluateConditionalJump (Instruction instr, out Instruction? target)
+			private bool EvaluateConditionalJump (Instruction instr, out Instruction? target)
 			{
 				if (!GetOperandsConstantValues (out object? right, out object? left)) {
 					target = null;
@@ -1781,7 +1781,7 @@ namespace Mono.Linker.Steps
 			}
 
 			[MemberNotNullWhen (true, "Result")]
-			bool ConvertStackToResult ()
+			private bool ConvertStackToResult ()
 			{
 				if (stack_instr == null)
 					return false;
@@ -1814,7 +1814,7 @@ namespace Mono.Linker.Steps
 				return false;
 			}
 
-			static Instruction? GetArgumentValue (Instruction[]? arguments, int index)
+			private static Instruction? GetArgumentValue (Instruction[]? arguments, int index)
 			{
 				if (arguments == null)
 					return null;
@@ -1822,7 +1822,7 @@ namespace Mono.Linker.Steps
 				return index < arguments.Length ? arguments[index] : null;
 			}
 
-			Instruction[]? GetArgumentsOnStack (MethodDefinition method)
+			private Instruction[]? GetArgumentsOnStack (MethodDefinition method)
 			{
 				int length = method.Parameters.Count;
 				Debug.Assert (length != 0);
@@ -1836,7 +1836,7 @@ namespace Mono.Linker.Steps
 				return result;
 			}
 
-			Instruction? GetLocalsValue (int index, MethodBody body)
+			private Instruction? GetLocalsValue (int index, MethodBody body)
 			{
 				if (locals != null && locals.TryGetValue (index, out Instruction? instruction))
 					return instruction;
@@ -1848,7 +1848,7 @@ namespace Mono.Linker.Steps
 				return CodeRewriterStep.CreateConstantResultInstruction (context, body.Variables[index].VariableType);
 			}
 
-			bool GetOperandConstantValue ([NotNullWhen (true)] out object? value)
+			private bool GetOperandConstantValue ([NotNullWhen (true)] out object? value)
 			{
 				if (stack_instr == null) {
 					value = null;
@@ -1864,7 +1864,7 @@ namespace Mono.Linker.Steps
 				return GetConstantValue (instr, out value);
 			}
 
-			bool GetOperandsConstantValues ([NotNullWhen (true)] out object? left, [NotNullWhen (true)] out object? right)
+			private bool GetOperandsConstantValues ([NotNullWhen (true)] out object? left, [NotNullWhen (true)] out object? right)
 			{
 				if (stack_instr == null) {
 					left = right = null;
@@ -1900,7 +1900,7 @@ namespace Mono.Linker.Steps
 				return GetConstantValue (instr, out right);
 			}
 
-			void PushOnStack (Instruction instruction)
+			private void PushOnStack (Instruction instruction)
 			{
 				if (stack_instr == null)
 					stack_instr = new Stack<Instruction> ();
@@ -1908,7 +1908,7 @@ namespace Mono.Linker.Steps
 				stack_instr.Push (instruction);
 			}
 
-			void StoreToLocals (int index)
+			private void StoreToLocals (int index)
 			{
 				if (locals == null)
 					locals = new Dictionary<int, Instruction> ();
@@ -1919,12 +1919,12 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		readonly record struct CalleePayload (MethodDefinition Method, Instruction[]? Arguments = null)
+		private readonly record struct CalleePayload (MethodDefinition Method, Instruction[]? Arguments = null)
 		{
 			public bool HasUnknownArguments => Arguments is null;
 		}
 
-		readonly record struct MethodResult (Instruction Instruction, bool IsSideEffectFree)
+		private readonly record struct MethodResult (Instruction Instruction, bool IsSideEffectFree)
 		{
 			public Instruction GetPrototype () => Instruction.GetPrototype ();
 		}

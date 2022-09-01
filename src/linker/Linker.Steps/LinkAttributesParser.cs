@@ -17,7 +17,7 @@ namespace Mono.Linker.Steps
 {
 	public class LinkAttributesParser : ProcessLinkerXmlBase
 	{
-		AttributeInfo? _attributeInfo;
+		private AttributeInfo? _attributeInfo;
 
 		public LinkAttributesParser (LinkContext context, Stream documentStream, string xmlDocumentLocation)
 			: base (context, documentStream, xmlDocumentLocation)
@@ -36,12 +36,12 @@ namespace Mono.Linker.Steps
 			ProcessXml (stripLinkAttributes, _context.IgnoreLinkAttributes);
 		}
 
-		static bool IsRemoveAttributeInstances (string attributeName) => attributeName == "RemoveAttributeInstances" || attributeName == "RemoveAttributeInstancesAttribute";
+		private static bool IsRemoveAttributeInstances (string attributeName) => attributeName == "RemoveAttributeInstances" || attributeName == "RemoveAttributeInstancesAttribute";
 
-		(CustomAttribute[]? customAttributes, MessageOrigin[]? origins) ProcessAttributes (XPathNavigator nav, ICustomAttributeProvider provider)
+		private (CustomAttribute[]? customAttributes, MessageOrigin[]? origins) ProcessAttributes (XPathNavigator nav, ICustomAttributeProvider provider)
 		{
-			var customAttributesBuilder = new ArrayBuilder<CustomAttribute> ();
-			var originsBuilder = new ArrayBuilder<MessageOrigin> ();
+			var customAttributesBuilder = default (ArrayBuilder<CustomAttribute>);
+			var originsBuilder = default (ArrayBuilder<MessageOrigin>);
 			foreach (XPathNavigator attributeNav in nav.SelectChildren ("attribute", string.Empty)) {
 				if (!ShouldProcessElement (attributeNav))
 					continue;
@@ -99,7 +99,7 @@ namespace Mono.Linker.Steps
 				return sb.ToString ();
 			}
 		}
-		TypeDefinition? GenerateRemoveAttributeInstancesAttribute ()
+		private TypeDefinition? GenerateRemoveAttributeInstancesAttribute ()
 		{
 			TypeDefinition? td = null;
 
@@ -127,9 +127,9 @@ namespace Mono.Linker.Steps
 			//
 			// public sealed class RemoveAttributeInstancesAttribute : Attribute
 			// {
-			//		public RemoveAttributeInstancesAttribute () {}
-			//		public RemoveAttributeInstancesAttribute (object values) {} // For legacy uses
-			//		public RemoveAttributeInstancesAttribute (params object[] values) {}
+			//      public RemoveAttributeInstancesAttribute () {}
+			//      public RemoveAttributeInstancesAttribute (object values) {} // For legacy uses
+			//      public RemoveAttributeInstancesAttribute (params object[] values) {}
 			// }
 			//
 			const MethodAttributes ctorAttributes = MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName | MethodAttributes.Final;
@@ -151,7 +151,7 @@ namespace Mono.Linker.Steps
 			return _context.MarkedKnownMembers.RemoveAttributeInstancesAttributeDefinition = td;
 		}
 
-		CustomAttribute? CreateCustomAttribute (XPathNavigator nav, TypeDefinition attributeType)
+		private CustomAttribute? CreateCustomAttribute (XPathNavigator nav, TypeDefinition attributeType)
 		{
 			CustomAttributeArgument[] arguments = ReadCustomAttributeArguments (nav, attributeType);
 
@@ -170,7 +170,7 @@ namespace Mono.Linker.Steps
 			return customAttribute;
 		}
 
-		MethodDefinition? FindBestMatchingConstructor (TypeDefinition attributeType, CustomAttributeArgument[] args)
+		private MethodDefinition? FindBestMatchingConstructor (TypeDefinition attributeType, CustomAttributeArgument[] args)
 		{
 			var methods = attributeType.Methods;
 			for (int i = 0; i < attributeType.Methods.Count; ++i) {
@@ -199,7 +199,7 @@ namespace Mono.Linker.Steps
 			return null;
 		}
 
-		void ReadCustomAttributeProperties (XPathNavigator nav, TypeDefinition attributeType, CustomAttribute customAttribute)
+		private void ReadCustomAttributeProperties (XPathNavigator nav, TypeDefinition attributeType, CustomAttribute customAttribute)
 		{
 			foreach (XPathNavigator propertyNav in nav.SelectChildren ("property", string.Empty)) {
 				string propertyName = GetName (propertyNav);
@@ -222,9 +222,9 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		CustomAttributeArgument[] ReadCustomAttributeArguments (XPathNavigator nav, TypeDefinition attributeType)
+		private CustomAttributeArgument[] ReadCustomAttributeArguments (XPathNavigator nav, TypeDefinition attributeType)
 		{
-			var args = new ArrayBuilder<CustomAttributeArgument> ();
+			var args = default (ArrayBuilder<CustomAttributeArgument>);
 
 			foreach (XPathNavigator argumentNav in nav.SelectChildren ("argument", string.Empty)) {
 				CustomAttributeArgument? caa = ReadCustomAttributeArgument (argumentNav, attributeType);
@@ -235,7 +235,7 @@ namespace Mono.Linker.Steps
 			return args.ToArray () ?? Array.Empty<CustomAttributeArgument> ();
 		}
 
-		CustomAttributeArgument? ReadCustomAttributeArgument (XPathNavigator nav, IMemberDefinition memberWithAttribute)
+		private CustomAttributeArgument? ReadCustomAttributeArgument (XPathNavigator nav, IMemberDefinition memberWithAttribute)
 		{
 			TypeReference? typeref = ResolveArgumentType (nav, memberWithAttribute);
 			if (typeref is null)
@@ -305,11 +305,11 @@ namespace Mono.Linker.Steps
 				if (typeref is ArrayType arrayTypeRef) {
 					var elementType = arrayTypeRef.ElementType;
 					var arrayArgumentIterator = nav.SelectChildren ("argument", string.Empty);
-					ArrayBuilder<CustomAttributeArgument> elements = new ArrayBuilder<CustomAttributeArgument> ();
+					ArrayBuilder<CustomAttributeArgument> elements = default (ArrayBuilder<CustomAttributeArgument>);
 					foreach (XPathNavigator elementNav in arrayArgumentIterator) {
 						if (ReadCustomAttributeArgument (elementNav, memberWithAttribute) is CustomAttributeArgument arg) {
 							// To match Cecil, elements of a list that are subclasses of the list type must be boxed in the base type
-							//	e.g. object[] { 73 } translates to Cecil.CAA { Type: object[] : Value: CAA{ Type: object, Value: CAA{ Type: int, Value: 73} } }
+							//  e.g. object[] { 73 } translates to Cecil.CAA { Type: object[] : Value: CAA{ Type: object, Value: CAA{ Type: int, Value: 73} } }
 							if (arg.Type == elementType) {
 								elements.Add (arg);
 							}
@@ -353,7 +353,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		object? ConvertStringValue (object value, TypeReference targetType)
+		private object? ConvertStringValue (object value, TypeReference targetType)
 		{
 			TypeCode typeCode;
 			switch (targetType.MetadataType) {
@@ -408,7 +408,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		bool GetAttributeType (XPathNavigator nav, string attributeFullName, [NotNullWhen (true)] out TypeDefinition? attributeType)
+		private bool GetAttributeType (XPathNavigator nav, string attributeFullName, [NotNullWhen (true)] out TypeDefinition? attributeType)
 		{
 			string assemblyName = GetAttribute (nav, "assembly");
 			if (string.IsNullOrEmpty (assemblyName)) {
@@ -489,7 +489,7 @@ namespace Mono.Linker.Steps
 			ProcessParameters (method, nav);
 		}
 
-		void ProcessParameters (MethodDefinition method, XPathNavigator nav)
+		private void ProcessParameters (MethodDefinition method, XPathNavigator nav)
 		{
 			Debug.Assert (_attributeInfo != null);
 			foreach (XPathNavigator parameterNav in nav.SelectChildren ("parameter", string.Empty)) {
@@ -508,7 +508,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void ProcessReturnParameters (MethodDefinition method, XPathNavigator nav)
+		private void ProcessReturnParameters (MethodDefinition method, XPathNavigator nav)
 		{
 			bool firstAppearance = true;
 			foreach (XPathNavigator returnNav in nav.SelectChildren ("return", string.Empty)) {
@@ -531,7 +531,7 @@ namespace Mono.Linker.Steps
 			return null;
 		}
 
-		static string GetMethodSignature (MethodDefinition method, bool includeReturnType = false)
+		private static string GetMethodSignature (MethodDefinition method, bool includeReturnType = false)
 		{
 			StringBuilder sb = new StringBuilder ();
 			if (includeReturnType) {
@@ -539,25 +539,25 @@ namespace Mono.Linker.Steps
 			}
 			sb.Append (method.Name);
 			if (method.HasGenericParameters) {
-				sb.Append ("<");
+				sb.Append ('<');
 				for (int i = 0; i < method.GenericParameters.Count; i++) {
 					if (i > 0)
-						sb.Append (",");
+						sb.Append (',');
 
 					sb.Append (method.GenericParameters[i].Name);
 				}
-				sb.Append (">");
+				sb.Append ('>');
 			}
-			sb.Append ("(");
+			sb.Append ('(');
 			if (method.HasParameters) {
 				for (int i = 0; i < method.Parameters.Count; i++) {
 					if (i > 0)
-						sb.Append (",");
+						sb.Append (',');
 
 					sb.Append (method.Parameters[i].ParameterType.FullName);
 				}
 			}
-			sb.Append (")");
+			sb.Append (')');
 			return sb.ToString ();
 		}
 
@@ -571,7 +571,7 @@ namespace Mono.Linker.Steps
 			PopulateAttributeInfo (@event, nav);
 		}
 
-		void PopulateAttributeInfo (ICustomAttributeProvider provider, XPathNavigator nav)
+		private void PopulateAttributeInfo (ICustomAttributeProvider provider, XPathNavigator nav)
 		{
 			Debug.Assert (_attributeInfo != null);
 			var (attributes, origins) = ProcessAttributes (nav, provider);

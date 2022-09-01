@@ -366,7 +366,7 @@ namespace Mono.Linker
 		// required by this type (but not members of these interfaces, or interfaces required only by base types).
 		public static void GetAllOnType (this TypeDefinition type, LinkContext context, bool declaredOnly, List<IMetadataTokenProvider> members) => GetAllOnType (type, context, declaredOnly, members, new HashSet<TypeDefinition> ());
 
-		static void GetAllOnType (TypeDefinition type, LinkContext context, bool declaredOnly, List<IMetadataTokenProvider> members, HashSet<TypeDefinition> types)
+		private static void GetAllOnType (TypeDefinition type, LinkContext context, bool declaredOnly, List<IMetadataTokenProvider> members, HashSet<TypeDefinition> types)
 		{
 			if (!types.Add (type))
 				return;

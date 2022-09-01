@@ -12,9 +12,9 @@ namespace Mono.Linker.Dataflow
 {
 	public readonly struct GenericArgumentDataFlow
 	{
-		readonly LinkContext _context;
-		readonly MarkStep _markStep;
-		readonly MessageOrigin _origin;
+		private readonly LinkContext _context;
+		private readonly MarkStep _markStep;
+		private readonly MessageOrigin _origin;
 
 		public GenericArgumentDataFlow (LinkContext context, MarkStep markStep, in MessageOrigin origin)
 		{
@@ -34,7 +34,7 @@ namespace Mono.Linker.Dataflow
 			RequireDynamicallyAccessedMembers (diagnosticContext, genericArgumentValue, genericParameterValue);
 		}
 
-		void RequireDynamicallyAccessedMembers (in DiagnosticContext diagnosticContext, in MultiValue value, ValueWithDynamicallyAccessedMembers targetValue)
+		private void RequireDynamicallyAccessedMembers (in DiagnosticContext diagnosticContext, in MultiValue value, ValueWithDynamicallyAccessedMembers targetValue)
 		{
 			var reflectionMarker = new ReflectionMarker (_context, _markStep, enabled: true);
 			var requireDynamicallyAccessedMembersAction = new RequireDynamicallyAccessedMembersAction (reflectionMarker, diagnosticContext);

@@ -11,9 +11,9 @@ using TLens.Analyzers;
 
 namespace TLens
 {
-	sealed class Driver
+	internal sealed class Driver
 	{
-		static int Main (string[] args)
+		private static int Main (string[] args)
 		{
 			bool showUsage = false;
 			bool error = false;
@@ -99,7 +99,7 @@ namespace TLens
 			return 0;
 		}
 
-		static void ShowUsage (OptionSet options)
+		private static void ShowUsage (OptionSet options)
 		{
 			Console.WriteLine ("Trimming Lens");
 			Console.WriteLine ("  tlens [options] input-files");
@@ -115,7 +115,7 @@ namespace TLens
 			}
 		}
 
-		static List<AssemblyDefinition> LoadFiles (List<string> files, AssemlyReferenceResolver resolver)
+		private static List<AssemblyDefinition> LoadFiles (List<string> files, AssemlyReferenceResolver resolver)
 		{
 			var assemblies = new List<AssemblyDefinition> ();
 			foreach (var file in files) {

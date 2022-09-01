@@ -13,8 +13,8 @@ namespace Mono.Linker.Steps
 	// - this will discover types in non-"link" assemblies as well
 	public class DiscoverSerializationHandler : IMarkHandler
 	{
-		LinkContext? _context;
-		LinkContext Context {
+		private LinkContext? _context;
+		private LinkContext Context {
 			get {
 				Debug.Assert (_context != null);
 				return _context;
@@ -28,7 +28,7 @@ namespace Mono.Linker.Steps
 			markContext.RegisterMarkMethodAction (CheckForSerializerActivation);
 		}
 
-		void CheckForSerializerActivation (MethodDefinition method)
+		private void CheckForSerializerActivation (MethodDefinition method)
 		{
 			var type = method.DeclaringType;
 
@@ -49,7 +49,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void ProcessType (TypeDefinition type)
+		private void ProcessType (TypeDefinition type)
 		{
 			ProcessAttributeProvider (type);
 
@@ -75,7 +75,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void ProcessAttributeProvider (ICustomAttributeProvider provider)
+		private void ProcessAttributeProvider (ICustomAttributeProvider provider)
 		{
 			if (!provider.HasCustomAttributes)
 				return;
@@ -96,7 +96,7 @@ namespace Mono.Linker.Steps
 				Context.SerializationMarker.TrackForSerialization (provider, SerializerKind.XmlSerializer);
 		}
 
-		static bool IsPreservedSerializationAttribute (ICustomAttributeProvider provider, CustomAttribute attribute, out SerializerKind serializerKind)
+		private static bool IsPreservedSerializationAttribute (ICustomAttributeProvider provider, CustomAttribute attribute, out SerializerKind serializerKind)
 		{
 			TypeReference attributeType = attribute.Constructor.DeclaringType;
 			serializerKind = SerializerKind.None;

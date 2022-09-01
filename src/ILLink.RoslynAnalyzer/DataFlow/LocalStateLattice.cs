@@ -10,9 +10,9 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 {
 	public readonly struct LocalKey : IEquatable<LocalKey>
 	{
-		readonly ILocalSymbol? Local;
+		private readonly ILocalSymbol? Local;
 
-		readonly CaptureId? CaptureId;
+		private readonly CaptureId? CaptureId;
 
 		public LocalKey (ILocalSymbol symbol) => (Local, CaptureId) = (symbol, null);
 
@@ -26,6 +26,16 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			if (Local != null)
 				return Local.ToString ();
 			return $"capture {CaptureId.GetHashCode ()}";
+		}
+
+		public override bool Equals (object obj)
+		{
+			return obj is LocalKey && Equals ((LocalKey) obj);
+		}
+
+		public override int GetHashCode ()
+		{
+			throw new NotImplementedException ();
 		}
 	}
 
@@ -41,7 +51,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 
 		public LocalState (TValue defaultValue)
 			: this (new DefaultValueDictionary<LocalKey, TValue> (defaultValue),
-				new DefaultValueDictionary<CaptureId, CapturedReferenceValue> (new CapturedReferenceValue ()))
+				new DefaultValueDictionary<CaptureId, CapturedReferenceValue> (default (CapturedReferenceValue)))
 		{
 		}
 
@@ -52,7 +62,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		}
 
 		public LocalState (DefaultValueDictionary<LocalKey, TValue> dictionary)
-			: this (dictionary, new DefaultValueDictionary<CaptureId, CapturedReferenceValue> (new CapturedReferenceValue ()))
+			: this (dictionary, new DefaultValueDictionary<CaptureId, CapturedReferenceValue> (default (CapturedReferenceValue)))
 		{
 		}
 
@@ -63,6 +73,16 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		public void Set (LocalKey key, TValue value) => Dictionary.Set (key, value);
 
 		public override string ToString () => Dictionary.ToString ();
+
+		public override bool Equals (object obj)
+		{
+			return obj is LocalState<TValue> && Equals ((LocalState<TValue>) obj);
+		}
+
+		public override int GetHashCode ()
+		{
+			throw new NotImplementedException ();
+		}
 	}
 
 	// Wrapper struct exists purely to substitute a concrete LocalKey for TKey of DictionaryLattice
@@ -76,7 +96,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		public LocalStateLattice (TValueLattice valueLattice)
 		{
 			Lattice = new DictionaryLattice<LocalKey, TValue, TValueLattice> (valueLattice);
-			CapturedReferenceLattice = new DictionaryLattice<CaptureId, CapturedReferenceValue, CapturedReferenceLattice> (new CapturedReferenceLattice ());
+			CapturedReferenceLattice = new DictionaryLattice<CaptureId, CapturedReferenceValue, CapturedReferenceLattice> (default (CapturedReferenceLattice));
 			Top = new (Lattice.Top);
 		}
 

@@ -9,8 +9,8 @@ namespace Mono.Linker.Steps
 {
 	public class ReflectionBlockedStep : BaseStep
 	{
-		AssemblyDefinition? assembly;
-		AssemblyDefinition Assembly {
+		private AssemblyDefinition? assembly;
+		private AssemblyDefinition Assembly {
 			get {
 				Debug.Assert (assembly != null);
 				return assembly;
@@ -25,7 +25,7 @@ namespace Mono.Linker.Steps
 				ProcessType (type);
 		}
 
-		void ProcessType (TypeDefinition type)
+		private void ProcessType (TypeDefinition type)
 		{
 			if (!HasIndirectCallers (type)) {
 				AddCustomAttribute (type);
@@ -46,7 +46,7 @@ namespace Mono.Linker.Steps
 				ProcessType (nested);
 		}
 
-		bool HasIndirectCallers (TypeDefinition type)
+		private bool HasIndirectCallers (TypeDefinition type)
 		{
 			foreach (var method in type.Methods) {
 				if (Annotations.IsIndirectlyCalled (method))
@@ -63,7 +63,7 @@ namespace Mono.Linker.Steps
 			return false;
 		}
 
-		void AddCustomAttribute (ICustomAttributeProvider caProvider)
+		private void AddCustomAttribute (ICustomAttributeProvider caProvider)
 		{
 			// We are using DisableReflectionAttribute which is not exact match but it's quite
 			// close to what we need and it already exists in the BCL

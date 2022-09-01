@@ -76,14 +76,14 @@ namespace ILLink.Tasks
 		/// Maps to '--warnaserror' if true, '--warnaserror-' if false.
 		/// </summary>
 		public bool TreatWarningsAsErrors { set => _treatWarningsAsErrors = value; }
-		bool? _treatWarningsAsErrors;
+		private bool? _treatWarningsAsErrors;
 
 		/// <summary>
 		/// Produce at most one trim analysis warning per assembly.
 		/// Maps to '--singlewarn' if true, '--singlewarn-' if false.
 		/// </summary>
 		public bool SingleWarn { set => _singleWarn = value; }
-		bool? _singleWarn;
+		private bool? _singleWarn;
 
 		/// <summary>
 		/// The list of warnings to report as errors.
@@ -110,35 +110,35 @@ namespace ILLink.Tasks
 		///   Maps to '--enable-opt beforefieldinit' or '--disable-opt beforefieldinit'.
 		/// </summary>
 		public bool BeforeFieldInit { set => _beforeFieldInit = value; }
-		bool? _beforeFieldInit;
+		private bool? _beforeFieldInit;
 
 		/// <summary>
 		///   Boolean specifying whether to enable overrideremoval optimization globally.
 		///   Maps to '--enable-opt overrideremoval' or '--disable-opt overrideremoval'.
 		/// </summary>
 		public bool OverrideRemoval { set => _overrideRemoval = value; }
-		bool? _overrideRemoval;
+		private bool? _overrideRemoval;
 
 		/// <summary>
 		///   Boolean specifying whether to enable unreachablebodies optimization globally.
 		///   Maps to '--enable-opt unreachablebodies' or '--disable-opt unreachablebodies'.
 		/// </summary>
 		public bool UnreachableBodies { set => _unreachableBodies = value; }
-		bool? _unreachableBodies;
+		private bool? _unreachableBodies;
 
 		/// <summary>
 		///   Boolean specifying whether to enable unusedinterfaces optimization globally.
 		///   Maps to '--enable-opt unusedinterfaces' or '--disable-opt unusedinterfaces'.
 		/// </summary>
 		public bool UnusedInterfaces { set => _unusedInterfaces = value; }
-		bool? _unusedInterfaces;
+		private bool? _unusedInterfaces;
 
 		/// <summary>
 		///   Boolean specifying whether to enable ipconstprop optimization globally.
 		///   Maps to '--enable-opt ipconstprop' or '--disable-opt ipconstprop'.
 		/// </summary>
 		public bool IPConstProp { set => _iPConstProp = value; }
-		bool? _iPConstProp;
+		private bool? _iPConstProp;
 
 		/// <summary>
 		///   A list of feature names used by the body substitution logic.
@@ -153,9 +153,9 @@ namespace ILLink.Tasks
 		///   Maps to '--enable-opt sealer' or '--disable-opt sealer'.
 		/// </summary>
 		public bool Sealer { set => _sealer = value; }
-		bool? _sealer;
+		private bool? _sealer;
 
-		static readonly string[] _optimizationNames = new string[] {
+		private static readonly string[] _optimizationNames = new string[] {
 			"BeforeFieldInit",
 			"OverrideRemoval",
 			"UnreachableBodies",
@@ -195,7 +195,7 @@ namespace ILLink.Tasks
 		///   the command-line. (Target files will likely set their own defaults to keep symbols.)
 		/// </summary>
 		public bool RemoveSymbols { set => _removeSymbols = value; }
-		bool? _removeSymbols;
+		private bool? _removeSymbols;
 
 		/// <summary>
 		///   Sets the default action for trimmable assemblies.
@@ -234,11 +234,11 @@ namespace ILLink.Tasks
 
 		private string DotNetPath {
 			get {
-				if (!String.IsNullOrEmpty (_dotnetPath))
+				if (!string.IsNullOrEmpty (_dotnetPath))
 					return _dotnetPath;
 
 				_dotnetPath = Environment.GetEnvironmentVariable (DotNetHostPathEnvironmentName);
-				if (String.IsNullOrEmpty (_dotnetPath))
+				if (string.IsNullOrEmpty (_dotnetPath))
 					throw new InvalidOperationException ($"{DotNetHostPathEnvironmentName} is not set");
 
 				return _dotnetPath;
@@ -258,7 +258,7 @@ namespace ILLink.Tasks
 
 		public string ILLinkPath {
 			get {
-				if (!String.IsNullOrEmpty (_illinkPath))
+				if (!string.IsNullOrEmpty (_illinkPath))
 					return _illinkPath;
 
 				var taskDirectory = Path.GetDirectoryName (Assembly.GetExecutingAssembly ().Location);
@@ -367,10 +367,10 @@ namespace ILLink.Tasks
 				// Add per-assembly optimization arguments
 				foreach (var optimization in _optimizationNames) {
 					string optimizationValue = assembly.GetMetadata (optimization);
-					if (String.IsNullOrEmpty (optimizationValue))
+					if (string.IsNullOrEmpty (optimizationValue))
 						continue;
 
-					if (!Boolean.TryParse (optimizationValue, out bool enabled))
+					if (!bool.TryParse (optimizationValue, out bool enabled))
 						throw new ArgumentException ($"optimization metadata {optimization} must be True or False");
 
 					SetOpt (args, optimization, assemblyName, enabled);
@@ -378,8 +378,8 @@ namespace ILLink.Tasks
 
 				// Add per-assembly verbosity arguments
 				string singleWarn = assembly.GetMetadata ("TrimmerSingleWarn");
-				if (!String.IsNullOrEmpty (singleWarn)) {
-					if (!Boolean.TryParse (singleWarn, out bool value))
+				if (!string.IsNullOrEmpty (singleWarn)) {
+					if (!bool.TryParse (singleWarn, out bool value))
 						throw new ArgumentException ($"TrimmerSingleWarn metadata must be True or False");
 
 					if (value)
@@ -451,7 +451,7 @@ namespace ILLink.Tasks
 				foreach (var customData in CustomData) {
 					var key = customData.ItemSpec;
 					var value = customData.GetMetadata ("Value");
-					if (String.IsNullOrEmpty (value))
+					if (string.IsNullOrEmpty (value))
 						throw new ArgumentException ("custom data requires \"Value\" metadata");
 					args.Append ("--custom-data ").Append (' ').Append (key).Append ('=').AppendLine (Quote (value));
 				}
@@ -461,7 +461,7 @@ namespace ILLink.Tasks
 				foreach (var featureSetting in FeatureSettings) {
 					var feature = featureSetting.ItemSpec;
 					var featureValue = featureSetting.GetMetadata ("Value");
-					if (String.IsNullOrEmpty (featureValue))
+					if (string.IsNullOrEmpty (featureValue))
 						throw new ArgumentException ("feature settings require \"Value\" metadata");
 					args.Append ("--feature ").Append (feature).Append (' ').AppendLine (featureValue);
 				}
@@ -487,11 +487,11 @@ namespace ILLink.Tasks
 					// handle optional before/aftersteps
 					var beforeStep = customStep.GetMetadata ("BeforeStep");
 					var afterStep = customStep.GetMetadata ("AfterStep");
-					if (!String.IsNullOrEmpty (beforeStep) && !String.IsNullOrEmpty (afterStep))
+					if (!string.IsNullOrEmpty (beforeStep) && !string.IsNullOrEmpty (afterStep))
 						throw new ArgumentException ("custom step may not have both \"BeforeStep\" and \"AfterStep\" metadata");
-					if (!String.IsNullOrEmpty (beforeStep))
+					if (!string.IsNullOrEmpty (beforeStep))
 						customStepString = $"-{beforeStep}:{customStepString}";
-					if (!String.IsNullOrEmpty (afterStep))
+					if (!string.IsNullOrEmpty (afterStep))
 						customStepString = $"+{afterStep}:{customStepString}";
 
 					args.AppendLine (Quote (customStepString));

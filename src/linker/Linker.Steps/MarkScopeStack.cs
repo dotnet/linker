@@ -20,12 +20,12 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		readonly Stack<Scope> _scopeStack;
+		private readonly Stack<Scope> _scopeStack;
 
-		readonly struct LocalScope : IDisposable
+		private readonly struct LocalScope : IDisposable
 		{
-			readonly MessageOrigin _origin;
-			readonly MarkScopeStack _scopeStack;
+			private readonly MessageOrigin _origin;
+			private readonly MarkScopeStack _scopeStack;
 
 			public LocalScope (in MessageOrigin origin, MarkScopeStack scopeStack)
 			{
@@ -51,11 +51,11 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		readonly struct ParentScope : IDisposable
+		private readonly struct ParentScope : IDisposable
 		{
-			readonly Scope _parentScope;
-			readonly Scope _childScope;
-			readonly MarkScopeStack _scopeStack;
+			private readonly Scope _parentScope;
+			private readonly Scope _childScope;
+			private readonly MarkScopeStack _scopeStack;
 
 			public ParentScope (MarkScopeStack scopeStack)
 			{
@@ -111,12 +111,12 @@ namespace Mono.Linker.Steps
 			_scopeStack.Push (new Scope (new MessageOrigin (scope.Origin.Provider, offset)));
 		}
 
-		void Push (in Scope scope)
+		private void Push (in Scope scope)
 		{
 			_scopeStack.Push (scope);
 		}
 
-		Scope Pop ()
+		private Scope Pop ()
 		{
 			if (!_scopeStack.TryPop (out var result))
 				throw new InternalErrorException ($"Scope stack imbalance - trying to pop empty stack.");

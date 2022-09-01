@@ -9,9 +9,9 @@ using Mono.Cecil.Cil;
 
 namespace TLens.Analyzers
 {
-	sealed class RedundantFieldInitializationAnalyzer : Analyzer
+	internal sealed class RedundantFieldInitializationAnalyzer : Analyzer
 	{
-		readonly Dictionary<MethodDefinition, List<FieldDefinition>> ctors = new Dictionary<MethodDefinition, List<FieldDefinition>> ();
+		private readonly Dictionary<MethodDefinition, List<FieldDefinition>> ctors = new Dictionary<MethodDefinition, List<FieldDefinition>> ();
 
 		protected override void ProcessMethod (MethodDefinition method)
 		{
@@ -26,7 +26,7 @@ namespace TLens.Analyzers
 			}
 		}
 
-		void RedundantInitializationToDefaultValues (MethodDefinition ctor)
+		private void RedundantInitializationToDefaultValues (MethodDefinition ctor)
 		{
 			if (ctor.DeclaringType.IsValueType)
 				return;
@@ -93,12 +93,12 @@ namespace TLens.Analyzers
 			}
 		}
 
-		static bool IsDefaultNumeric (Instruction instruction)
+		private static bool IsDefaultNumeric (Instruction instruction)
 		{
 			return instruction.OpCode.Code == Code.Ldc_I4_0;
 		}
 
-		static bool IsLoadIntPtrOrUIntPtrZero (Instruction instruction)
+		private static bool IsLoadIntPtrOrUIntPtrZero (Instruction instruction)
 		{
 			if (instruction.OpCode.Code != Code.Ldsfld)
 				return false;

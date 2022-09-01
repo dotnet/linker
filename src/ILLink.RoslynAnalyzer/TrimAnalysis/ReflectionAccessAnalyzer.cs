@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis;
 
 namespace ILLink.RoslynAnalyzer.TrimAnalysis
 {
-	readonly struct ReflectionAccessAnalyzer
+	internal readonly struct ReflectionAccessAnalyzer
 	{
 #pragma warning disable CA1822 // Mark members as static - the other partial implementations might need to be instance methods
 		internal void GetReflectionAccessDiagnostics (in DiagnosticContext diagnosticContext, ITypeSymbol typeSymbol, DynamicallyAccessedMemberTypes requiredMemberTypes, bool declaredOnly = false)
@@ -71,7 +71,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 				GetReflectionAccessDiagnosticsForMethod (diagnosticContext, c);
 		}
 
-		static void ReportRequiresUnreferencedCodeDiagnostic (in DiagnosticContext diagnosticContext, AttributeData requiresAttributeData, ISymbol member)
+		private static void ReportRequiresUnreferencedCodeDiagnostic (in DiagnosticContext diagnosticContext, AttributeData requiresAttributeData, ISymbol member)
 		{
 			var message = RequiresUnreferencedCodeUtils.GetMessageFromAttribute (requiresAttributeData);
 			var url = RequiresAnalyzerBase.GetUrlFromAttribute (requiresAttributeData);
@@ -105,7 +105,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 				GetReflectionAccessDiagnosticsForMethod (diagnosticContext, propertySymbol.GetMethod);
 		}
 
-		static void GetDiagnosticsForEvent (in DiagnosticContext diagnosticContext, IEventSymbol eventSymbol)
+		private static void GetDiagnosticsForEvent (in DiagnosticContext diagnosticContext, IEventSymbol eventSymbol)
 		{
 			if (eventSymbol.AddMethod is not null)
 				GetReflectionAccessDiagnosticsForMethod (diagnosticContext, eventSymbol.AddMethod);
@@ -115,7 +115,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 				GetReflectionAccessDiagnosticsForMethod (diagnosticContext, eventSymbol.RaiseMethod);
 		}
 
-		static void GetDiagnosticsForField (in DiagnosticContext diagnosticContext, IFieldSymbol fieldSymbol)
+		private static void GetDiagnosticsForField (in DiagnosticContext diagnosticContext, IFieldSymbol fieldSymbol)
 		{
 			if (fieldSymbol.TryGetRequiresUnreferencedCodeAttribute (out var requiresUnreferencedCodeAttributeData))
 				ReportRequiresUnreferencedCodeDiagnostic (diagnosticContext, requiresUnreferencedCodeAttributeData, fieldSymbol);

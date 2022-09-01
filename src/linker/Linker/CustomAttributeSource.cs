@@ -12,7 +12,7 @@ namespace Mono.Linker
 	{
 		public AttributeInfo PrimaryAttributeInfo { get; }
 		private readonly Dictionary<AssemblyDefinition, AttributeInfo?> _embeddedXmlInfos;
-		readonly LinkContext _context;
+		private readonly LinkContext _context;
 
 		public CustomAttributeSource (LinkContext context)
 		{

@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis;
 
 namespace ILLink.Shared.TypeSystemProxy
 {
-	readonly partial struct MethodProxy
+	internal readonly partial struct MethodProxy
 	{
 		public MethodProxy (IMethodSymbol method) => Method = method;
 
@@ -49,7 +49,7 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		internal partial bool ReturnsVoid () => Method.ReturnType.SpecialType == SpecialType.System_Void;
 
-		static bool IsTypeOf (ITypeSymbol type, string fullTypeName)
+		private static bool IsTypeOf (ITypeSymbol type, string fullTypeName)
 		{
 			if (type is not INamedTypeSymbol namedType)
 				return false;

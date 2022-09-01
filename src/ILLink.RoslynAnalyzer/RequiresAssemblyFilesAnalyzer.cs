@@ -15,18 +15,18 @@ namespace ILLink.RoslynAnalyzer
 		private const string RequiresAssemblyFilesAttribute = nameof (RequiresAssemblyFilesAttribute);
 		public const string RequiresAssemblyFilesAttributeFullyQualifiedName = "System.Diagnostics.CodeAnalysis." + RequiresAssemblyFilesAttribute;
 
-		static readonly DiagnosticDescriptor s_locationRule = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.AvoidAssemblyLocationInSingleFile,
+		private static readonly DiagnosticDescriptor s_locationRule = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.AvoidAssemblyLocationInSingleFile,
 			helpLinkUri: "https://docs.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/il3000");
 
-		static readonly DiagnosticDescriptor s_getFilesRule = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.AvoidAssemblyGetFilesInSingleFile,
+		private static readonly DiagnosticDescriptor s_getFilesRule = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.AvoidAssemblyGetFilesInSingleFile,
 			helpLinkUri: "https://docs.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/il3001");
 
-		static readonly DiagnosticDescriptor s_requiresAssemblyFilesRule = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresAssemblyFiles,
+		private static readonly DiagnosticDescriptor s_requiresAssemblyFilesRule = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresAssemblyFiles,
 			helpLinkUri: "https://docs.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/il3002");
 
-		static readonly DiagnosticDescriptor s_requiresAssemblyFilesAttributeMismatch = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresAssemblyFilesAttributeMismatch);
+		private static readonly DiagnosticDescriptor s_requiresAssemblyFilesAttributeMismatch = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresAssemblyFilesAttributeMismatch);
 
-		static readonly DiagnosticDescriptor s_requiresAssemblyFilesOnStaticCtor = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresAssemblyFilesOnStaticConstructor);
+		private static readonly DiagnosticDescriptor s_requiresAssemblyFilesOnStaticCtor = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresAssemblyFilesOnStaticConstructor);
 
 		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create (s_locationRule, s_getFilesRule, s_requiresAssemblyFilesRule, s_requiresAssemblyFilesAttributeMismatch, s_requiresAssemblyFilesOnStaticCtor);
 

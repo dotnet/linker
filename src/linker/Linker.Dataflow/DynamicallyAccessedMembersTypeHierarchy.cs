@@ -10,10 +10,10 @@ using Mono.Linker.Steps;
 
 namespace Mono.Linker.Dataflow
 {
-	sealed class DynamicallyAccessedMembersTypeHierarchy
+	internal sealed class DynamicallyAccessedMembersTypeHierarchy
 	{
-		readonly LinkContext _context;
-		readonly MarkStep _markStep;
+		private readonly LinkContext _context;
+		private readonly MarkStep _markStep;
 
 		// Cache of DynamicallyAccessedMembers annotations applied to types and their hierarchies
 		// Values
@@ -36,7 +36,7 @@ namespace Mono.Linker.Dataflow
 		// because interfaces are marked late and in effectively random order.
 		// For this cache to be effective we need to be able to fill it for all base types and interfaces
 		// of a type which is currently being marked - at which point the interfaces are not yet marked.
-		readonly Dictionary<TypeDefinition, (DynamicallyAccessedMemberTypes annotation, bool applied)> _typesInDynamicallyAccessedMembersHierarchy;
+		private readonly Dictionary<TypeDefinition, (DynamicallyAccessedMemberTypes annotation, bool applied)> _typesInDynamicallyAccessedMembersHierarchy;
 
 		public DynamicallyAccessedMembersTypeHierarchy (LinkContext context, MarkStep markStep)
 		{
@@ -65,7 +65,7 @@ namespace Mono.Linker.Dataflow
 			}
 
 			// For the purposes of the DynamicallyAccessedMembers type hierarchies
-			// we consider interfaces of marked types to be also "marked" in that 
+			// we consider interfaces of marked types to be also "marked" in that
 			// their annotations will be applied to the type regardless if later on
 			// we decide to remove the interface. This is to keep the complexity of the implementation
 			// relatively low. In the future it could be possibly optimized.
@@ -168,7 +168,7 @@ namespace Mono.Linker.Dataflow
 			return annotation;
 		}
 
-		bool ApplyDynamicallyAccessedMembersToTypeHierarchyInner (
+		private bool ApplyDynamicallyAccessedMembersToTypeHierarchyInner (
 			in ReflectionMarker reflectionMarker,
 			TypeDefinition type)
 		{
@@ -206,7 +206,7 @@ namespace Mono.Linker.Dataflow
 			return applied;
 		}
 
-		void ApplyDynamicallyAccessedMembersToType (in ReflectionMarker reflectionMarker, in MessageOrigin origin, TypeDefinition type, DynamicallyAccessedMemberTypes annotation)
+		private void ApplyDynamicallyAccessedMembersToType (in ReflectionMarker reflectionMarker, in MessageOrigin origin, TypeDefinition type, DynamicallyAccessedMemberTypes annotation)
 		{
 			Debug.Assert (annotation != DynamicallyAccessedMemberTypes.None);
 
@@ -249,7 +249,7 @@ namespace Mono.Linker.Dataflow
 			reflectionMarker.MarkTypeForDynamicallyAccessedMembers (origin, type, annotation, DependencyKind.DynamicallyAccessedMemberOnType, declaredOnly: true);
 		}
 
-		(DynamicallyAccessedMemberTypes annotation, bool applied) GetCachedInfoForTypeInHierarchy (TypeDefinition type)
+		private (DynamicallyAccessedMemberTypes annotation, bool applied) GetCachedInfoForTypeInHierarchy (TypeDefinition type)
 		{
 			// The type should be in our cache already
 			if (!_typesInDynamicallyAccessedMembersHierarchy.TryGetValue (type, out var existingValue)) {

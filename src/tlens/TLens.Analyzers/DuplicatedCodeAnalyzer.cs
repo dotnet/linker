@@ -9,9 +9,9 @@ using Mono.Cecil.Cil;
 
 namespace TLens.Analyzers
 {
-	sealed class DuplicatedCodeAnalyzer : Analyzer
+	internal sealed class DuplicatedCodeAnalyzer : Analyzer
 	{
-		readonly Dictionary<string, List<MethodDefinition>> strings = new Dictionary<string, List<MethodDefinition>> ();
+		private readonly Dictionary<string, List<MethodDefinition>> strings = new Dictionary<string, List<MethodDefinition>> ();
 
 		protected override void ProcessMethod (MethodDefinition method)
 		{

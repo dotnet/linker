@@ -10,10 +10,10 @@ namespace Mono.Linker.Dataflow
 {
 	public readonly struct TrimAnalysisPatternStore
 	{
-		readonly Dictionary<(MessageOrigin, bool), TrimAnalysisAssignmentPattern> AssignmentPatterns;
-		readonly Dictionary<MessageOrigin, TrimAnalysisMethodCallPattern> MethodCallPatterns;
-		readonly ValueSetLattice<SingleValue> Lattice;
-		readonly LinkContext _context;
+		private readonly Dictionary<(MessageOrigin, bool), TrimAnalysisAssignmentPattern> AssignmentPatterns;
+		private readonly Dictionary<MessageOrigin, TrimAnalysisMethodCallPattern> MethodCallPatterns;
+		private readonly ValueSetLattice<SingleValue> Lattice;
+		private readonly LinkContext _context;
 
 		public TrimAnalysisPatternStore (ValueSetLattice<SingleValue> lattice, LinkContext context)
 		{

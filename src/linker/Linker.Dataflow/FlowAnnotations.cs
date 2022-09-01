@@ -15,11 +15,11 @@ using Mono.Linker.Dataflow;
 
 namespace ILLink.Shared.TrimAnalysis
 {
-	sealed partial class FlowAnnotations
+	internal sealed partial class FlowAnnotations
 	{
-		readonly LinkContext _context;
-		readonly Dictionary<TypeDefinition, TypeAnnotations> _annotations = new Dictionary<TypeDefinition, TypeAnnotations> ();
-		readonly TypeHierarchyCache _hierarchyInfo;
+		private readonly LinkContext _context;
+		private readonly Dictionary<TypeDefinition, TypeAnnotations> _annotations = new Dictionary<TypeDefinition, TypeAnnotations> ();
+		private readonly TypeHierarchyCache _hierarchyInfo;
 
 		public FlowAnnotations (LinkContext context)
 		{
@@ -174,7 +174,7 @@ namespace ILLink.Shared.TrimAnalysis
 				_hierarchyInfo.IsSystemReflectionIReflect (type));
 		}
 
-		TypeAnnotations GetAnnotations (TypeDefinition type)
+		private TypeAnnotations GetAnnotations (TypeDefinition type)
 		{
 			if (!_annotations.TryGetValue (type, out TypeAnnotations value)) {
 				value = BuildTypeAnnotations (type);
@@ -184,13 +184,13 @@ namespace ILLink.Shared.TrimAnalysis
 			return value;
 		}
 
-		static bool IsDynamicallyAccessedMembersAttribute (CustomAttribute attribute)
+		private static bool IsDynamicallyAccessedMembersAttribute (CustomAttribute attribute)
 		{
 			var attributeType = attribute.AttributeType;
 			return attributeType.Name == "DynamicallyAccessedMembersAttribute" && attributeType.Namespace == "System.Diagnostics.CodeAnalysis";
 		}
 
-		DynamicallyAccessedMemberTypes GetMemberTypesForDynamicallyAccessedMembersAttribute (IMemberDefinition member, ICustomAttributeProvider? providerIfNotMember = null)
+		private DynamicallyAccessedMemberTypes GetMemberTypesForDynamicallyAccessedMembersAttribute (IMemberDefinition member, ICustomAttributeProvider? providerIfNotMember = null)
 		{
 			ICustomAttributeProvider provider = providerIfNotMember ?? member;
 			if (!_context.CustomAttributes.HasAny (provider))
@@ -206,12 +206,12 @@ namespace ILLink.Shared.TrimAnalysis
 			return DynamicallyAccessedMemberTypes.None;
 		}
 
-		TypeAnnotations BuildTypeAnnotations (TypeDefinition type)
+		private TypeAnnotations BuildTypeAnnotations (TypeDefinition type)
 		{
 			// class, interface, struct can have annotations
 			DynamicallyAccessedMemberTypes typeAnnotation = GetMemberTypesForDynamicallyAccessedMembersAttribute (type);
 
-			var annotatedFields = new ArrayBuilder<FieldAnnotation> ();
+			var annotatedFields = default (ArrayBuilder<FieldAnnotation>);
 
 			// First go over all fields with an explicit annotation
 			if (type.HasFields) {
@@ -231,7 +231,7 @@ namespace ILLink.Shared.TrimAnalysis
 				}
 			}
 
-			var annotatedMethods = new ArrayBuilder<MethodAnnotations> ();
+			var annotatedMethods = default (ArrayBuilder<MethodAnnotations>);
 
 			// Next go over all methods with an explicit annotation
 			if (type.HasMethods) {
@@ -426,7 +426,7 @@ namespace ILLink.Shared.TrimAnalysis
 			return attrs;
 		}
 
-		bool ScanMethodBodyForFieldAccess (MethodBody body, bool write, out FieldDefinition? found)
+		private bool ScanMethodBodyForFieldAccess (MethodBody body, bool write, out FieldDefinition? found)
 		{
 			// Tries to find the backing field for a property getter/setter.
 			// Returns true if this is a method body that we can unambiguously analyze.
@@ -528,7 +528,7 @@ namespace ILLink.Shared.TrimAnalysis
 			}
 		}
 
-		void ValidateMethodParametersHaveNoAnnotations (DynamicallyAccessedMemberTypes[] parameterAnnotations, MethodDefinition method, MethodDefinition baseMethod, IMemberDefinition origin)
+		private void ValidateMethodParametersHaveNoAnnotations (DynamicallyAccessedMemberTypes[] parameterAnnotations, MethodDefinition method, MethodDefinition baseMethod, IMemberDefinition origin)
 		{
 			for (int parameterIndex = 0; parameterIndex < parameterAnnotations.Length; parameterIndex++) {
 				var annotation = parameterAnnotations[parameterIndex];
@@ -540,7 +540,7 @@ namespace ILLink.Shared.TrimAnalysis
 			}
 		}
 
-		void ValidateMethodGenericParametersHaveNoAnnotations (DynamicallyAccessedMemberTypes[] genericParameterAnnotations, MethodDefinition method, MethodDefinition baseMethod, IMemberDefinition origin)
+		private void ValidateMethodGenericParametersHaveNoAnnotations (DynamicallyAccessedMemberTypes[] genericParameterAnnotations, MethodDefinition method, MethodDefinition baseMethod, IMemberDefinition origin)
 		{
 			for (int genericParameterIndex = 0; genericParameterIndex < genericParameterAnnotations.Length; genericParameterIndex++) {
 				if (genericParameterAnnotations[genericParameterIndex] != DynamicallyAccessedMemberTypes.None) {
@@ -552,7 +552,7 @@ namespace ILLink.Shared.TrimAnalysis
 			}
 		}
 
-		void LogValidationWarning (IMetadataTokenProvider provider, IMetadataTokenProvider baseProvider, IMemberDefinition origin)
+		private void LogValidationWarning (IMetadataTokenProvider provider, IMetadataTokenProvider baseProvider, IMemberDefinition origin)
 		{
 			Debug.Assert (provider.GetType () == baseProvider.GetType ());
 			Debug.Assert (!(provider is GenericParameter genericParameter) || genericParameter.DeclaringMethod != null);
@@ -583,13 +583,13 @@ namespace ILLink.Shared.TrimAnalysis
 			}
 		}
 
-		readonly struct TypeAnnotations
+		private readonly struct TypeAnnotations
 		{
-			readonly TypeDefinition _type;
-			readonly DynamicallyAccessedMemberTypes _typeAnnotation;
-			readonly MethodAnnotations[]? _annotatedMethods;
-			readonly FieldAnnotation[]? _annotatedFields;
-			readonly DynamicallyAccessedMemberTypes[]? _genericParameterAnnotations;
+			private readonly TypeDefinition _type;
+			private readonly DynamicallyAccessedMemberTypes _typeAnnotation;
+			private readonly MethodAnnotations[]? _annotatedMethods;
+			private readonly FieldAnnotation[]? _annotatedFields;
+			private readonly DynamicallyAccessedMemberTypes[]? _genericParameterAnnotations;
 
 			public TypeAnnotations (
 				TypeDefinition type,
@@ -656,7 +656,7 @@ namespace ILLink.Shared.TrimAnalysis
 			}
 		}
 
-		readonly struct MethodAnnotations
+		private readonly struct MethodAnnotations
 		{
 			public readonly MethodDefinition Method;
 			public readonly DynamicallyAccessedMemberTypes[]? ParameterAnnotations;
@@ -689,7 +689,7 @@ namespace ILLink.Shared.TrimAnalysis
 			}
 		}
 
-		readonly struct FieldAnnotation
+		private readonly struct FieldAnnotation
 		{
 			public readonly FieldDefinition Field;
 			public readonly DynamicallyAccessedMemberTypes Annotation;

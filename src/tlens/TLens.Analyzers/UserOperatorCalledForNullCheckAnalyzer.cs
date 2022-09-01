@@ -9,9 +9,9 @@ using Mono.Cecil.Cil;
 
 namespace TLens.Analyzers
 {
-	sealed class UserOperatorCalledForNullCheckAnalyzer : Analyzer
+	internal sealed class UserOperatorCalledForNullCheckAnalyzer : Analyzer
 	{
-		sealed class Counters
+		private sealed class Counters
 		{
 			public int Total;
 			public int Redundant;
@@ -19,7 +19,7 @@ namespace TLens.Analyzers
 			public double Ratio => (double) Redundant / Total;
 		}
 
-		readonly Dictionary<MethodDefinition, Counters> operators = new Dictionary<MethodDefinition, Counters> ();
+		private readonly Dictionary<MethodDefinition, Counters> operators = new Dictionary<MethodDefinition, Counters> ();
 
 		protected override void ProcessMethod (MethodDefinition method)
 		{
@@ -62,7 +62,7 @@ namespace TLens.Analyzers
 			PrintHeader ("User operators used for null checks");
 
 			foreach (var e in entries) {
-				Console.WriteLine ($"User operator '{e.Key.ToDisplay ()}' was called {e.Value.Redundant} [{e.Value.Ratio.ToString ("0%")}] times with null values");
+				Console.WriteLine ($"User operator '{e.Key.ToDisplay ()}' was called {e.Value.Redundant} [{e.Value.Ratio:0%}] times with null values");
 			}
 		}
 	}

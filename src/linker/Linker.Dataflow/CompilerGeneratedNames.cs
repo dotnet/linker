@@ -3,7 +3,7 @@
 
 namespace Mono.Linker.Dataflow
 {
-	sealed class CompilerGeneratedNames
+	internal sealed class CompilerGeneratedNames
 	{
 		internal static bool IsGeneratedMemberName (string memberName)
 		{

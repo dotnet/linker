@@ -18,7 +18,7 @@ namespace Mono.Linker.Steps
 			Context.WarningSuppressionWriter?.OutputSuppressions (Context.OutputDirectory);
 		}
 
-		void CheckOutputDirectory ()
+		private void CheckOutputDirectory ()
 		{
 			if (Directory.Exists (Context.OutputDirectory))
 				return;

@@ -17,8 +17,8 @@ namespace ILLink.CodeFix
 	[ExportCodeFixProvider (LanguageNames.CSharp, Name = nameof (UnconditionalSuppressMessageCodeFixProvider)), Shared]
 	public class UnconditionalSuppressMessageCodeFixProvider : BaseAttributeCodeFixProvider
 	{
-		const string Justification = nameof (Justification);
-		const string UnconditionalSuppressMessageAttribute = nameof (UnconditionalSuppressMessageAttribute);
+		private const string Justification = nameof (Justification);
+		private const string UnconditionalSuppressMessageAttribute = nameof (UnconditionalSuppressMessageAttribute);
 		public const string FullyQualifiedUnconditionalSuppressMessageAttribute = "System.Diagnostics.CodeAnalysis." + UnconditionalSuppressMessageAttribute;
 
 		public sealed override ImmutableArray<string> FixableDiagnosticIds

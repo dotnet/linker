@@ -9,9 +9,9 @@ using Mono.Cecil.Cil;
 
 namespace TLens.Analyzers
 {
-	sealed class TypeInstatiationAnalyzer : Analyzer
+	internal sealed class TypeInstatiationAnalyzer : Analyzer
 	{
-		readonly Dictionary<TypeDefinition, List<MethodDefinition>> types = new Dictionary<TypeDefinition, List<MethodDefinition>> ();
+		private readonly Dictionary<TypeDefinition, List<MethodDefinition>> types = new Dictionary<TypeDefinition, List<MethodDefinition>> ();
 
 		protected override void ProcessMethod (MethodDefinition method)
 		{

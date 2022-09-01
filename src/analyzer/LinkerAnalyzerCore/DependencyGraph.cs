@@ -36,7 +36,7 @@ namespace LinkerAnalyzer.Core
 	{
 		protected List<VertexData> vertices = new List<VertexData> ();
 		public List<VertexData> Types = new List<VertexData> ();
-		readonly Dictionary<string, int> indexes = new Dictionary<string, int> ();
+		private readonly Dictionary<string, int> indexes = new Dictionary<string, int> ();
 		protected Dictionary<string, int> counts = new Dictionary<string, int> ();
 		internal SpaceAnalyzer SpaceAnalyzer { get; set; }
 
@@ -54,7 +54,7 @@ namespace LinkerAnalyzer.Core
 			}
 		}
 
-		void Load (FileStream fileStream)
+		private void Load (FileStream fileStream)
 		{
 			using (XmlReader reader = XmlReader.Create (fileStream)) {
 				while (reader.Read ()) {
@@ -117,7 +117,7 @@ namespace LinkerAnalyzer.Core
 			return vertices[index];
 		}
 
-		IEnumerable<Tuple<VertexData, int>> AddDependencies (VertexData vertex, HashSet<int> reachedVertices, int depth)
+		private IEnumerable<Tuple<VertexData, int>> AddDependencies (VertexData vertex, HashSet<int> reachedVertices, int depth)
 		{
 			reachedVertices.Add (vertex.index);
 			yield return new Tuple<VertexData, int> (vertex, depth);

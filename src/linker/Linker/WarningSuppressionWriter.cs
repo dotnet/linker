@@ -15,7 +15,7 @@ namespace Mono.Linker
 	{
 		private readonly Dictionary<AssemblyNameDefinition, HashSet<(int Code, IMemberDefinition Member)>> _warnings;
 		private readonly FileOutputKind _fileOutputKind;
-		readonly LinkContext _context;
+		private readonly LinkContext _context;
 
 		public WarningSuppressionWriter (LinkContext context, FileOutputKind fileOutputKind = FileOutputKind.CSharp)
 		{
@@ -56,7 +56,7 @@ namespace Mono.Linker
 			}
 		}
 
-		void OutputSuppressionsXmlFormat (AssemblyNameDefinition assemblyName, string directory)
+		private void OutputSuppressionsXmlFormat (AssemblyNameDefinition assemblyName, string directory)
 		{
 			var xmlTree = new XElement ("linker");
 			var xmlAssembly = new XElement ("assembly", new XAttribute ("fullname", assemblyName.FullName));
@@ -81,7 +81,7 @@ namespace Mono.Linker
 			}
 		}
 
-		void OutputSuppressionsCSharpFormat (AssemblyNameDefinition assemblyName, string directory)
+		private void OutputSuppressionsCSharpFormat (AssemblyNameDefinition assemblyName, string directory)
 		{
 			using (var sw = new StreamWriter (Path.Combine (directory, $"{assemblyName.Name}.WarningSuppressions.cs"))) {
 				StringBuilder sb = new StringBuilder ("using System.Diagnostics.CodeAnalysis;").AppendLine ().AppendLine ();
@@ -98,7 +98,7 @@ namespace Mono.Linker
 			}
 		}
 
-		List<(int Code, string MemberDocumentationSignature)> GetListOfWarnings (AssemblyNameDefinition assemblyName)
+		private List<(int Code, string MemberDocumentationSignature)> GetListOfWarnings (AssemblyNameDefinition assemblyName)
 		{
 			List<(int Code, string MemberDocumentationSignature)> listOfWarnings = new List<(int Code, string MemberDocumentationSignature)> ();
 			StringBuilder sb = new StringBuilder ();
@@ -112,7 +112,7 @@ namespace Mono.Linker
 			return listOfWarnings;
 		}
 
-		static string GetWarningSuppressionScopeString (string memberDocumentationSignature)
+		private static string GetWarningSuppressionScopeString (string memberDocumentationSignature)
 		{
 			if (memberDocumentationSignature.StartsWith (DocumentationSignatureGenerator.TypePrefix))
 				return "type";

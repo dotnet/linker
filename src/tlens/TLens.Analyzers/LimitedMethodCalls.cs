@@ -9,9 +9,9 @@ using Mono.Cecil.Cil;
 
 namespace TLens.Analyzers
 {
-	sealed class LimitedMethodCalls : Analyzer
+	internal sealed class LimitedMethodCalls : Analyzer
 	{
-		readonly Dictionary<MethodDefinition, List<MethodDefinition>> methods = new Dictionary<MethodDefinition, List<MethodDefinition>> ();
+		private readonly Dictionary<MethodDefinition, List<MethodDefinition>> methods = new Dictionary<MethodDefinition, List<MethodDefinition>> ();
 
 		protected override void ProcessMethod (MethodDefinition method)
 		{

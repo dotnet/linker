@@ -9,9 +9,9 @@ using Mono.Cecil.Cil;
 
 namespace TLens.Analyzers
 {
-	sealed class InverterCtorsChainAnalyzer : Analyzer
+	internal sealed class InverterCtorsChainAnalyzer : Analyzer
 	{
-		readonly List<(MethodDefinition, MethodDefinition)> ctors = new List<(MethodDefinition, MethodDefinition)> ();
+		private readonly List<(MethodDefinition, MethodDefinition)> ctors = new List<(MethodDefinition, MethodDefinition)> ();
 
 		protected override void ProcessMethod (MethodDefinition method)
 		{

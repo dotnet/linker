@@ -9,7 +9,7 @@ using Mono.Collections.Generic;
 
 namespace Mono.Linker.Steps
 {
-	struct CategorizedSubSteps
+	internal struct CategorizedSubSteps
 	{
 		public List<ISubStep> on_assemblies;
 		public List<ISubStep> on_types;
@@ -26,10 +26,10 @@ namespace Mono.Linker.Steps
 	//
 	public abstract class SubStepsDispatcher : IStep
 	{
-		readonly List<ISubStep> substeps;
+		private readonly List<ISubStep> substeps;
 
-		CategorizedSubSteps? categorized;
-		CategorizedSubSteps Categorized {
+		private CategorizedSubSteps? categorized;
+		private CategorizedSubSteps Categorized {
 			get {
 				Debug.Assert (categorized.HasValue);
 				return categorized.Value;
@@ -58,9 +58,9 @@ namespace Mono.Linker.Steps
 			BrowseAssemblies (context.GetAssemblies ());
 		}
 
-		static bool HasSubSteps (List<ISubStep> substeps) => substeps?.Count > 0;
+		private static bool HasSubSteps (List<ISubStep> substeps) => substeps?.Count > 0;
 
-		void BrowseAssemblies (IEnumerable<AssemblyDefinition> assemblies)
+		private void BrowseAssemblies (IEnumerable<AssemblyDefinition> assemblies)
 		{
 			foreach (var assembly in assemblies) {
 				CategorizeSubSteps (assembly);
@@ -75,7 +75,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		bool ShouldDispatchTypes ()
+		private bool ShouldDispatchTypes ()
 		{
 			return HasSubSteps (Categorized.on_types)
 				|| HasSubSteps (Categorized.on_fields)
@@ -84,7 +84,7 @@ namespace Mono.Linker.Steps
 				|| HasSubSteps (Categorized.on_events);
 		}
 
-		void BrowseTypes (Collection<TypeDefinition> types)
+		private void BrowseTypes (Collection<TypeDefinition> types)
 		{
 			foreach (TypeDefinition type in types) {
 				DispatchType (type);
@@ -114,55 +114,55 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void DispatchAssembly (AssemblyDefinition assembly)
+		private void DispatchAssembly (AssemblyDefinition assembly)
 		{
 			foreach (var substep in Categorized.on_assemblies) {
 				substep.ProcessAssembly (assembly);
 			}
 		}
 
-		void DispatchType (TypeDefinition type)
+		private void DispatchType (TypeDefinition type)
 		{
 			foreach (var substep in Categorized.on_types) {
 				substep.ProcessType (type);
 			}
 		}
 
-		void DispatchField (FieldDefinition field)
+		private void DispatchField (FieldDefinition field)
 		{
 			foreach (var substep in Categorized.on_fields) {
 				substep.ProcessField (field);
 			}
 		}
 
-		void DispatchMethod (MethodDefinition method)
+		private void DispatchMethod (MethodDefinition method)
 		{
 			foreach (var substep in Categorized.on_methods) {
 				substep.ProcessMethod (method);
 			}
 		}
 
-		void DispatchProperty (PropertyDefinition property)
+		private void DispatchProperty (PropertyDefinition property)
 		{
 			foreach (var substep in Categorized.on_properties) {
 				substep.ProcessProperty (property);
 			}
 		}
 
-		void DispatchEvent (EventDefinition @event)
+		private void DispatchEvent (EventDefinition @event)
 		{
 			foreach (var substep in Categorized.on_events) {
 				substep.ProcessEvent (@event);
 			}
 		}
 
-		void InitializeSubSteps (LinkContext context)
+		private void InitializeSubSteps (LinkContext context)
 		{
 			foreach (var substep in substeps)
 				substep.Initialize (context);
 		}
 
-		void CategorizeSubSteps (AssemblyDefinition assembly)
+		private void CategorizeSubSteps (AssemblyDefinition assembly)
 		{
 			categorized = new CategorizedSubSteps {
 				on_assemblies = new List<ISubStep> (),
@@ -177,7 +177,7 @@ namespace Mono.Linker.Steps
 				CategorizeSubStep (substep, assembly);
 		}
 
-		void CategorizeSubStep (ISubStep substep, AssemblyDefinition assembly)
+		private void CategorizeSubStep (ISubStep substep, AssemblyDefinition assembly)
 		{
 			if (!substep.IsActiveFor (assembly))
 				return;
@@ -190,7 +190,7 @@ namespace Mono.Linker.Steps
 			CategorizeTarget (substep, SubStepTargets.Event, Categorized.on_events);
 		}
 
-		static void CategorizeTarget (ISubStep substep, SubStepTargets target, List<ISubStep> list)
+		private static void CategorizeTarget (ISubStep substep, SubStepTargets target, List<ISubStep> list)
 		{
 			if (!Targets (substep, target))
 				return;
@@ -198,6 +198,6 @@ namespace Mono.Linker.Steps
 			list.Add (substep);
 		}
 
-		static bool Targets (ISubStep substep, SubStepTargets target) => (substep.Targets & target) == target;
+		private static bool Targets (ISubStep substep, SubStepTargets target) => (substep.Targets & target) == target;
 	}
 }

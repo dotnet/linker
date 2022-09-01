@@ -15,21 +15,21 @@ namespace Mono.Linker.Dataflow
 	// Currently this is implemented using heuristics
 	public class CompilerGeneratedState
 	{
-		readonly LinkContext _context;
-		readonly Dictionary<TypeDefinition, MethodDefinition> _compilerGeneratedTypeToUserCodeMethod;
-		readonly Dictionary<TypeDefinition, TypeArgumentInfo> _generatedTypeToTypeArgumentInfo;
-		readonly record struct TypeArgumentInfo (
+		private readonly LinkContext _context;
+		private readonly Dictionary<TypeDefinition, MethodDefinition> _compilerGeneratedTypeToUserCodeMethod;
+		private readonly Dictionary<TypeDefinition, TypeArgumentInfo> _generatedTypeToTypeArgumentInfo;
+		private readonly record struct TypeArgumentInfo (
 			/// <summary>The method which calls the ctor for the given type</summary>
 			MethodDefinition CreatingMethod,
 			/// <summary>Attributes for the type, pulled from the creators type arguments</summary>
 			IReadOnlyList<ICustomAttributeProvider>? OriginalAttributes);
 
-		readonly Dictionary<MethodDefinition, MethodDefinition> _compilerGeneratedMethodToUserCodeMethod;
+		private readonly Dictionary<MethodDefinition, MethodDefinition> _compilerGeneratedMethodToUserCodeMethod;
 
 		// For each type that has had its cache populated, stores a map of methods which have corresponding
 		// compiler-generated members (either methods or state machine types) to those compiler-generated members,
 		// or null if the type has no methods with compiler-generated members.
-		readonly Dictionary<TypeDefinition, Dictionary<MethodDefinition, List<IMemberDefinition>>?> _cachedTypeToCompilerGeneratedMembers;
+		private readonly Dictionary<TypeDefinition, Dictionary<MethodDefinition, List<IMemberDefinition>>?> _cachedTypeToCompilerGeneratedMembers;
 
 		public CompilerGeneratedState (LinkContext context)
 		{
@@ -40,7 +40,7 @@ namespace Mono.Linker.Dataflow
 			_cachedTypeToCompilerGeneratedMembers = new Dictionary<TypeDefinition, Dictionary<MethodDefinition, List<IMemberDefinition>>?> ();
 		}
 
-		static IEnumerable<TypeDefinition> GetCompilerGeneratedNestedTypes (TypeDefinition type)
+		private static IEnumerable<TypeDefinition> GetCompilerGeneratedNestedTypes (TypeDefinition type)
 		{
 			foreach (var nestedType in type.NestedTypes) {
 				if (!CompilerGeneratedNames.IsGeneratedMemberName (nestedType.Name))
@@ -108,7 +108,7 @@ namespace Mono.Linker.Dataflow
 		/// up and find the nearest containing user type. Returns the nearest user type,
 		/// or null if none was found.
 		/// </summary>
-		TypeDefinition? GetCompilerGeneratedStateForType (TypeDefinition type)
+		private TypeDefinition? GetCompilerGeneratedStateForType (TypeDefinition type)
 		{
 			// Look in the declaring type if this is a compiler-generated type (state machine or display class).
 			// State machines can be emitted into display classes, so we may also need to go one more level up.
@@ -392,7 +392,7 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		static TypeDefinition? GetFirstConstructorArgumentAsType (CustomAttribute attribute)
+		private static TypeDefinition? GetFirstConstructorArgumentAsType (CustomAttribute attribute)
 		{
 			if (!attribute.HasConstructorArguments)
 				return null;

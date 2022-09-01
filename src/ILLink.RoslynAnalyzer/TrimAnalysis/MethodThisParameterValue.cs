@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis;
 
 namespace ILLink.Shared.TrimAnalysis
 {
-	partial record MethodThisParameterValue
+	internal partial record MethodThisParameterValue
 	{
 		public MethodThisParameterValue (IMethodSymbol methodSymbol)
 			: this (methodSymbol, methodSymbol.GetDynamicallyAccessedMemberTypes ()) { }

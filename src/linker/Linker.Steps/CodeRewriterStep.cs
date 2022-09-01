@@ -11,8 +11,8 @@ namespace Mono.Linker.Steps
 {
 	public class CodeRewriterStep : BaseStep
 	{
-		AssemblyDefinition? assembly;
-		AssemblyDefinition Assembly {
+		private AssemblyDefinition? assembly;
+		private AssemblyDefinition Assembly {
 			get {
 				Debug.Assert (assembly != null);
 				return assembly;
@@ -30,7 +30,7 @@ namespace Mono.Linker.Steps
 				ProcessType (type);
 		}
 
-		void ProcessType (TypeDefinition type)
+		private void ProcessType (TypeDefinition type)
 		{
 			foreach (var method in type.Methods) {
 				if (method.HasBody)
@@ -45,7 +45,7 @@ namespace Mono.Linker.Steps
 				ProcessType (nested);
 		}
 
-		void AddFieldsInitializations (TypeDefinition type)
+		private void AddFieldsInitializations (TypeDefinition type)
 		{
 			Instruction ret;
 			LinkerILProcessor processor;
@@ -96,7 +96,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void ProcessMethod (MethodDefinition method)
+		private void ProcessMethod (MethodDefinition method)
 		{
 			switch (Annotations.GetAction (method)) {
 			case MethodAction.ConvertToStub:
@@ -128,7 +128,7 @@ namespace Mono.Linker.Steps
 			method.ClearDebugInformation ();
 		}
 
-		MethodBody CreateThrowLinkedAwayBody (MethodDefinition method)
+		private MethodBody CreateThrowLinkedAwayBody (MethodDefinition method)
 		{
 			var body = new MethodBody (method);
 			var il = body.GetLinkerILProcessor ();
@@ -153,7 +153,7 @@ namespace Mono.Linker.Steps
 			return body;
 		}
 
-		MethodBody CreateStubBody (MethodDefinition method)
+		private MethodBody CreateStubBody (MethodDefinition method)
 		{
 			var body = new MethodBody (method);
 
@@ -193,7 +193,7 @@ namespace Mono.Linker.Steps
 			return body;
 		}
 
-		static void StubComplexBody (MethodDefinition method, MethodBody body, LinkerILProcessor il)
+		private static void StubComplexBody (MethodDefinition method, MethodBody body, LinkerILProcessor il)
 		{
 			switch (method.ReturnType.MetadataType) {
 			case MetadataType.MVar:

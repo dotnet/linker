@@ -80,7 +80,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			return TryGetTryOrCatchOrFilter (regionProxy.Region.EnclosingRegion, out tryOrCatchOrFilterRegion);
 		}
 
-		static bool TryGetTryOrCatchOrFilter (ControlFlowRegion? region, out RegionProxy tryOrCatchOrFilterRegion)
+		private static bool TryGetTryOrCatchOrFilter (ControlFlowRegion? region, out RegionProxy tryOrCatchOrFilterRegion)
 		{
 			tryOrCatchOrFilterRegion = default;
 			// The check for ControlFlowRegionKind.Root prevents us from walking out to regions that

@@ -9,10 +9,10 @@ using Mono.Cecil.Cil;
 
 namespace TLens.Analyzers
 {
-	sealed class UnnecessaryFieldsAssignmentAnalyzer : Analyzer
+	internal sealed class UnnecessaryFieldsAssignmentAnalyzer : Analyzer
 	{
 		[Flags]
-		enum Access
+		private enum Access
 		{
 			None = 0,
 			Read = 1 << 1,
@@ -20,8 +20,8 @@ namespace TLens.Analyzers
 			ValuePropagation = 1 << 3,
 		}
 
-		readonly Dictionary<FieldDefinition, Access> fields = new Dictionary<FieldDefinition, Access> ();
-		readonly Dictionary<FieldDefinition, List<MethodDefinition>> writes = new Dictionary<FieldDefinition, List<MethodDefinition>> ();
+		private readonly Dictionary<FieldDefinition, Access> fields = new Dictionary<FieldDefinition, Access> ();
+		private readonly Dictionary<FieldDefinition, List<MethodDefinition>> writes = new Dictionary<FieldDefinition, List<MethodDefinition>> ();
 
 		protected override void ProcessMethod (MethodDefinition method)
 		{
@@ -82,7 +82,7 @@ namespace TLens.Analyzers
 		public override void PrintResults (int maxCount)
 		{
 			var static_entries = fields.Where (l => l.Value == Access.Write && l.Key.IsStatic).
-				OrderBy (l => l.Key, new FieldTypeSizeComparer ()).
+				OrderBy (l => l.Key, default (FieldTypeSizeComparer)).
 				ThenBy (l => l.Key.DeclaringType.FullName).
 				Take (maxCount);
 			if (static_entries.Any ()) {
@@ -100,7 +100,7 @@ namespace TLens.Analyzers
 			}
 
 			var instance_entries = fields.Where (l => l.Value == Access.Write && !l.Key.IsStatic).
-				OrderBy (l => l.Key, new FieldTypeSizeComparer ()).
+				OrderBy (l => l.Key, default (FieldTypeSizeComparer)).
 				ThenBy (l => l.Key.DeclaringType.FullName).
 				Take (maxCount);
 			if (instance_entries.Any ()) {
@@ -118,7 +118,7 @@ namespace TLens.Analyzers
 			}
 		}
 
-		struct FieldTypeSizeComparer : IComparer<FieldDefinition>
+		private struct FieldTypeSizeComparer : IComparer<FieldDefinition>
 		{
 			public int Compare (FieldDefinition x, FieldDefinition y)
 			{
@@ -128,7 +128,7 @@ namespace TLens.Analyzers
 				return GetSize (y_type).CompareTo (GetSize (x_type));
 			}
 
-			static int GetSize (TypeReference type)
+			private static int GetSize (TypeReference type)
 			{
 				if (type.IsArray)
 					return 100;

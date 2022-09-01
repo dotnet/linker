@@ -10,7 +10,7 @@ namespace Mono.Linker.Steps
 	{
 		protected AnnotationStore Annotations => Context.Annotations;
 
-		LinkContext? _context { get; set; }
+		private LinkContext? _context { get; set; }
 		protected LinkContext Context {
 			get {
 				Debug.Assert (_context != null);

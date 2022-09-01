@@ -11,7 +11,7 @@ namespace Mono.Linker
 	/// </summary>
 	public class DependencyRecorderHelper
 	{
-		static bool IsAssemblyBound (TypeDefinition td)
+		private static bool IsAssemblyBound (TypeDefinition td)
 		{
 			do {
 				if (td.IsNestedPrivate || td.IsNestedAssembly || td.IsNestedFamilyAndAssembly)
@@ -48,7 +48,7 @@ namespace Mono.Linker
 			return "Other:" + o;
 		}
 
-		static bool WillAssemblyBeModified (LinkContext context, AssemblyDefinition assembly)
+		private static bool WillAssemblyBeModified (LinkContext context, AssemblyDefinition assembly)
 		{
 			switch (context.Annotations.GetAction (assembly)) {
 			case AssemblyAction.Link:

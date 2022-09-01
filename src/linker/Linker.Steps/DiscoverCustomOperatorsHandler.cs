@@ -10,19 +10,19 @@ namespace Mono.Linker.Steps
 {
 	public class DiscoverOperatorsHandler : IMarkHandler
 	{
-		LinkContext? _context;
-		LinkContext Context {
+		private LinkContext? _context;
+		private LinkContext Context {
 			get {
 				Debug.Assert (_context != null);
 				return _context;
 			}
 		}
 
-		bool _seenLinqExpressions;
-		readonly HashSet<TypeDefinition> _trackedTypesWithOperators;
-		Dictionary<TypeDefinition, List<MethodDefinition>>? _pendingOperatorsForType;
+		private bool _seenLinqExpressions;
+		private readonly HashSet<TypeDefinition> _trackedTypesWithOperators;
+		private Dictionary<TypeDefinition, List<MethodDefinition>>? _pendingOperatorsForType;
 
-		Dictionary<TypeDefinition, List<MethodDefinition>> PendingOperatorsForType {
+		private Dictionary<TypeDefinition, List<MethodDefinition>> PendingOperatorsForType {
 			get {
 				if (_pendingOperatorsForType == null)
 					_pendingOperatorsForType = new Dictionary<TypeDefinition, List<MethodDefinition>> ();
@@ -41,7 +41,7 @@ namespace Mono.Linker.Steps
 			markContext.RegisterMarkTypeAction (ProcessType);
 		}
 
-		void ProcessType (TypeDefinition type)
+		private void ProcessType (TypeDefinition type)
 		{
 			CheckForLinqExpressions (type);
 
@@ -64,7 +64,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void CheckForLinqExpressions (TypeDefinition type)
+		private void CheckForLinqExpressions (TypeDefinition type)
 		{
 			if (_seenLinqExpressions)
 				return;
@@ -80,12 +80,12 @@ namespace Mono.Linker.Steps
 			_trackedTypesWithOperators.Clear ();
 		}
 
-		void MarkOperator (MethodDefinition method)
+		private void MarkOperator (MethodDefinition method)
 		{
 			Context.Annotations.Mark (method, new DependencyInfo (DependencyKind.PreservedOperator, method.DeclaringType), new MessageOrigin (method.DeclaringType));
 		}
 
-		bool ProcessCustomOperators (TypeDefinition type, bool mark)
+		private bool ProcessCustomOperators (TypeDefinition type, bool mark)
 		{
 			if (!type.HasMethods)
 				return false;
@@ -116,8 +116,8 @@ namespace Mono.Linker.Steps
 			return hasCustomOperators;
 		}
 
-		TypeDefinition? _nullableOfT;
-		TypeDefinition? NullableOfT {
+		private TypeDefinition? _nullableOfT;
+		private TypeDefinition? NullableOfT {
 			get {
 				if (_nullableOfT == null)
 					_nullableOfT = BCL.FindPredefinedType (WellKnownType.System_Nullable_T, Context);
@@ -125,7 +125,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		TypeDefinition? NonNullableType (TypeReference type)
+		private TypeDefinition? NonNullableType (TypeReference type)
 		{
 			var typeDef = Context.TryResolve (type);
 			if (typeDef == null)
@@ -145,7 +145,7 @@ namespace Mono.Linker.Steps
 			return Context.TryResolve (nullableType.GenericArguments[0]);
 		}
 
-		bool IsOperator (MethodDefinition method, out TypeDefinition? otherType)
+		private bool IsOperator (MethodDefinition method, out TypeDefinition? otherType)
 		{
 			otherType = null;
 

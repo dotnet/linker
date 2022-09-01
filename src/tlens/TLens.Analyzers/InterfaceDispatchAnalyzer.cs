@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace TLens.Analyzers
 {
-	sealed class InterfaceDispatchAnalyzer : InterfacesAnalyzer
+	internal sealed class InterfaceDispatchAnalyzer : InterfacesAnalyzer
 	{
 		public override void PrintResults (int maxCount)
 		{

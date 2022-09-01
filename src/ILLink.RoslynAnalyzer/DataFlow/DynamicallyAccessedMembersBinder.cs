@@ -367,7 +367,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		public static void GetAllOnType (this ITypeSymbol type, bool declaredOnly, List<ISymbol> members) => GetAllOnType (type, declaredOnly, members, new HashSet<ITypeSymbol> (SymbolEqualityComparer.Default));
 #pragma warning restore RS1024
 
-		static void GetAllOnType (ITypeSymbol type, bool declaredOnly, List<ISymbol> members, HashSet<ITypeSymbol> types)
+		private static void GetAllOnType (ITypeSymbol type, bool declaredOnly, List<ISymbol> members, HashSet<ITypeSymbol> types)
 		{
 			if (!types.Add (type))
 				return;

@@ -3,7 +3,7 @@
 
 namespace Mono.Linker
 {
-	static class Constants
+	internal static class Constants
 	{
 		// Prefix used in error/warning reporting to specify the tool it comes from
 		public const string ILLink = "ILLink";

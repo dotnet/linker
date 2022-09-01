@@ -8,7 +8,7 @@ using Mono.Cecil;
 
 namespace Mono.Linker
 {
-	sealed class TypeHierarchyCache
+	internal sealed class TypeHierarchyCache
 	{
 		[Flags]
 		private enum HierarchyFlags
@@ -17,8 +17,8 @@ namespace Mono.Linker
 			IsSystemReflectionIReflect = 0x02,
 		}
 
-		readonly Dictionary<TypeDefinition, HierarchyFlags> _cache = new Dictionary<TypeDefinition, HierarchyFlags> ();
-		readonly LinkContext context;
+		private readonly Dictionary<TypeDefinition, HierarchyFlags> _cache = new Dictionary<TypeDefinition, HierarchyFlags> ();
+		private readonly LinkContext context;
 
 		public TypeHierarchyCache (LinkContext context)
 		{

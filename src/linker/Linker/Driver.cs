@@ -46,8 +46,8 @@ namespace Mono.Linker
 
 	public partial class Driver : IDisposable
 	{
-		const string resolvers = "-a|-x";
-		const string _linker = "IL Linker";
+		private const string resolvers = "-a|-x";
+		private const string _linker = "IL Linker";
 
 		public static int Main (string[] args)
 		{
@@ -69,9 +69,9 @@ namespace Mono.Linker
 			}
 		}
 
-		readonly Queue<string> arguments;
-		bool _needAddBypassNGenStep;
-		LinkContext? context;
+		private readonly Queue<string> arguments;
+		private bool _needAddBypassNGenStep;
+		private LinkContext? context;
 		protected LinkContext Context {
 			get {
 				Debug.Assert (context != null);
@@ -146,7 +146,7 @@ namespace Mono.Linker
 						numBackslash /= 2;
 					}
 					if (numBackslash > 0)
-						argBuilder.Append (new String ('\\', numBackslash));
+						argBuilder.Append (new string ('\\', numBackslash));
 					if (cur < 0 || (!inquote && char.IsWhiteSpace ((char) cur)))
 						break;
 					if (copyChar)
@@ -157,7 +157,7 @@ namespace Mono.Linker
 			}
 		}
 
-		void ErrorMissingArgument (string optionName)
+		private void ErrorMissingArgument (string optionName)
 		{
 			Context.LogError (null, DiagnosticId.MissingArgumentForCommanLineOptionName, optionName);
 		}
@@ -823,7 +823,7 @@ namespace Mono.Linker
 		/// This method is called in the exception filter for unexpected exceptions.
 		/// Prints error messages and returns false to avoid catching in the exception filter.
 		/// </summary>
-		bool LogFatalError (Exception e)
+		private bool LogFatalError (Exception e)
 		{
 			switch (e) {
 			case LinkerFatalErrorException lex:
@@ -846,7 +846,7 @@ namespace Mono.Linker
 
 		private static IEnumerable<int> ProcessWarningCodes (string value)
 		{
-			string Unquote (string arg)
+			static string Unquote (string arg)
 			{
 				if (arg.Length > 1 && arg[0] == '"' && arg[arg.Length - 1] == '"')
 					return arg.Substring (1, arg.Length - 2);
@@ -865,7 +865,7 @@ namespace Mono.Linker
 			}
 		}
 
-		Assembly? GetCustomAssembly (string arg)
+		private Assembly? GetCustomAssembly (string arg)
 		{
 			if (Path.IsPathRooted (arg)) {
 				var assemblyPath = Path.GetFullPath (arg);
@@ -895,7 +895,7 @@ namespace Mono.Linker
 			pipeline.AddStepBefore (typeof (MarkStep), new LinkAttributesStep (File.OpenRead (file), file));
 		}
 
-		static void AddBodySubstituterStep (Pipeline pipeline, string file)
+		private static void AddBodySubstituterStep (Pipeline pipeline, string file)
 		{
 			pipeline.AddStepBefore (typeof (MarkStep), new BodySubstituterStep (File.OpenRead (file), file));
 		}
@@ -923,7 +923,7 @@ namespace Mono.Linker
 			return true;
 		}
 
-		bool TryGetCustomAssembly (ref string arg, [NotNullWhen (true)] out Assembly? assembly)
+		private bool TryGetCustomAssembly (ref string arg, [NotNullWhen (true)] out Assembly? assembly)
 		{
 			assembly = null;
 			int pos = arg.IndexOf (",");
@@ -1028,7 +1028,7 @@ namespace Mono.Linker
 			return null;
 		}
 
-		static IMarkHandler? FindMarkHandler (Pipeline pipeline, string name)
+		private static IMarkHandler? FindMarkHandler (Pipeline pipeline, string name)
 		{
 			foreach (IMarkHandler step in pipeline.MarkHandlers) {
 				Type t = step.GetType ();
@@ -1039,7 +1039,7 @@ namespace Mono.Linker
 			return null;
 		}
 
-		Type? ResolveStepType (string type, Assembly assembly)
+		private Type? ResolveStepType (string type, Assembly assembly)
 		{
 			// Ignore warning, since we're just enabling analyzer for dogfooding
 #pragma warning disable IL2026
@@ -1054,7 +1054,7 @@ namespace Mono.Linker
 			return step;
 		}
 
-		TStep? ResolveStep<TStep> (string type, Assembly assembly) where TStep : class
+		private TStep? ResolveStep<TStep> (string type, Assembly assembly) where TStep : class
 		{
 			// Ignore warning, since we're just enabling analyzer for dogfooding
 #pragma warning disable IL2026
@@ -1074,7 +1074,7 @@ namespace Mono.Linker
 			return (TStep?) Activator.CreateInstance (step);
 		}
 
-		static string[] GetFiles (string param)
+		private static string[] GetFiles (string param)
 		{
 			if (param.Length < 1 || param[0] != '@')
 				return new string[] { param };
@@ -1083,7 +1083,7 @@ namespace Mono.Linker
 			return ReadLines (file);
 		}
 
-		static string[] ReadLines (string file)
+		private static string[] ReadLines (string file)
 		{
 			var lines = new List<string> ();
 			using (StreamReader reader = new StreamReader (file)) {
@@ -1094,7 +1094,7 @@ namespace Mono.Linker
 			return lines.ToArray ();
 		}
 
-		AssemblyAction? ParseAssemblyAction (string s)
+		private AssemblyAction? ParseAssemblyAction (string s)
 		{
 			switch (s.ToLowerInvariant ()) {
 			case "copy":
@@ -1118,7 +1118,7 @@ namespace Mono.Linker
 			return null;
 		}
 
-		AssemblyRootMode? ParseAssemblyRootsMode (string s)
+		private AssemblyRootMode? ParseAssemblyRootsMode (string s)
 		{
 			switch (s.ToLowerInvariant ()) {
 			case "default":
@@ -1137,7 +1137,7 @@ namespace Mono.Linker
 			return null;
 		}
 
-		bool GetWarnVersion (string text, out WarnVersion version)
+		private bool GetWarnVersion (string text, out WarnVersion version)
 		{
 			if (int.TryParse (text, out int versionNum)) {
 				version = (WarnVersion) versionNum;
@@ -1181,7 +1181,7 @@ namespace Mono.Linker
 			return false;
 		}
 
-		bool TryGetMetadataTrimming (string text, out MetadataTrimming metadataTrimming)
+		private bool TryGetMetadataTrimming (string text, out MetadataTrimming metadataTrimming)
 		{
 			switch (text.ToLowerInvariant ()) {
 			case "all":
@@ -1217,7 +1217,7 @@ namespace Mono.Linker
 			}
 		}
 
-		bool GetBoolParam (string token, Action<bool> action)
+		private bool GetBoolParam (string token, Action<bool> action)
 		{
 			if (arguments.Count == 0) {
 				action (true);
@@ -1240,7 +1240,7 @@ namespace Mono.Linker
 			return false;
 		}
 
-		bool GetStringParam (string token, [NotNullWhen (true)] out string? value)
+		private bool GetStringParam (string token, [NotNullWhen (true)] out string? value)
 		{
 			value = null;
 			if (arguments.Count < 1) {
@@ -1258,7 +1258,7 @@ namespace Mono.Linker
 			return false;
 		}
 
-		string? GetNextStringValue ()
+		private string? GetNextStringValue ()
 		{
 			if (arguments.Count < 1)
 				return null;
@@ -1284,12 +1284,12 @@ namespace Mono.Linker
 			return new List<BaseStep> ();
 		}
 
-		static bool IsValidAssemblyName (string value)
+		private static bool IsValidAssemblyName (string value)
 		{
 			return !string.IsNullOrEmpty (value);
 		}
 
-		static void Usage ()
+		private static void Usage ()
 		{
 			Console.WriteLine (_linker);
 
@@ -1389,20 +1389,20 @@ namespace Mono.Linker
 			Console.WriteLine ("");
 		}
 
-		static void Version ()
+		private static void Version ()
 		{
 			Console.WriteLine ("{0} Version {1}",
 				_linker,
 				System.Reflection.Assembly.GetExecutingAssembly ().GetName ().Version);
 		}
 
-		static void About ()
+		private static void About ()
 		{
 			Console.WriteLine ("For more information, visit the project Web site");
 			Console.WriteLine ("   https://github.com/dotnet/linker");
 		}
 
-		static Pipeline GetStandardPipeline ()
+		private static Pipeline GetStandardPipeline ()
 		{
 			Pipeline p = new Pipeline ();
 			p.AppendStep (new ProcessReferencesStep ());

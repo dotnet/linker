@@ -86,7 +86,7 @@ namespace Mono.Linker
 			sb.Insert (0, '<');
 		}
 
-		static void PrependGenericArguments (Stack<TypeReference> genericArguments, int argumentsToTake, StringBuilder sb)
+		private static void PrependGenericArguments (Stack<TypeReference> genericArguments, int argumentsToTake, StringBuilder sb)
 		{
 			sb.Insert (0, '>').Insert (0, genericArguments.Pop ().GetDisplayNameWithoutNamespace ().ToString ());
 			while (--argumentsToTake > 0)
@@ -95,7 +95,7 @@ namespace Mono.Linker
 			sb.Insert (0, '<');
 		}
 
-		static void AppendArrayType (ArrayType arrayType, StringBuilder sb)
+		private static void AppendArrayType (ArrayType arrayType, StringBuilder sb)
 		{
 			void parseArrayDimensions (ArrayType at)
 			{

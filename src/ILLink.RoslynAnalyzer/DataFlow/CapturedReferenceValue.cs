@@ -35,12 +35,22 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 		}
 
 		public bool Equals (CapturedReferenceValue other) => Reference == other.Reference;
+
+		public override bool Equals (object obj)
+		{
+			return obj is CapturedReferenceValue && Equals ((CapturedReferenceValue) obj);
+		}
+
+		public override int GetHashCode ()
+		{
+			throw new NotImplementedException ();
+		}
 	}
 
 
 	public struct CapturedReferenceLattice : ILattice<CapturedReferenceValue>
 	{
-		public CapturedReferenceValue Top => new CapturedReferenceValue ();
+		public CapturedReferenceValue Top => default (CapturedReferenceValue);
 
 		public CapturedReferenceValue Meet (CapturedReferenceValue left, CapturedReferenceValue right)
 		{

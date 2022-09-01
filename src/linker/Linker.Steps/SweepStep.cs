@@ -42,8 +42,8 @@ namespace Mono.Linker.Steps
 {
 	public class SweepStep : BaseStep
 	{
-		readonly bool sweepSymbols;
-		readonly HashSet<AssemblyDefinition> BypassNGenToSave = new HashSet<AssemblyDefinition> ();
+		private readonly bool sweepSymbols;
+		private readonly HashSet<AssemblyDefinition> BypassNGenToSave = new HashSet<AssemblyDefinition> ();
 
 		public SweepStep (bool sweepSymbols = true)
 		{
@@ -94,7 +94,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void RemoveUnmarkedAssembly (AssemblyDefinition assembly)
+		private void RemoveUnmarkedAssembly (AssemblyDefinition assembly)
 		{
 			// Check if unmarked whole assembly can be turned into full
 			// assembly removal (AssemblyAction.Delete)
@@ -109,7 +109,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void UpdateAssemblyReferencesToRemovedAssemblies (AssemblyDefinition assembly)
+		private void UpdateAssemblyReferencesToRemovedAssemblies (AssemblyDefinition assembly)
 		{
 			var action = Annotations.GetAction (assembly);
 			switch (action) {
@@ -149,8 +149,8 @@ namespace Mono.Linker.Steps
 						// rewrite the copy to save to update the scopes not to point
 						// forwarding assembly (facade).
 						//
-						//		foo.dll -> facade.dll    -> lib.dll
-						//		copy    |  copy (delete) |  link
+						//      foo.dll -> facade.dll    -> lib.dll
+						//      copy    |  copy (delete) |  link
 						//
 						Annotations.SetAction (assembly, AssemblyAction.Save);
 						continue;
@@ -258,7 +258,7 @@ namespace Mono.Linker.Steps
 				AssemblyReferencesCorrector.SweepAssemblyReferences (assembly);
 		}
 
-		bool IsUsedAssembly (AssemblyDefinition assembly)
+		private bool IsUsedAssembly (AssemblyDefinition assembly)
 		{
 			if (IsMarkedAssembly (assembly))
 				return true;
@@ -269,12 +269,12 @@ namespace Mono.Linker.Steps
 			return false;
 		}
 
-		bool IsMarkedAssembly (AssemblyDefinition assembly)
+		private bool IsMarkedAssembly (AssemblyDefinition assembly)
 		{
 			return Annotations.IsMarked (assembly.MainModule);
 		}
 
-		bool CanSweepNamesForMember (IMemberDefinition member, MetadataTrimming metadataTrimming)
+		private bool CanSweepNamesForMember (IMemberDefinition member, MetadataTrimming metadataTrimming)
 		{
 			return (Context.MetadataTrimming & metadataTrimming) != 0 && !Annotations.IsReflectionUsed (member);
 		}
@@ -284,7 +284,7 @@ namespace Mono.Linker.Steps
 			Annotations.SetAction (assembly, AssemblyAction.Delete);
 		}
 
-		void SweepResources (AssemblyDefinition assembly)
+		private void SweepResources (AssemblyDefinition assembly)
 		{
 			var resourcesToRemove = Annotations.GetResourcesToRemove (assembly);
 			if (resourcesToRemove == null)
@@ -295,7 +295,7 @@ namespace Mono.Linker.Steps
 				resources.Remove (resource);
 		}
 
-		bool SweepTypeForwarders (AssemblyDefinition assembly)
+		private bool SweepTypeForwarders (AssemblyDefinition assembly)
 		{
 			return assembly.MainModule.HasExportedTypes &&
 				SweepCollectionMetadata (assembly.MainModule.ExportedTypes);
@@ -383,7 +383,7 @@ namespace Mono.Linker.Steps
 				method.HasSecurity = false;
 		}
 
-		bool ShouldSetHasSecurityToFalse (ISecurityDeclarationProvider providerAsSecurity, ICustomAttributeProvider provider)
+		private bool ShouldSetHasSecurityToFalse (ISecurityDeclarationProvider providerAsSecurity, ICustomAttributeProvider provider)
 		{
 			if (!providerAsSecurity.HasSecurityDeclarations) {
 				// If the method or type had security before and all attributes were removed, or no remaining attributes are security attributes,
@@ -398,7 +398,7 @@ namespace Mono.Linker.Steps
 			return false;
 		}
 
-		bool IsSecurityAttributeType (TypeDefinition definition)
+		private bool IsSecurityAttributeType (TypeDefinition definition)
 		{
 			if (definition == null)
 				return false;
@@ -468,22 +468,22 @@ namespace Mono.Linker.Steps
 				}
 			}
 		}
-		void SweepOverrides (MethodDefinition method)
+		private void SweepOverrides (MethodDefinition method)
 		{
 			for (int i = 0; i < method.Overrides.Count;) {
 				// We can't rely on the context resolution cache anymore, since it may remember methods which are already removed
 				// So call the direct Resolve here and avoid the cache.
 				// We want to remove a method from the list of Overrides if:
-				//	Resolve() is null
-				//		This can happen for a couple of reasons, but it indicates the method isn't in the final assembly.
-				//		Resolve also may return a removed value if method.Overrides[i] is a MethodDefinition. In this case, Resolve short circuits and returns `this`.
-				//	OR
-				//	ov.DeclaringType is null
-				//		ov.DeclaringType may be null if Resolve short circuited and returned a removed method. In this case, we want to remove the override.
-				//	OR
-				//	ov is in a `link` scope and is unmarked
-				//		ShouldRemove returns true if the method is unmarked, but we also We need to make sure the override is in a link scope.
-				//		Only things in a link scope are marked, so ShouldRemove is only valid for items in a `link` scope.
+				//  Resolve() is null
+				//      This can happen for a couple of reasons, but it indicates the method isn't in the final assembly.
+				//      Resolve also may return a removed value if method.Overrides[i] is a MethodDefinition. In this case, Resolve short circuits and returns `this`.
+				//  OR
+				//  ov.DeclaringType is null
+				//      ov.DeclaringType may be null if Resolve short circuited and returned a removed method. In this case, we want to remove the override.
+				//  OR
+				//  ov is in a `link` scope and is unmarked
+				//      ShouldRemove returns true if the method is unmarked, but we also We need to make sure the override is in a link scope.
+				//      Only things in a link scope are marked, so ShouldRemove is only valid for items in a `link` scope.
 				if (method.Overrides[i].Resolve () is not MethodDefinition ov || ov.DeclaringType is null || (IsLinkScope (ov.DeclaringType.Scope) && ShouldRemove (ov)))
 					method.Overrides.RemoveAt (i);
 				else
@@ -500,7 +500,7 @@ namespace Mono.Linker.Steps
 			return assembly != null && Annotations.GetAction (assembly) == AssemblyAction.Link;
 		}
 
-		void SweepDebugInfo (Collection<MethodDefinition> methods)
+		private void SweepDebugInfo (Collection<MethodDefinition> methods)
 		{
 			List<ScopeDebugInformation>? sweptScopes = null;
 			foreach (var m in methods) {
@@ -588,13 +588,13 @@ namespace Mono.Linker.Steps
 		{
 		}
 
-		sealed class AssemblyReferencesCorrector : TypeReferenceWalker
+		private sealed class AssemblyReferencesCorrector : TypeReferenceWalker
 		{
-			readonly DefaultMetadataImporter importer;
+			private readonly DefaultMetadataImporter importer;
 
-			bool changedAnyScopes;
+			private bool changedAnyScopes;
 
-			AssemblyReferencesCorrector (AssemblyDefinition assembly) : base (assembly)
+			private AssemblyReferencesCorrector (AssemblyDefinition assembly) : base (assembly)
 			{
 				this.importer = new DefaultMetadataImporter (assembly.MainModule);
 				changedAnyScopes = false;

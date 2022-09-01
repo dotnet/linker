@@ -11,7 +11,7 @@ namespace Mono.Linker
 	{
 		public SubstitutionInfo PrimarySubstitutionInfo { get; }
 		private readonly Dictionary<AssemblyDefinition, SubstitutionInfo?> _embeddedXmlInfos;
-		readonly LinkContext _context;
+		private readonly LinkContext _context;
 
 		public MemberActionStore (LinkContext context)
 		{

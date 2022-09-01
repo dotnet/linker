@@ -7,7 +7,7 @@ using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.Single
 
 namespace ILLink.Shared.TrimAnalysis
 {
-	partial record ArrayValue
+	internal partial record ArrayValue
 	{
 		public readonly Dictionary<int, MultiValue> IndexValues;
 
@@ -23,7 +23,7 @@ namespace ILLink.Shared.TrimAnalysis
 
 		public static MultiValue Create (int size) => Create (new ConstIntValue (size));
 
-		ArrayValue (SingleValue size)
+		private ArrayValue (SingleValue size)
 		{
 			Size = size;
 			IndexValues = new Dictionary<int, MultiValue> ();

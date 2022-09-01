@@ -10,13 +10,13 @@ using Mono.Linker.Dataflow;
 
 namespace ILLink.Shared.TrimAnalysis
 {
-	partial struct HandleCallAction
+	internal partial struct HandleCallAction
 	{
 #pragma warning disable CA1822 // Mark members as static - the other partial implementations might need to be instance methods
 
-		readonly LinkContext _context;
-		readonly ReflectionMarker _reflectionMarker;
-		readonly MethodDefinition _callingMethodDefinition;
+		private readonly LinkContext _context;
+		private readonly ReflectionMarker _reflectionMarker;
+		private readonly MethodDefinition _callingMethodDefinition;
 
 		public HandleCallAction (
 			LinkContext context,

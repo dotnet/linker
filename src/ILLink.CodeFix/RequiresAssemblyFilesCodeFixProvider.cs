@@ -33,7 +33,7 @@ namespace ILLink.CodeFix
 
 		public sealed override Task RegisterCodeFixesAsync (CodeFixContext context) => BaseRegisterCodeFixesAsync (context);
 
-		protected override SyntaxNode[] GetAttributeArguments (ISymbol? attributableSymbol, ISymbol targetSymbol, SyntaxGenerator syntaxGenerator, Diagnostic diagnostic) => 
+		protected override SyntaxNode[] GetAttributeArguments (ISymbol? attributableSymbol, ISymbol targetSymbol, SyntaxGenerator syntaxGenerator, Diagnostic diagnostic) =>
 			RequiresHelpers.GetAttributeArgumentsForRequires (targetSymbol, syntaxGenerator, HasPublicAccessibility(attributableSymbol));
 	}
 }

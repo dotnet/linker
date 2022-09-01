@@ -9,8 +9,8 @@ namespace Mono.Linker
 	[DebuggerDisplay ("{Override}")]
 	public class OverrideInformation
 	{
-		readonly ITryResolveMetadata resolver;
-		readonly OverridePair _pair;
+		private readonly ITryResolveMetadata resolver;
+		private readonly OverridePair _pair;
 		private InterfaceImplementation? _matchingInterfaceImplementation;
 
 		public OverrideInformation (MethodDefinition @base, MethodDefinition @override, ITryResolveMetadata resolver, InterfaceImplementation? matchingInterfaceImplementation = null)

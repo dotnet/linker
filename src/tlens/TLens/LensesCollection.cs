@@ -8,7 +8,7 @@ using TLens.Analyzers;
 
 namespace TLens
 {
-	static class LensesCollection
+	internal static class LensesCollection
 	{
 		public sealed class LensAnalyzerDetails
 		{
@@ -37,7 +37,7 @@ namespace TLens
 		// Most used/unused attributes
 		// Constants passed as arguments
 		//
-		static readonly LensAnalyzerDetails[] all = new[] {
+		private static readonly LensAnalyzerDetails[] all = new[] {
 			new LensAnalyzerDetails ("duplicated-code",
 				"Methods which are possible duplicates", typeof (DuplicatedCodeAnalyzer)),
 			new LensAnalyzerDetails ("fields-init",

@@ -42,7 +42,7 @@ namespace Mono.Linker.Steps
 
 	public class OutputStep : BaseStep
 	{
-		private Dictionary<UInt16, TargetArchitecture>? architectureMap;
+		private Dictionary<ushort, TargetArchitecture>? architectureMap;
 
 		private enum NativeOSOverride
 		{
@@ -53,17 +53,17 @@ namespace Mono.Linker.Steps
 			Default = 0
 		}
 
-		readonly List<string> assembliesWritten;
+		private readonly List<string> assembliesWritten;
 
 		public OutputStep ()
 		{
 			assembliesWritten = new List<string> ();
 		}
 
-		TargetArchitecture CalculateArchitecture (TargetArchitecture readyToRunArch)
+		private TargetArchitecture CalculateArchitecture (TargetArchitecture readyToRunArch)
 		{
 			if (architectureMap == null) {
-				architectureMap = new Dictionary<UInt16, TargetArchitecture> ();
+				architectureMap = new Dictionary<ushort, TargetArchitecture> ();
 				foreach (var os in Enum.GetValues (typeof (NativeOSOverride))) {
 					ushort osVal = (ushort) (NativeOSOverride) os;
 					foreach (var arch in Enum.GetValues (typeof (TargetArchitecture))) {
@@ -95,12 +95,12 @@ namespace Mono.Linker.Steps
 		{
 			if (Context.AssemblyListFile != null) {
 				using (var w = File.CreateText (Context.AssemblyListFile)) {
-					w.WriteLine ("[" + String.Join (", ", assembliesWritten.Select (a => "\"" + a + "\"").ToArray ()) + "]");
+					w.WriteLine ("[" + string.Join (", ", assembliesWritten.Select (a => "\"" + a + "\"").ToArray ()) + "]");
 				}
 			}
 		}
 
-		void CheckOutputDirectory ()
+		private void CheckOutputDirectory ()
 		{
 			if (Directory.Exists (Context.OutputDirectory))
 				return;
@@ -138,7 +138,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void OutputAssembly (AssemblyDefinition assembly)
+		private void OutputAssembly (AssemblyDefinition assembly)
 		{
 			string directory = Context.OutputDirectory;
 
@@ -197,12 +197,12 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void CloseSymbols (AssemblyDefinition assembly)
+		private void CloseSymbols (AssemblyDefinition assembly)
 		{
 			Annotations.CloseSymbolReader (assembly);
 		}
 
-		WriterParameters SaveSymbols (AssemblyDefinition assembly)
+		private WriterParameters SaveSymbols (AssemblyDefinition assembly)
 		{
 			var parameters = new WriterParameters {
 				DeterministicMvid = Context.DeterministicOutput
@@ -223,7 +223,7 @@ namespace Mono.Linker.Steps
 		}
 
 
-		void CopySatelliteAssembliesIfNeeded (AssemblyDefinition assembly, string directory)
+		private void CopySatelliteAssembliesIfNeeded (AssemblyDefinition assembly, string directory)
 		{
 			if (!Annotations.ProcessSatelliteAssemblies)
 				return;
@@ -244,7 +244,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void CopyConfigFileIfNeeded (AssemblyDefinition assembly, string directory)
+		private void CopyConfigFileIfNeeded (AssemblyDefinition assembly, string directory)
 		{
 			string config = GetConfigFile (GetOriginalAssemblyFileInfo (assembly).FullName);
 			if (!File.Exists (config))
@@ -258,17 +258,17 @@ namespace Mono.Linker.Steps
 			File.Copy (config, GetConfigFile (GetAssemblyFileName (assembly, directory)), true);
 		}
 
-		static string GetAssemblyResourceFileName (string assembly)
+		private static string GetAssemblyResourceFileName (string assembly)
 		{
 			return Path.GetFileNameWithoutExtension (assembly) + ".resources.dll";
 		}
 
-		static string GetConfigFile (string assembly)
+		private static string GetConfigFile (string assembly)
 		{
 			return assembly + ".config";
 		}
 
-		FileInfo GetOriginalAssemblyFileInfo (AssemblyDefinition assembly)
+		private FileInfo GetOriginalAssemblyFileInfo (AssemblyDefinition assembly)
 		{
 			return new FileInfo (Context.GetAssemblyLocation (assembly));
 		}

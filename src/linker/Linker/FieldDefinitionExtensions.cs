@@ -5,7 +5,7 @@ using Mono.Cecil;
 
 namespace Mono.Linker
 {
-	static class FieldDefinitionExtensions
+	internal static class FieldDefinitionExtensions
 	{
 		public static bool IsCompilerGenerated (this FieldDefinition field)
 		{

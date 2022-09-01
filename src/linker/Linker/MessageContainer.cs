@@ -210,7 +210,7 @@ namespace Mono.Linker
 			return false;
 		}
 
-		static bool TryLogSingleWarning (LinkContext context, int code, MessageOrigin origin, string subcategory)
+		private static bool TryLogSingleWarning (LinkContext context, int code, MessageOrigin origin, string subcategory)
 		{
 			if (subcategory != MessageSubCategory.TrimAnalysis)
 				return false;
@@ -289,10 +289,10 @@ namespace Mono.Linker
 			string origin = Origin?.ToString () ?? originApp;
 
 			StringBuilder sb = new StringBuilder ();
-			sb.Append (origin).Append (":");
+			sb.Append (origin).Append (':');
 
 			if (!string.IsNullOrEmpty (SubCategory))
-				sb.Append (" ").Append (SubCategory);
+				sb.Append (' ').Append (SubCategory);
 
 			string cat;
 			switch (Category) {
@@ -309,14 +309,14 @@ namespace Mono.Linker
 			}
 
 			if (!string.IsNullOrEmpty (cat)) {
-				sb.Append (" ")
+				sb.Append (' ')
 					.Append (cat)
 					.Append (" IL")
 					// Warning and error messages always have a code.
 					.Append (Code!.Value.ToString ("D4"))
 					.Append (": ");
 			} else {
-				sb.Append (" ");
+				sb.Append (' ');
 			}
 
 			if (Origin?.Provider != null) {

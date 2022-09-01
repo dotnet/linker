@@ -11,12 +11,12 @@ namespace ILLink.RoslynAnalyzer
 	[DiagnosticAnalyzer (LanguageNames.CSharp)]
 	public sealed class RequiresDynamicCodeAnalyzer : RequiresAnalyzerBase
 	{
-		const string RequiresDynamicCodeAttribute = nameof (RequiresDynamicCodeAttribute);
+		private const string RequiresDynamicCodeAttribute = nameof (RequiresDynamicCodeAttribute);
 		public const string FullyQualifiedRequiresDynamicCodeAttribute = "System.Diagnostics.CodeAnalysis." + RequiresDynamicCodeAttribute;
 
-		static readonly DiagnosticDescriptor s_requiresDynamicCodeOnStaticCtor = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresDynamicCodeOnStaticConstructor);
-		static readonly DiagnosticDescriptor s_requiresDynamicCodeRule = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresDynamicCode);
-		static readonly DiagnosticDescriptor s_requiresDynamicCodeAttributeMismatch = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresDynamicCodeAttributeMismatch);
+		private static readonly DiagnosticDescriptor s_requiresDynamicCodeOnStaticCtor = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresDynamicCodeOnStaticConstructor);
+		private static readonly DiagnosticDescriptor s_requiresDynamicCodeRule = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresDynamicCode);
+		private static readonly DiagnosticDescriptor s_requiresDynamicCodeAttributeMismatch = DiagnosticDescriptors.GetDiagnosticDescriptor (DiagnosticId.RequiresDynamicCodeAttributeMismatch);
 
 		public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
 			ImmutableArray.Create (s_requiresDynamicCodeRule, s_requiresDynamicCodeAttributeMismatch, s_requiresDynamicCodeOnStaticCtor);

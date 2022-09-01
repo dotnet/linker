@@ -49,7 +49,7 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		IEnumerable<string> GetInputAssemblyPaths ()
+		private IEnumerable<string> GetInputAssemblyPaths ()
 		{
 			var assemblies = new HashSet<string> ();
 			foreach (var referencePath in Context.Resolver.GetReferencePaths ()) {
@@ -64,7 +64,7 @@ namespace Mono.Linker.Steps
 			return action == AssemblyAction.Copy || action == AssemblyAction.Save;
 		}
 
-		bool MaybeIsFullyPreservedAssembly (string assemblyName)
+		private bool MaybeIsFullyPreservedAssembly (string assemblyName)
 		{
 			if (Context.Actions.TryGetValue (assemblyName, out AssemblyAction action))
 				return IsFullyPreservedAction (action);
