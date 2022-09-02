@@ -155,14 +155,14 @@ namespace ILLink.Tasks.Tests
 			XElement existingAssembly = new XElement ("assembly", new XAttribute ("fullname", "testassembly"),
 					new XComment ("Existing content"));
 			XElement existingContent = new XElement ("linker", existingAssembly);
-			new XDocument (existingContent).Save ("Test.ILLink.Descriptors.Combined.xml");
+			new XDocument (existingContent).Save ("Test.ILLink.Descriptors.Combined2.xml");
 
 			var task = new CreateRuntimeRootILLinkDescriptorFile () {
 				NamespaceFilePath = new TaskItem ("namespace.h"),
 				MscorlibFilePath = new TaskItem ("corelib.h"),
 				CortypeFilePath = new TaskItem ("cortypeinfo.h"),
 				RexcepFilePath = new TaskItem ("rexcep.h"),
-				ILLinkTrimXmlFilePath = new TaskItem ("Test.ILLink.Descriptors.Combined.xml"),
+				ILLinkTrimXmlFilePath = new TaskItem ("Test.ILLink.Descriptors.Combined2.xml"),
 				DefineConstants = new TaskItem[] {
 					new TaskItem("FOR_ILLINK"),
 					new TaskItem("_TEST"),
