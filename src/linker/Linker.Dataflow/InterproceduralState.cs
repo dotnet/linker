@@ -79,7 +79,7 @@ namespace Mono.Linker.Dataflow
 
 		public override int GetHashCode ()
 		{
-			throw new NotImplementedException ();
+			return base.GetHashCode ();
 		}
 	}
 

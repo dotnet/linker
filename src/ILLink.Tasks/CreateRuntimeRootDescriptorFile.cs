@@ -306,7 +306,9 @@ namespace ILLink.Tasks
 		private void OutputXml (string iLLinkTrimXmlFilePath, string outputFileName)
 		{
 			XmlDocument doc = new XmlDocument ();
-			doc.Load (iLLinkTrimXmlFilePath);
+			StringReader sreader = new StringReader (iLLinkTrimXmlFilePath);
+			XmlReader reader = XmlReader.Create (sreader, new XmlReaderSettings () { XmlResolver = null });
+			doc.Load (reader);
 			XmlNode linkerNode = doc["linker"];
 
 			if (featureSwitchMembers.Count > 0) {

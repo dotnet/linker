@@ -35,7 +35,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 
 		public override int GetHashCode ()
 		{
-			throw new NotImplementedException ();
+			return base.GetHashCode ();
 		}
 	}
 
@@ -81,7 +81,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 
 		public override int GetHashCode ()
 		{
-			throw new NotImplementedException ();
+			return base.GetHashCode ();
 		}
 	}
 
