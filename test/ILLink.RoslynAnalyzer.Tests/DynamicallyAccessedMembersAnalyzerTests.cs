@@ -1381,7 +1381,7 @@ namespace System
 			// The actual usage (return value) should warn, about missing annotation, but the cref should not.
 			return VerifyDynamicallyAccessedMembersAnalyzer (Source,
 				// (11,9): warning IL2091: 'TInner' generic argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicMethods' in 'CRequires<TInner>'. The generic parameter 'TOuter' of 'C<TOuter>' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to.
-				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsGenericParameter).WithSpan (11, 9, 11, 26).WithSpan (4, 9, 4, 15).WithArguments ("TInner", "CRequires<TInner>", "TOuter", "C<TOuter>", "'DynamicallyAccessedMemberTypes.PublicMethods'"));
+				VerifyCS.Diagnostic (DiagnosticId.DynamicallyAccessedMembersMismatchTypeArgumentTargetsGenericParameter).WithSpan (11, 9, 11, 26).WithArguments ("TInner", "CRequires<TInner>", "TOuter", "C<TOuter>", "'DynamicallyAccessedMemberTypes.PublicMethods'"));
 		}
 	}
 }
