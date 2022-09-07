@@ -13,6 +13,7 @@ using Predecessor = ILLink.Shared.DataFlow.IControlFlowGraph<
 	Mono.Linker.Dataflow.BasicBlock, 
 	Mono.Linker.Dataflow.Region
 >.Predecessor;
+using Mono.Collections.Generic;
 
 namespace Mono.Linker.Dataflow
 {
@@ -23,72 +24,75 @@ namespace Mono.Linker.Dataflow
 
 	public struct BasicBlock : IEquatable<BasicBlock>
 	{
-		public List<Instruction> Instructions;
+		private readonly int _id;
 
-		public BasicBlock ()
+		private readonly Collection<Instruction> _methodInstructions;
+
+		private readonly int _start;
+
+		private readonly int _end;
+
+		public BasicBlock (Collection<Instruction> methodInstructions,int id, int start, int end)
 		{
-			Instructions = new List<Instruction> ();
+			_methodInstructions = methodInstructions;
+			_start = start;
+			_end = end;
+			_id = id;
 		}
+
+		public int Id => _id;
+
+		public Instruction? FirstInstruction => _start >= 0 ? _methodInstructions[_start] : null;
+
+		public Instruction? LastInstruction => _end >= 0 ? _methodInstructions[_end] : null;
 
 		public bool Equals (BasicBlock other)
 		{
-			return Instructions == other.Instructions;
+			return _start == other._start && _end == other._end;
 		}
 
 		public override string ToString ()
 		{
-			if (Instructions.Count == 0) return "Empty";
+			if (_end == -1) return "Empty";
 
-			return $"[IL_{Instructions[0].Offset:X4}, IL_{Instructions[^1].Offset:X4}]";
+			return $"[IL_{_methodInstructions[_start].Offset:X4}, IL_{_methodInstructions[_end].Offset:X4}]";
 		}
 	}
 
 	public struct ControlFlowGraph : IControlFlowGraph<BasicBlock, Region>
 	{
-		private const int firstBlockId = int.MinValue;
-		private const int lastBlockId = int.MaxValue;
-		private BasicBlock first;
-		private readonly Dictionary<int, BasicBlock> basicBlocks;
-		private readonly Dictionary<BasicBlock, HashSet<BasicBlock>> edges;
+		private readonly List<BasicBlock> _blocks;
+		private readonly Dictionary<int, BasicBlock> firstInstructionToBlock;
+		private readonly List<List<int>> edges;
 
 		public override string ToString ()
 		{
-			if (basicBlocks.Count == 0) return "";
-
-			var orderedBlocks = basicBlocks.OrderBy (o => o.Key).Select(o => o.Value).ToList();
-
-			var blockIndices = new Dictionary<BasicBlock, int> ();
-
-			foreach (var block in orderedBlocks) {
-				blockIndices.Add (block, blockIndices.Count);
-			}
+			if (firstInstructionToBlock.Count == 0) return "";
 
 			var nodes = new List<string> ();
 
-			foreach (var block in orderedBlocks) {
-				var predecessors = GetPredecessors (block).Select (o => blockIndices[o.Block]).Order();
-				nodes.Add($"Id: {blockIndices[block]}, Range: {block}, Predecessors: [{string.Join (",", predecessors)}]");
+			foreach (var block in _blocks) {
+				var predecessors = GetPredecessors (block).Select(o => o.Block.Id).ToList();
+				nodes.Add($"Id: {block.Id}, Range: {block}, Predecessors: [{string.Join (",", predecessors)}]");
 			}
 			return string.Join (" | ", nodes);
 		}
 
-		public IEnumerable<BasicBlock> Blocks => basicBlocks.Values;
+		public IEnumerable<BasicBlock> Blocks => firstInstructionToBlock.Values;
 
-		public BasicBlock Entry => first;
+		public BasicBlock Entry => _blocks[0];
 
 		public ControlFlowGraph (MethodBody methodBody)
 		{
-			basicBlocks = new Dictionary<int, BasicBlock> ();
+			firstInstructionToBlock = new Dictionary<int, BasicBlock> ();
+			_blocks = new List<BasicBlock> ();
 			edges = SplitMethodBody (methodBody);
 		}
 
 		public IEnumerable<Predecessor> GetPredecessors (BasicBlock block)
 		{
-			if(!edges.TryGetValue(block, out var preceedingBlocks)) {
-				throw new Exception ("change this exception later");
-			}
-			foreach (var prevBlock in preceedingBlocks) {
-				yield return new Predecessor (prevBlock, ImmutableArray<Region>.Empty);
+			foreach (var prevBlockId in edges[block.Id]) {
+				yield return new Predecessor (_blocks[prevBlockId], ImmutableArray<Region>.Empty);
 			}
 		}
 
@@ -132,49 +136,46 @@ namespace Mono.Linker.Dataflow
 			throw new NotImplementedException ();
 		}
 
-		private Dictionary<BasicBlock, HashSet<BasicBlock>> SplitMethodBody (MethodBody methodBody)
+		private List<List<int>> SplitMethodBody (MethodBody methodBody)
 		{
 			ConstructBasicBlocks (methodBody);
-			var cfg = new Dictionary<BasicBlock, HashSet<BasicBlock>> ();
+			var cfg = new List<List<int>>(_blocks.Count);
 
-			first = new BasicBlock ();
-			basicBlocks.Add (firstBlockId, first);
-			basicBlocks.Add (lastBlockId, new BasicBlock ());
-
-
-			foreach (var (_, basicBlock) in basicBlocks) {
-				cfg.Add (basicBlock, new HashSet<BasicBlock> ());
+			foreach (var _ in _blocks) {
+				cfg.Add (new List<int> ());
 			}
 
-			foreach (var (_, basicBlock) in basicBlocks.Where (o => o.Value.Instructions.Count != 0).OrderBy(o => o.Key)) {
+			//Add initial block connections
+			cfg[1].Add (0);
 
-				var firstInstruction = basicBlock.Instructions[0];
-				if(firstInstruction.Previous == null) {
-					cfg[basicBlock].Add (basicBlocks[firstBlockId]);
+			foreach (var basicBlock in _blocks) {
+
+				if(basicBlock.LastInstruction == null) {
+					continue;
 				}
 
-				var lastInstruction = basicBlock.Instructions[^1];
-
 				// Handle conditional branches
-
-				if (lastInstruction.OpCode.IsControlFlowInstruction()) {
-					var jumpTargets = lastInstruction.GetJumpTargets ();
+				if (basicBlock.LastInstruction.OpCode.IsControlFlowInstruction()) {
+					var jumpTargets = basicBlock.LastInstruction.GetJumpTargets ();
 
 					foreach (var jumpTarget in jumpTargets) {
-						cfg[basicBlocks[jumpTarget.Offset]].Add (basicBlock);
+						var targetId = firstInstructionToBlock[jumpTarget.Offset].Id;
+						cfg[targetId].Add (basicBlock.Id);
 					}
 
-					if (lastInstruction.OpCode.FlowControl == FlowControl.Cond_Branch && lastInstruction.Next != null) {
-						cfg[basicBlocks[lastInstruction.Next.Offset]].Add (basicBlock);
+					if (basicBlock.LastInstruction.OpCode.FlowControl == FlowControl.Cond_Branch && basicBlock.LastInstruction.Next != null) {
+						var targetId = firstInstructionToBlock[basicBlock.LastInstruction.Next.Offset].Id;
+						cfg[targetId].Add (basicBlock.Id);
 					}
 				}
 				// Handle last block predecessors
-				else if (lastInstruction.OpCode.FlowControl == FlowControl.Return) {
-					cfg[basicBlocks[lastBlockId]].Add (basicBlock);
+				else if (basicBlock.LastInstruction.OpCode.FlowControl == FlowControl.Return) {
+					cfg[_blocks.Count-1].Add (basicBlock.Id);
 				} 
 				// Handle fall through
-				else if (lastInstruction.OpCode.FlowControl == FlowControl.Next && lastInstruction.Next != null) {
-					cfg[basicBlocks[lastInstruction.Next.Offset]].Add (basicBlock);
+				else if (basicBlock.LastInstruction.OpCode.FlowControl == FlowControl.Next && basicBlock.LastInstruction.Next != null) {
+					var targetId = firstInstructionToBlock[basicBlock.LastInstruction.Next.Offset].Id;
+					cfg[targetId].Add (basicBlock.Id);
 				}
 			}
 
@@ -183,16 +184,34 @@ namespace Mono.Linker.Dataflow
 
 		private void ConstructBasicBlocks (MethodBody methodBody)
 		{
-			var currentBlock = new BasicBlock ();
+			int blockStart = 0;
+
+			// Add extra first block
+			AddBlock(methodBody.Instructions, -1, -1);
+			
 			var leaders = methodBody.GetInitialBasicBlockInstructions ();
 
-			foreach (Instruction operation in methodBody.Instructions) {
-				if (leaders.Contains (operation.Offset)) {
-					currentBlock = new BasicBlock ();
-					basicBlocks.Add (operation.Offset, currentBlock);
+			for (int i = 1; i < methodBody.Instructions.Count; i++)
+			{
+				if (leaders.Contains (methodBody.Instructions[i].Offset)){
+					AddBlock(methodBody.Instructions, blockStart, i - 1);
+					blockStart = i;
 				}
+			}
 
-				currentBlock.Instructions.Add (operation);
+			AddBlock (methodBody.Instructions, blockStart, methodBody.Instructions.Count - 1);
+
+			// Add extra last block
+			AddBlock(methodBody.Instructions, -1, -1);
+		}
+
+		private void AddBlock (Collection<Instruction> instructions, int ilStart, int ilEnd)
+		{
+			var block = new BasicBlock (instructions, _blocks.Count, ilStart, ilEnd);
+			_blocks.Add (block);
+
+			if(ilStart >= 0) {
+				firstInstructionToBlock.Add (instructions[ilStart].Offset, block);
 			}
 		}
 	}
