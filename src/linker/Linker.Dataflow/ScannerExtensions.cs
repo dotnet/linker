@@ -42,15 +42,19 @@ namespace Mono.Linker.Dataflow
 
 		public static HashSet<int> GetInitialBasicBlockInstructions (this MethodBody methodBody)
 		{
+			// Method identifies leading instructions in each basicBlock.
+			// An instruction defines a new basicBlock iff it is first instruction, jump target or instruction following jump target.
+			// This makes is different than ComputeBranchTargets, which returns only jump targets.
+			// Currently, the method does not support exception handling syntax.
 			var leaders = new HashSet<int> ();
 
 			foreach (Instruction operation in methodBody.Instructions) {
 
-				// first instruction is a leader
+				// First instruction is a leader
 				if (leaders.Count == 0)
 					leaders.Add (operation.Offset);
 
-				// targets of control flow instructions are leaders
+				// Targets of control flow instructions are leaders
 				if (operation.OpCode.IsControlFlowInstruction ()) {
 					var jumpTargets = operation.GetJumpTargets ();
 
@@ -58,7 +62,8 @@ namespace Mono.Linker.Dataflow
 						leaders.Add (target.Offset);
 					}
 
-					if (operation.OpCode.FlowControl == FlowControl.Cond_Branch && operation.Next != null) {
+					// Instructions following conditional or unconditional jumps are leaders
+					if (operation.Next != null) {
 						leaders.Add (operation.Next.Offset);
 					}
 				}
