@@ -248,9 +248,7 @@ namespace ILLink.Shared.TrimAnalysis
 							continue;
 						}
 
-						if (paramAnnotations == null) {
-							paramAnnotations = new DynamicallyAccessedMemberTypes[method.GetILParameterCount ()];
-						}
+						paramAnnotations ??= new DynamicallyAccessedMemberTypes[method.GetILParameterCount ()];
 						paramAnnotations[(int)i] = pa;
 					}
 
@@ -265,8 +263,7 @@ namespace ILLink.Shared.TrimAnalysis
 							var genericParameter = method.GenericParameters[genericParameterIndex];
 							var annotation = GetMemberTypesForDynamicallyAccessedMembersAttribute (method, providerIfNotMember: genericParameter);
 							if (annotation != DynamicallyAccessedMemberTypes.None) {
-								if (genericParameterAnnotations == null)
-									genericParameterAnnotations = new DynamicallyAccessedMemberTypes[method.GenericParameters.Count];
+								genericParameterAnnotations ??= new DynamicallyAccessedMemberTypes[method.GenericParameters.Count];
 								genericParameterAnnotations[genericParameterIndex] = annotation;
 							}
 						}
@@ -378,8 +375,7 @@ namespace ILLink.Shared.TrimAnalysis
 					var provider = attrs?[genericParameterIndex] ?? type.GenericParameters[genericParameterIndex];
 					var annotation = GetMemberTypesForDynamicallyAccessedMembersAttribute (type, providerIfNotMember: provider);
 					if (annotation != DynamicallyAccessedMemberTypes.None) {
-						if (typeGenericParameterAnnotations == null)
-							typeGenericParameterAnnotations = new DynamicallyAccessedMemberTypes[type.GenericParameters.Count];
+						typeGenericParameterAnnotations ??= new DynamicallyAccessedMemberTypes[type.GenericParameters.Count];
 						typeGenericParameterAnnotations[genericParameterIndex] = annotation;
 					}
 				}

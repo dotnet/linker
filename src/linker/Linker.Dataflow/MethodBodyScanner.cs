@@ -12,6 +12,7 @@ using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Collections.Generic;
+using static Mono.Linker.ParameterHelpers;
 using LocalVariableStore = System.Collections.Generic.Dictionary<
 	Mono.Cecil.Cil.VariableDefinition,
 	Mono.Linker.Dataflow.ValueBasicBlockPair>;
@@ -300,9 +301,7 @@ namespace Mono.Linker.Dataflow
 					}
 				}
 
-				if (currentStack == null) {
-					currentStack = new Stack<StackSlot> (methodBody.MaxStackSize);
-				}
+				currentStack ??= new Stack<StackSlot> (methodBody.MaxStackSize);
 
 				switch (operation.OpCode.Code) {
 				case Code.Add:
