@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using ILLink.Shared.DataFlow;
 using Mono.Cecil;
+using Mono.Linker;
 using Mono.Linker.Dataflow;
 using TypeDefinition = Mono.Cecil.TypeDefinition;
 
@@ -17,7 +18,7 @@ namespace ILLink.Shared.TrimAnalysis
 	/// </summary>
 	partial record MethodParameterValue : IValueWithStaticType
 	{
-		public MethodParameterValue (TypeDefinition? staticType, MethodDefinition method, int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+		public MethodParameterValue (TypeDefinition? staticType, MethodDefinition method, ILParameterIndex parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 		{
 			StaticType = staticType;
 			Method = method;
@@ -27,23 +28,21 @@ namespace ILLink.Shared.TrimAnalysis
 
 		public readonly MethodDefinition Method;
 
-		/// <summary>
-		/// This is the index of non-implicit parameter - so the index into MethodDefinition.Parameters array.
-		/// It's NOT the IL parameter index which could be offset by 1 if the method has an implicit this.
-		/// </summary>
-		public readonly int ParameterIndex;
-
-		public ParameterDefinition ParameterDefinition => Method.Parameters[ParameterIndex];
+		public readonly ILParameterIndex ParameterIndex;
 
 		public override DynamicallyAccessedMemberTypes DynamicallyAccessedMemberTypes { get; }
 
 		public override IEnumerable<string> GetDiagnosticArgumentsForAnnotationMismatch ()
-			=> new string[] { DiagnosticUtilities.GetParameterNameForErrorMessage (ParameterDefinition), DiagnosticUtilities.GetMethodSignatureDisplayName (Method) };
+			=> IsThisParameter() ?
+			new string[] { Method.GetDisplayName() }
+			: new string[] { DiagnosticUtilities.GetParameterNameForErrorMessage (Method.GetParameter(ParameterIndex)), DiagnosticUtilities.GetMethodSignatureDisplayName (Method) };
 
 		public TypeDefinition? StaticType { get; }
 
 		public override SingleValue DeepCopy () => this; // This value is immutable
 
 		public override string ToString () => this.ValueToString (Method, ParameterIndex, DynamicallyAccessedMemberTypes);
+
+		public bool IsThisParameter () => ParameterIndex == 0 && Method.HasThis;
 	}
 }

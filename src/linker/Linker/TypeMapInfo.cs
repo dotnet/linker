@@ -338,8 +338,10 @@ namespace Mono.Linker
 			if (!candidate.HasParameters)
 				return true;
 
+#pragma warning disable RS0030 // MethodReference.Parameters is banned. For dealing with text representations, it makes sense to use here.
 			var cp = candidate.Parameters;
 			var mp = method.Parameters;
+#pragma warning restore RS0030
 			if (cp.Count != mp.Count)
 				return false;
 
@@ -347,8 +349,8 @@ namespace Mono.Linker
 				return false;
 
 			for (int i = 0; i < cp.Count; i++) {
-				if (candidate.GetParameterType (i, context) is not TypeReference candidateParameterType ||
-					method.GetParameterType (i, context) is not TypeReference methodParameterType ||
+				if (candidate.GetInflatedParameterType (i, context) is not TypeReference candidateParameterType ||
+					method.GetInflatedParameterType (i, context) is not TypeReference methodParameterType ||
 					!TypeMatch (candidateParameterType, methodParameterType))
 					return false;
 			}

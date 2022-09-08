@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using ILLink.Shared;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -106,8 +107,8 @@ namespace Mono.Linker
 			foreach (VariableDefinition var in body.Variables)
 				AddIfResolved (types, var.VariableType);
 
-			foreach (var parameter in body.Method.Parameters)
-				AddIfResolved (types, parameter.ParameterType);
+			for (int i = 0; i < method.GetILParameterCount(); i++)
+				AddIfResolved (types, method.GetParameterType((ILParameterIndex) i));
 
 			foreach (ExceptionHandler eh in body.ExceptionHandlers) {
 				if (eh.HandlerType == ExceptionHandlerType.Catch) {
@@ -129,8 +130,8 @@ namespace Mono.Linker
 					var resolvedMethod = context.TryResolve (methodReference);
 					if (resolvedMethod != null) {
 						if (resolvedMethod.HasParameters) {
-							foreach (var param in resolvedMethod.Parameters)
-								AddIfResolved (types, param.ParameterType);
+							for (int i = 0; i < resolvedMethod.GetILParameterCount(); i++)
+								AddIfResolved (types, resolvedMethod.GetParameterType((ILParameterIndex) i));
 						}
 
 						AddFromGenericParameterProvider (types, resolvedMethod);

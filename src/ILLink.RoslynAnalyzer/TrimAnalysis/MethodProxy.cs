@@ -19,14 +19,16 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		internal partial bool IsDeclaredOnType (string fullTypeName) => IsTypeOf (Method.ContainingType, fullTypeName);
 
-		internal partial bool HasParameters () => Method.Parameters.Length > 0;
+		internal partial bool HasNonThisParameters () => Method.Parameters.Length > 0;
 
-		internal partial int GetParametersCount () => Method.Parameters.Length;
+		internal partial int GetNonThisParametersCount () => Method.Parameters.Length;
 
-		internal partial bool HasParameterOfType (int parameterIndex, string fullTypeName)
-			=> Method.Parameters.Length > parameterIndex && IsTypeOf (Method.Parameters[parameterIndex].Type, fullTypeName);
+		internal partial int GetILParametersCount () => Method.Parameters.Length + (Method.IsStatic ? 0 : 1);
 
-		internal partial string GetParameterDisplayName (int parameterIndex) => Method.Parameters[parameterIndex].GetDisplayName ();
+		internal partial bool HasParameterOfType (ILParameterIndex parameterIndex, string fullTypeName)
+			=> IsTypeOf (Method.GetParameterType(parameterIndex), fullTypeName);
+
+		internal partial string GetParameterDisplayName (ILParameterIndex parameterIndex) => Method.GetParameter(parameterIndex).GetDisplayName ();
 
 		internal partial bool HasGenericParameters () => Method.IsGenericMethod;
 
@@ -57,13 +59,23 @@ namespace ILLink.Shared.TypeSystemProxy
 			return namedType.HasName (fullTypeName);
 		}
 
-		public ReferenceKind ParameterReferenceKind (int index)
-			=> Method.Parameters[index].RefKind switch {
+		public ReferenceKind ParameterReferenceKind (ILParameterIndex index)
+		{
+			if (Method.IsThisParameterIndex (index))
+				return Method.ContainingType.IsValueType ? ReferenceKind.Ref : ReferenceKind.None;
+			return Method.GetParameter(index).RefKind switch {
 				RefKind.In => ReferenceKind.In,
 				RefKind.Out => ReferenceKind.Out,
 				RefKind.Ref => ReferenceKind.Ref,
 				_ => ReferenceKind.None
 			};
+		}
+
+		internal partial ILParameterIndex GetILParameterIndex (NonThisParameterIndex parameterIndex)
+			=> Method.GetILParameterIndex (parameterIndex);
+
+		internal partial NonThisParameterIndex GetNonThisParameterIndex (ILParameterIndex parameterIndex)
+			=> Method.GetNonThisParameterIndex (parameterIndex);
 
 		public override string ToString () => Method.ToString ();
 	}

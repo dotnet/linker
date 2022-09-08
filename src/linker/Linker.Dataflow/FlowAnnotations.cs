@@ -45,11 +45,11 @@ namespace ILLink.Shared.TrimAnalysis
 		/// </summary>
 		/// <param name="parameterIndex">Parameter index in the IL sense. Parameter 0 on instance methods is `this`.</param>
 		/// <returns></returns>
-		public DynamicallyAccessedMemberTypes GetParameterAnnotation (MethodDefinition method, int parameterIndex)
+		public DynamicallyAccessedMemberTypes GetParameterAnnotation (MethodDefinition method, ILParameterIndex parameterIndex)
 		{
 			if (GetAnnotations (method.DeclaringType).TryGetAnnotation (method, out var annotation) &&
 				annotation.ParameterAnnotations != null)
-				return annotation.ParameterAnnotations[parameterIndex];
+				return annotation.ParameterAnnotations[(int) parameterIndex];
 
 			return DynamicallyAccessedMemberTypes.None;
 		}
@@ -226,48 +226,32 @@ namespace ILLink.Shared.TrimAnalysis
 				foreach (MethodDefinition method in type.Methods) {
 					DynamicallyAccessedMemberTypes[]? paramAnnotations = null;
 
-					// We convert indices from metadata space to IL space here.
-					// IL space assigns index 0 to the `this` parameter on instance methods.
-
-
-					DynamicallyAccessedMemberTypes methodMemberTypes = GetMemberTypesForDynamicallyAccessedMembersAttribute (method);
-
-					int offset;
-					if (method.HasImplicitThis ()) {
-						offset = 1;
-						if (IsTypeInterestingForDataflow (method.DeclaringType)) {
-							// If there's an annotation on the method itself and it's one of the special types (System.Type for example)
-							// treat that annotation as annotating the "this" parameter.
-							if (methodMemberTypes != DynamicallyAccessedMemberTypes.None) {
-								paramAnnotations = new DynamicallyAccessedMemberTypes[method.Parameters.Count + offset];
-								paramAnnotations[0] = methodMemberTypes;
-							}
-						} else if (methodMemberTypes != DynamicallyAccessedMemberTypes.None) {
-							_context.LogWarning (method, DiagnosticId.DynamicallyAccessedMembersIsNotAllowedOnMethods);
-						}
-					} else {
-						offset = 0;
-						if (methodMemberTypes != DynamicallyAccessedMemberTypes.None) {
-							_context.LogWarning (method, DiagnosticId.DynamicallyAccessedMembersIsNotAllowedOnMethods);
-						}
+					// Warn is there is an annotation on a method without a `this` parameter -- we won't catch it in the for loop if there's no parameters
+					if(GetMemberTypesForDynamicallyAccessedMembersAttribute(method) != DynamicallyAccessedMemberTypes.None
+						&& !method.HasImplicitThis()) {
+						_context.LogWarning (method, DiagnosticId.DynamicallyAccessedMembersIsNotAllowedOnMethods);
 					}
 
-					for (int i = 0; i < method.Parameters.Count; i++) {
-						var methodParameter = method.Parameters[i];
-						DynamicallyAccessedMemberTypes pa = GetMemberTypesForDynamicallyAccessedMembersAttribute (method, providerIfNotMember: methodParameter);
+					// We convert indices from metadata space to IL space here.
+					// IL space assigns index 0 to the `this` parameter on instance methods.
+					for (ILParameterIndex i = 0; (int) i < method.GetILParameterCount (); i++) {
+						DynamicallyAccessedMemberTypes pa = GetMemberTypesForDynamicallyAccessedMembersAttribute (method, method.GetParameterCustomAttributeProvider (i));
 						if (pa == DynamicallyAccessedMemberTypes.None)
 							continue;
 
-						if (!IsTypeInterestingForDataflow (methodParameter.ParameterType)) {
-							_context.LogWarning (method, DiagnosticId.DynamicallyAccessedMembersOnMethodParameterCanOnlyApplyToTypesOrStrings,
-								DiagnosticUtilities.GetParameterNameForErrorMessage (methodParameter), DiagnosticUtilities.GetMethodSignatureDisplayName (methodParameter.Method));
+						if (!IsTypeInterestingForDataflow (method.GetParameterType (i))) {
+							if (method.IsImplicitThisParameter (i))
+								_context.LogWarning (method, DiagnosticId.DynamicallyAccessedMembersIsNotAllowedOnMethods);
+							else
+								_context.LogWarning (method, DiagnosticId.DynamicallyAccessedMembersOnMethodParameterCanOnlyApplyToTypesOrStrings,
+									DiagnosticUtilities.GetParameterNameForErrorMessage (method.GetParameter (i)), DiagnosticUtilities.GetMethodSignatureDisplayName (method));
 							continue;
 						}
 
 						if (paramAnnotations == null) {
-							paramAnnotations = new DynamicallyAccessedMemberTypes[method.Parameters.Count + offset];
+							paramAnnotations = new DynamicallyAccessedMemberTypes[method.GetILParameterCount ()];
 						}
-						paramAnnotations[i + offset] = pa;
+						paramAnnotations[(int)i] = pa;
 					}
 
 					DynamicallyAccessedMemberTypes returnAnnotation = GetMemberTypesForDynamicallyAccessedMembersAttribute (method, providerIfNotMember: method.MethodReturnType);
@@ -338,8 +322,8 @@ namespace ILLink.Shared.TrimAnalysis
 							_context.LogWarning (setMethod, DiagnosticId.DynamicallyAccessedMembersConflictsBetweenPropertyAndAccessor, property.GetDisplayName (), setMethod.GetDisplayName ());
 						} else {
 							int offset = setMethod.HasImplicitThis () ? 1 : 0;
-							if (setMethod.Parameters.Count > 0) {
-								DynamicallyAccessedMemberTypes[] paramAnnotations = new DynamicallyAccessedMemberTypes[setMethod.Parameters.Count + offset];
+							if (setMethod.GetNonThisParameterCount() > 0) {
+								DynamicallyAccessedMemberTypes[] paramAnnotations = new DynamicallyAccessedMemberTypes[setMethod.GetILParameterCount()];
 								paramAnnotations[paramAnnotations.Length - 1] = annotation;
 								annotatedMethods.Add (new MethodAnnotations (setMethod, paramAnnotations, DynamicallyAccessedMemberTypes.None, null));
 							}
@@ -488,8 +472,8 @@ namespace ILLink.Shared.TrimAnalysis
 					for (int parameterIndex = 0; parameterIndex < methodAnnotations.ParameterAnnotations.Length; parameterIndex++) {
 						if (methodAnnotations.ParameterAnnotations[parameterIndex] != baseMethodAnnotations.ParameterAnnotations[parameterIndex])
 							LogValidationWarning (
-								DiagnosticUtilities.GetMethodParameterFromIndex (method, parameterIndex),
-								DiagnosticUtilities.GetMethodParameterFromIndex (baseMethod, parameterIndex),
+								DiagnosticUtilities.GetMethodParameterFromIndex (method, (ILParameterIndex) parameterIndex),
+								DiagnosticUtilities.GetMethodParameterFromIndex (baseMethod, (ILParameterIndex) parameterIndex),
 								method);
 					}
 				}
@@ -522,8 +506,8 @@ namespace ILLink.Shared.TrimAnalysis
 				var annotation = parameterAnnotations[parameterIndex];
 				if (annotation != DynamicallyAccessedMemberTypes.None)
 					LogValidationWarning (
-						DiagnosticUtilities.GetMethodParameterFromIndex (method, parameterIndex),
-						DiagnosticUtilities.GetMethodParameterFromIndex (baseMethod, parameterIndex),
+						DiagnosticUtilities.GetMethodParameterFromIndex (method, (ILParameterIndex) parameterIndex),
+						DiagnosticUtilities.GetMethodParameterFromIndex (baseMethod, (ILParameterIndex) parameterIndex),
 						origin);
 			}
 		}
@@ -699,18 +683,18 @@ namespace ILLink.Shared.TrimAnalysis
 			=> new GenericParameterValue (genericParameter.GenericParameter, GetGenericParameterAnnotation (genericParameter.GenericParameter));
 
 #pragma warning disable CA1822 // Mark members as static - keep this an instance method for consistency with the others
-		internal partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-			=> new MethodThisParameterValue (method.Method, dynamicallyAccessedMemberTypes);
+		internal partial MethodParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+			=> new MethodParameterValue (method.Method.DeclaringType, method.Method, 0, dynamicallyAccessedMemberTypes);
 #pragma warning restore CA1822
 
-		internal partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method)
+		internal partial MethodParameterValue GetMethodThisParameterValue (MethodProxy method)
 			=> GetMethodThisParameterValue (method, GetParameterAnnotation (method.Method, 0));
 
-		internal partial MethodParameterValue GetMethodParameterValue (MethodProxy method, int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-			=> new (method.Method.Parameters[parameterIndex].ParameterType.ResolveToTypeDefinition (_context), method.Method, parameterIndex, dynamicallyAccessedMemberTypes);
+		internal partial MethodParameterValue GetMethodParameterValue (MethodProxy method, ILParameterIndex parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+			=> new (method.Method.GetParameterType (parameterIndex).ResolveToTypeDefinition (_context), method.Method, parameterIndex, dynamicallyAccessedMemberTypes);
 
-		internal partial MethodParameterValue GetMethodParameterValue (MethodProxy method, int parameterIndex)
-			=> GetMethodParameterValue (method, parameterIndex, GetParameterAnnotation (method.Method, parameterIndex + (method.IsStatic () ? 0 : 1)));
+		internal partial MethodParameterValue GetMethodParameterValue (MethodProxy method, ILParameterIndex parameterIndex)
+			=> GetMethodParameterValue (method, parameterIndex, GetParameterAnnotation (method.Method, parameterIndex));
 
 		// Linker-specific dataflow value creation. Eventually more of these should be shared.
 		internal SingleValue GetFieldValue (FieldDefinition field)

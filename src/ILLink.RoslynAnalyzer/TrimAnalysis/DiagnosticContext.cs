@@ -40,9 +40,8 @@ namespace ILLink.Shared.TrimAnalysis
 
 			ISymbol symbol = actualValue switch {
 				FieldValue field => field.FieldSymbol,
-				MethodParameterValue mpv => mpv.ParameterSymbol,
+				MethodParameterValue mpv => mpv.MethodSymbol,
 				MethodReturnValue mrv => mrv.MethodSymbol,
-				MethodThisParameterValue mtpv => mtpv.MethodSymbol,
 				GenericParameterValue gpv => gpv.GenericParameter.TypeParameterSymbol,
 				_ => throw new InvalidOperationException ()
 			};

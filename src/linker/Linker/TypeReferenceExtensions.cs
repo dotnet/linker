@@ -291,8 +291,10 @@ namespace Mono.Linker
 				CallingConvention = methodDef.CallingConvention
 			};
 
+#pragma warning disable RS0030 // MethodReference.Parameters is banned. It makes sense to use when needing to directly use Cecil's api.
 			foreach (var parameter in methodDef.Parameters)
 				method.Parameters.Add (new ParameterDefinition (parameter.Name, parameter.Attributes, parameter.ParameterType));
+#pragma warning restore RS0030
 
 			foreach (var gp in methodDef.GenericParameters)
 				method.GenericParameters.Add (new GenericParameter (gp.Name, method));

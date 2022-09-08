@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
+using ILLink.Shared;
 using Mono.Cecil;
 
 namespace Mono.Linker
@@ -97,6 +98,13 @@ namespace Mono.Linker
 				di.Scope.Constants.Clear ();
 				di.Scope = null;
 			}
+		}
+
+		public static ICustomAttributeProvider GetParameterCustomAttributeProvider(this MethodDefinition method, ILParameterIndex index)
+		{
+			if (method.IsImplicitThisParameter (index))
+				return method;
+			return method.GetParameter (index);
 		}
 	}
 }

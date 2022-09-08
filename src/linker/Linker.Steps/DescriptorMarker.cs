@@ -199,11 +199,11 @@ namespace Mono.Linker.Steps
 
 			sb.Append ("(");
 			if (meth.HasParameters) {
-				for (int i = 0; i < meth.Parameters.Count; i++) {
+				for (int i = 0; i < meth.GetNonThisParameterCount (); i++) {
 					if (i > 0)
 						sb.Append (",");
 
-					sb.Append (meth.Parameters[i].ParameterType.FullName);
+					sb.Append (meth.GetParameterType ((NonThisParameterIndex) i).FullName);
 				}
 			}
 			sb.Append (")");

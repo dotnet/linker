@@ -4,10 +4,12 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using ILLink.RoslynAnalyzer;
 using ILLink.Shared.TypeSystemProxy;
 using Microsoft.CodeAnalysis;
 
+#nullable enable
 namespace ILLink.Shared.TrimAnalysis
 {
 	sealed partial class FlowAnnotations
@@ -23,31 +25,31 @@ namespace ILLink.Shared.TrimAnalysis
 
 		public static bool RequiresDataFlowAnalysis (IMethodSymbol method)
 		{
-			if (method.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None)
-				return true;
-
 			if (GetMethodReturnValueAnnotation (method) != DynamicallyAccessedMemberTypes.None)
 				return true;
 
-			foreach (var parameter in method.Parameters) {
-				if (GetMethodParameterAnnotation (parameter) != DynamicallyAccessedMemberTypes.None)
+			for (int i = 0; i < method.Parameters.Length; i++) {
+				if (GetMethodParameterAnnotation (method, (ILParameterIndex)i) != DynamicallyAccessedMemberTypes.None)
 					return true;
 			}
 
 			return false;
 		}
 
-		public static DynamicallyAccessedMemberTypes GetMethodParameterAnnotation (IParameterSymbol parameter)
+		public static DynamicallyAccessedMemberTypes GetMethodParameterAnnotation (IMethodSymbol method, ILParameterIndex index)
 		{
+			if (IMethodSymbolExtension.IsThisParameterIndex (method, index))
+				return RoslynAnalyzer.ISymbolExtensions.GetDynamicallyAccessedMemberTypes (method);
+
+			IParameterSymbol parameter = IMethodSymbolExtension.GetParameter (method, index);
 			var damt = parameter.GetDynamicallyAccessedMemberTypes ();
 
 			// Is this a property setter parameter?
-			var parameterMethod = (IMethodSymbol) parameter.ContainingSymbol;
-			Debug.Assert (parameterMethod != null);
+			Debug.Assert (method != null);
 			// If there are conflicts between the setter and the property annotation,
 			// the setter annotation wins. (But DAMT.None is ignored)
-			if (parameterMethod!.MethodKind == MethodKind.PropertySet && damt == DynamicallyAccessedMemberTypes.None) {
-				var property = (IPropertySymbol) parameterMethod.AssociatedSymbol!;
+			if (method!.MethodKind == MethodKind.PropertySet && damt == DynamicallyAccessedMemberTypes.None) {
+				var property = (IPropertySymbol) method.AssociatedSymbol!;
 				Debug.Assert (property != null);
 				damt = property!.GetDynamicallyAccessedMemberTypes ();
 			}
@@ -88,18 +90,18 @@ namespace ILLink.Shared.TrimAnalysis
 		internal partial GenericParameterValue GetGenericParameterValue (GenericParameterProxy genericParameter)
 			=> new GenericParameterValue (genericParameter.TypeParameterSymbol);
 
-		internal partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-			=> new MethodThisParameterValue (method.Method, dynamicallyAccessedMemberTypes);
+		internal partial MethodParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+			=> new MethodParameterValue (method.Method, 0, dynamicallyAccessedMemberTypes);
 
-		internal partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method)
+		internal partial MethodParameterValue GetMethodThisParameterValue (MethodProxy method)
 			=> GetMethodThisParameterValue (method, method.Method.GetDynamicallyAccessedMemberTypes ());
 
-		internal partial MethodParameterValue GetMethodParameterValue (MethodProxy method, int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-			=> new MethodParameterValue (method.Method.Parameters[parameterIndex], dynamicallyAccessedMemberTypes);
+		internal partial MethodParameterValue GetMethodParameterValue (MethodProxy method, ILParameterIndex parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+			=> new MethodParameterValue (method.Method, parameterIndex, dynamicallyAccessedMemberTypes);
 
-		internal partial MethodParameterValue GetMethodParameterValue (MethodProxy method, int parameterIndex)
+		internal partial MethodParameterValue GetMethodParameterValue (MethodProxy method, ILParameterIndex parameterIndex)
 		{
-			var annotation = GetMethodParameterAnnotation (method.Method.Parameters[parameterIndex]);
+			var annotation = GetMethodParameterAnnotation (method.Method, parameterIndex);
 			return GetMethodParameterValue (method, parameterIndex, annotation);
 		}
 #pragma warning restore CA1822

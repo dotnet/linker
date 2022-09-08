@@ -13,13 +13,20 @@ namespace ILLink.Shared.TypeSystemProxy
 		// Currently this only needs to work on non-nested, non-generic types.
 		// The format of the fullTypeName parameter is 'namespace.typename', so for example 'System.Reflection.Assembly'
 		internal partial bool IsDeclaredOnType (string fullTypeName);
-		internal partial bool HasParameters ();
-		internal partial int GetParametersCount ();
-		internal bool HasParametersCount (int parameterCount) => GetParametersCount () == parameterCount;
+		internal partial bool HasNonThisParameters ();
+		internal partial int GetNonThisParametersCount ();
+		internal partial int GetILParametersCount ();
+		internal bool HasNonThisParametersCount (int parameterCount) => GetNonThisParametersCount () == parameterCount;
 		// Currently this only needs to work on non-nested, non-generic types.
 		// The format of the fullTypeName parameter is 'namespace.typename', so for example 'System.Reflection.Assembly'
-		internal partial bool HasParameterOfType (int parameterIndex, string fullTypeName);
-		internal partial string GetParameterDisplayName (int parameterIndex);
+		internal partial bool HasParameterOfType (ILParameterIndex parameterIndex, string fullTypeName);
+		internal bool HasParameterOfType (NonThisParameterIndex parameterIndex, string fullTypeName)
+			=> HasParameterOfType (GetILParameterIndex (parameterIndex), fullTypeName);
+		internal partial string GetParameterDisplayName (ILParameterIndex parameterIndex);
+		internal string GetParameterDisplayName (NonThisParameterIndex parameterIndex)
+			=> GetParameterDisplayName (GetILParameterIndex (parameterIndex));
+		internal partial NonThisParameterIndex GetNonThisParameterIndex (ILParameterIndex parameterIndex);
+		internal partial ILParameterIndex GetILParameterIndex (NonThisParameterIndex parameterIndex);
 		internal partial bool HasGenericParameters ();
 		internal partial bool HasGenericParametersCount (int genericParameterCount);
 		internal partial ImmutableArray<GenericParameterProxy> GetGenericParameters ();

@@ -460,12 +460,14 @@ namespace Mono.Linker.Steps
 
 				bool sweepNames = CanSweepNamesForMember (method, MetadataTrimming.ParameterName);
 
+#pragma warning disable RS0030 // MethodReference.Parameters is banned. It makes sense to use when directly working with the Cecil type system though.
 				foreach (var parameter in method.Parameters) {
 					if (sweepNames)
 						parameter.Name = null;
 
 					SweepCustomAttributes (parameter);
 				}
+#pragma warning restore RS0030
 			}
 		}
 		void SweepOverrides (MethodDefinition method)

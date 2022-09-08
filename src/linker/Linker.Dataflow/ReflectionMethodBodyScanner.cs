@@ -93,20 +93,11 @@ namespace Mono.Linker.Dataflow
 			Debug.Fail ("Invalid IL or a bug in the scanner");
 		}
 
-		protected override ValueWithDynamicallyAccessedMembers GetMethodParameterValue (MethodDefinition method, int parameterIndex)
+		protected override ValueWithDynamicallyAccessedMembers GetMethodParameterValue (MethodDefinition method, ILParameterIndex parameterIndex)
 			=> GetMethodParameterValue (method, parameterIndex, _context.Annotations.FlowAnnotations.GetParameterAnnotation (method, parameterIndex));
 
-		ValueWithDynamicallyAccessedMembers GetMethodParameterValue (MethodDefinition method, int parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-		{
-			if (method.HasImplicitThis ()) {
-				if (parameterIndex == 0)
-					return _annotations.GetMethodThisParameterValue (method, dynamicallyAccessedMemberTypes);
-
-				parameterIndex--;
-			}
-
-			return _annotations.GetMethodParameterValue (method, parameterIndex, dynamicallyAccessedMemberTypes);
-		}
+		MethodParameterValue GetMethodParameterValue (MethodDefinition method, ILParameterIndex parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+			=> _annotations.GetMethodParameterValue (method, parameterIndex, dynamicallyAccessedMemberTypes);
 
 		protected override MultiValue GetFieldValue (FieldDefinition field) => _annotations.GetFieldValue (field);
 
@@ -123,9 +114,6 @@ namespace Mono.Linker.Dataflow
 
 		protected override void HandleStoreParameter (MethodDefinition method, MethodParameterValue parameter, Instruction operation, MultiValue valueToStore)
 			=> HandleStoreValueWithDynamicallyAccessedMembers (parameter, operation, valueToStore);
-
-		protected override void HandleStoreMethodThisParameter (MethodDefinition method, MethodThisParameterValue thisParameter, Instruction operation, MultiValue valueToStore)
-			=> HandleStoreValueWithDynamicallyAccessedMembers (thisParameter, operation, valueToStore);
 
 		protected override void HandleStoreMethodReturnValue (MethodDefinition method, MethodReturnValue returnValue, Instruction operation, MultiValue valueToStore)
 			=> HandleStoreValueWithDynamicallyAccessedMembers (returnValue, operation, valueToStore);
@@ -212,11 +200,11 @@ namespace Mono.Linker.Dataflow
 			case var callType when (callType == IntrinsicId.Type_GetConstructors || callType == IntrinsicId.Type_GetMethods || callType == IntrinsicId.Type_GetFields ||
 				callType == IntrinsicId.Type_GetProperties || callType == IntrinsicId.Type_GetEvents || callType == IntrinsicId.Type_GetNestedTypes || callType == IntrinsicId.Type_GetMembers)
 				&& calledMethod.DeclaringType.IsTypeOf (WellKnownType.System_Type)
-				&& calledMethod.Parameters[0].ParameterType.FullName == "System.Reflection.BindingFlags"
+				&& calledMethod.GetParameterType ((NonThisParameterIndex) 0).IsTypeOf ("System.Reflection.BindingFlags")
 				&& calledMethod.HasThis:
 			case var fieldPropertyOrEvent when (fieldPropertyOrEvent == IntrinsicId.Type_GetField || fieldPropertyOrEvent == IntrinsicId.Type_GetProperty || fieldPropertyOrEvent == IntrinsicId.Type_GetEvent)
 				&& calledMethod.DeclaringType.IsTypeOf (WellKnownType.System_Type)
-				&& calledMethod.Parameters[0].ParameterType.IsTypeOf (WellKnownType.System_String)
+				&& calledMethod.GetParameterType ((NonThisParameterIndex) 0).IsTypeOf (WellKnownType.System_String)
 				&& calledMethod.HasThis:
 			case var getRuntimeMember when getRuntimeMember == IntrinsicId.RuntimeReflectionExtensions_GetRuntimeEvent
 				|| getRuntimeMember == IntrinsicId.RuntimeReflectionExtensions_GetRuntimeField
@@ -226,7 +214,7 @@ namespace Mono.Linker.Dataflow
 			case IntrinsicId.Type_GetMethod:
 			case IntrinsicId.Type_GetNestedType:
 			case IntrinsicId.Nullable_GetUnderlyingType:
-			case IntrinsicId.Expression_Property when calledMethod.HasParameterOfType (1, "System.Reflection.MethodInfo"):
+			case IntrinsicId.Expression_Property when calledMethod.HasParameterOfType ((ILParameterIndex) 1, "System.Reflection.MethodInfo"):
 			case var fieldOrPropertyIntrinsic when fieldOrPropertyIntrinsic == IntrinsicId.Expression_Field || fieldOrPropertyIntrinsic == IntrinsicId.Expression_Property:
 			case IntrinsicId.Type_get_BaseType:
 			case IntrinsicId.Type_GetConstructor:
@@ -252,9 +240,11 @@ namespace Mono.Linker.Dataflow
 					if (calledMethodDefinition.IsPInvokeImpl) {
 						// Is the PInvoke dangerous?
 						bool comDangerousMethod = IsComInterop (calledMethodDefinition.MethodReturnType, calledMethodDefinition.ReturnType, context);
+#pragma warning disable RS0030 // MethodReference.Parameters is banned. When iterating over the non-this parameters it is more efficient to access it directly though.
 						foreach (ParameterDefinition pd in calledMethodDefinition.Parameters) {
 							comDangerousMethod |= IsComInterop (pd, pd.ParameterType, context);
 						}
+#pragma warning restore RS0030
 
 						if (comDangerousMethod) {
 							diagnosticContext.AddDiagnostic (DiagnosticId.CorrectnessOfCOMCannotBeGuaranteed, calledMethodDefinition.GetDisplayName ());
@@ -313,6 +303,7 @@ namespace Mono.Linker.Dataflow
 						if (staticType is null) {
 							// We don't know anything about the type GetType was called on. Track this as a usual result of a method call without any annotations
 							AddReturnValue (context.Annotations.FlowAnnotations.GetMethodReturnValue (calledMethodDefinition));
+							//AddReturnValue (UnknownValue.Instance);
 						} else if (staticType.IsSealed || staticType.IsTypeOf ("System", "Delegate")) {
 							// We can treat this one the same as if it was a typeof() expression
 

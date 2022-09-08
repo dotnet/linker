@@ -22,13 +22,21 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		internal partial bool IsDeclaredOnType (string fullTypeName) => Method.IsDeclaredOnType (fullTypeName);
 
-		internal partial bool HasParameters () => Method.HasParameters;
+		internal partial bool HasNonThisParameters () => Method.HasParameters;
 
-		internal partial int GetParametersCount () => Method.Parameters.Count;
+		internal partial int GetNonThisParametersCount () => Method.GetNonThisParameterCount ();
 
-		internal partial bool HasParameterOfType (int parameterIndex, string fullTypeName) => Method.HasParameterOfType (parameterIndex, fullTypeName);
+		internal partial int GetILParametersCount () => Method.GetILParameterCount();
 
-		internal partial string GetParameterDisplayName (int parameterIndex) => Method.Parameters[parameterIndex].Name;
+		internal partial bool HasParameterOfType (ILParameterIndex parameterIndex, string fullTypeName) => Method.HasParameterOfType (parameterIndex, fullTypeName);
+
+		internal partial string GetParameterDisplayName (ILParameterIndex parameterIndex) => Method.GetParameter(parameterIndex).Name;
+
+		internal partial ILParameterIndex GetILParameterIndex (NonThisParameterIndex parameterIndex)
+			=> Method.GetILParameterIndex (parameterIndex);
+
+		internal partial NonThisParameterIndex GetNonThisParameterIndex (ILParameterIndex parameterIndex)
+			=> Method.GetNonThisParameterIndex (parameterIndex);
 
 		internal partial bool HasGenericParameters () => Method.HasGenericParameters;
 
@@ -53,7 +61,7 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		public override string ToString () => Method.ToString ();
 
-		public ReferenceKind ParameterReferenceKind (int index) => Method.HasImplicitThis () ? Method.ParameterReferenceKind (index + 1) : Method.ParameterReferenceKind (index);
+		public ReferenceKind ParameterReferenceKind (ILParameterIndex index) => Method.ParameterReferenceKind (index);
 
 		public bool Equals (MethodProxy other) => Method.Equals (other.Method);
 

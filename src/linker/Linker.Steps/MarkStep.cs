@@ -1082,13 +1082,12 @@ namespace Mono.Linker.Steps
 					continue;
 				}
 
-				var mp = m.Parameters;
-				if (mp.Count != signature.Length)
+				if (m.GetNonThisParameterCount () != signature.Length)
 					continue;
 
 				int i = 0;
 				for (; i < signature.Length; ++i) {
-					if (mp[i].ParameterType.FullName != signature[i].Trim ().ToCecilName ()) {
+					if (m.GetParameterType ((NonThisParameterIndex) i).FullName != signature[i].Trim ().ToCecilName ()) {
 						i = -1;
 						break;
 					}
@@ -2474,12 +2473,11 @@ namespace Mono.Linker.Steps
 			if (!method.IsInstanceConstructor ())
 				return false;
 
-			var parameters = method.Parameters;
-			if (parameters.Count != 2)
+			if (method.GetNonThisParameterCount () != 2)
 				return false;
 
-			return parameters[0].ParameterType.Name == "SerializationInfo" &&
-				parameters[1].ParameterType.Name == "StreamingContext";
+			return method.GetParameterType ((NonThisParameterIndex) 0).Name == "SerializationInfo" &&
+				method.GetParameterType ((NonThisParameterIndex) 1).Name == "StreamingContext";
 		}
 
 		protected internal bool MarkMethodsIf (Collection<MethodDefinition> methods, Func<MethodDefinition, bool> predicate, in DependencyInfo reason, in MessageOrigin origin)
@@ -2519,7 +2517,7 @@ namespace Mono.Linker.Steps
 				return;
 
 			MarkMethodIf (type.Methods, m =>
-				m.Name == "GetInstance" && m.IsStatic && m.Parameters.Count == 1 && m.Parameters[0].ParameterType.MetadataType == MetadataType.String,
+				m.Name == "GetInstance" && m.IsStatic && m.GetNonThisParameterCount () == 1 && m.GetParameterType ((NonThisParameterIndex) 0).MetadataType == MetadataType.String,
 				reason,
 				ScopeStack.CurrentScope.Origin);
 		}
@@ -3148,11 +3146,13 @@ namespace Mono.Linker.Steps
 				MarkEvent (@event, new DependencyInfo (DependencyKind.EventOfEventMethod, method));
 
 			if (method.HasParameters) {
+#pragma warning disable RS0030 // MethodReference.Parameters is banned. It's easiest to leave the code as is for now
 				foreach (ParameterDefinition pd in method.Parameters) {
 					MarkType (pd.ParameterType, new DependencyInfo (DependencyKind.ParameterType, method));
 					MarkCustomAttributes (pd, new DependencyInfo (DependencyKind.ParameterAttribute, method));
 					MarkMarshalSpec (pd, new DependencyInfo (DependencyKind.ParameterMarshalSpec, method));
 				}
+#pragma warning restore RS0030
 			}
 
 			if (method.HasOverrides) {
@@ -3394,6 +3394,7 @@ namespace Mono.Linker.Steps
 				MarkFields (method.DeclaringType, includeStaticFields, new DependencyInfo (DependencyKind.InteropMethodDependency, method));
 			}
 
+#pragma warning disable RS0030 // MethodReference.Parameters is banned. It's easiest to leave this code as is for now
 			foreach (ParameterDefinition pd in method.Parameters) {
 				TypeReference paramTypeReference = pd.ParameterType;
 				if (paramTypeReference is TypeSpecification paramTypeSpecification) {
@@ -3410,6 +3411,7 @@ namespace Mono.Linker.Steps
 					}
 				}
 			}
+#pragma warning restore RS0030
 		}
 
 		protected virtual bool ShouldParseMethodBody (MethodDefinition method)

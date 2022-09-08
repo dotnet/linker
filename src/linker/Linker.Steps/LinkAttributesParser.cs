@@ -145,7 +145,9 @@ namespace Mono.Linker.Steps
 
 			var ctorN = new MethodDefinition (".ctor", ctorAttributes, voidType);
 			var paramN = new ParameterDefinition (objectArrayType);
+#pragma warning disable RS0030 // MethodReference.Parmeters is banned. It's necessary to build the method definition here though.
 			ctorN.Parameters.Add (paramN);
+#pragma warning restore RS0030
 			td.Methods.Add (ctorN);
 
 			return _context.MarkedKnownMembers.RemoveAttributeInstancesAttributeDefinition = td;
@@ -178,8 +180,7 @@ namespace Mono.Linker.Steps
 				if (!method.IsInstanceConstructor ())
 					continue;
 
-				var parameters = method.Parameters;
-				if (args.Length != parameters.Count)
+				if (args.Length != method.GetNonThisParameterCount ())
 					continue;
 
 				bool match = true;
@@ -187,7 +188,7 @@ namespace Mono.Linker.Steps
 					//
 					// No candidates betterness, only exact matches are supported
 					//
-					var parameterType = _context.TryResolve (parameters[ii].ParameterType);
+					var parameterType = _context.TryResolve (method.GetParameterType ((NonThisParameterIndex) i));
 					if (parameterType == null || parameterType != _context.TryResolve (args[ii].Type))
 						match = false;
 				}
@@ -496,6 +497,7 @@ namespace Mono.Linker.Steps
 				var (attributes, origins) = ProcessAttributes (parameterNav, method);
 				if (attributes != null && origins != null) {
 					string paramName = GetAttribute (parameterNav, "name");
+#pragma warning disable RS0030 // MethodReference.Parameters is banned. It's easiest to leave existing code as is
 					foreach (ParameterDefinition parameter in method.Parameters) {
 						if (paramName == parameter.Name) {
 							if (parameter.HasCustomAttributes || _attributeInfo.CustomAttributes.ContainsKey (parameter))
@@ -504,6 +506,7 @@ namespace Mono.Linker.Steps
 							break;
 						}
 					}
+#pragma warning restore RS0030
 				}
 			}
 		}
@@ -531,6 +534,7 @@ namespace Mono.Linker.Steps
 			return null;
 		}
 
+#pragma warning disable RS0030 // For display strings we should use source code based parameters
 		static string GetMethodSignature (MethodDefinition method, bool includeReturnType = false)
 		{
 			StringBuilder sb = new StringBuilder ();
@@ -560,6 +564,7 @@ namespace Mono.Linker.Steps
 			sb.Append (")");
 			return sb.ToString ();
 		}
+#pragma warning restore RS0030
 
 		protected override void ProcessProperty (TypeDefinition type, PropertyDefinition property, XPathNavigator nav, object? customData, bool fromSignature)
 		{

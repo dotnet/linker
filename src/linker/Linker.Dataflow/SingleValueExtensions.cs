@@ -46,7 +46,6 @@ namespace ILLink.Shared.TrimAnalysis
 			case KnownStringValue:
 			case ConstIntValue:
 			case MethodParameterValue:
-			case MethodThisParameterValue:
 			case MethodReturnValue:
 			case GenericParameterValue:
 			case RuntimeTypeHandleForGenericParameterValue:

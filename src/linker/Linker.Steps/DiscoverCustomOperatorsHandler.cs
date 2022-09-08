@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using ILLink.Shared;
 using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
 
@@ -166,7 +167,7 @@ namespace Mono.Linker.Steps
 			case "True":
 			case "False":
 				// Parameter type of a unary operator must be the declaring type
-				if (method.Parameters.Count != 1 || NonNullableType (method.Parameters[0].ParameterType) != self)
+				if (method.GetNonThisParameterCount () != 1 || NonNullableType (method.GetParameterType ((NonThisParameterIndex) 0)) != self)
 					return false;
 				// ++ and -- must return the declaring type
 				if (operatorName is "Increment" or "Decrement" && NonNullableType (method.ReturnType) != self)
@@ -189,10 +190,10 @@ namespace Mono.Linker.Steps
 			case "GreaterThan":
 			case "LessThanOrEqual":
 			case "GreaterThanOrEqual":
-				if (method.Parameters.Count != 2)
+				if (method.GetNonThisParameterCount () != 2)
 					return false;
-				var nnLeft = NonNullableType (method.Parameters[0].ParameterType);
-				var nnRight = NonNullableType (method.Parameters[1].ParameterType);
+				var nnLeft = NonNullableType (method.GetParameterType ((NonThisParameterIndex) 0));
+				var nnRight = NonNullableType (method.GetParameterType ((NonThisParameterIndex) 1));
 				if (nnLeft == null || nnRight == null)
 					return false;
 				// << and >> must take the declaring type and int
@@ -209,9 +210,9 @@ namespace Mono.Linker.Steps
 			// Conversion operators
 			case "Implicit":
 			case "Explicit":
-				if (method.Parameters.Count != 1)
+				if (method.GetNonThisParameterCount () != 1)
 					return false;
-				var nnSource = NonNullableType (method.Parameters[0].ParameterType);
+				var nnSource = NonNullableType (method.GetParameterType ((NonThisParameterIndex) 0));
 				var nnTarget = NonNullableType (method.ReturnType);
 				// Exactly one of source/target must be the declaring type
 				if (nnSource == self == (nnTarget == self))

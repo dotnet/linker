@@ -12,21 +12,30 @@ namespace ILLink.Shared.TrimAnalysis
 	partial record MethodParameterValue
 	{
 		public MethodParameterValue (IParameterSymbol parameterSymbol)
-			: this (parameterSymbol, FlowAnnotations.GetMethodParameterAnnotation (parameterSymbol)) { }
+			: this ((IMethodSymbol) parameterSymbol.ContainingSymbol, parameterSymbol.ILIndex(), FlowAnnotations.GetMethodParameterAnnotation ((IMethodSymbol) parameterSymbol.ContainingSymbol, parameterSymbol.ILIndex()))
+		{ }
 
-		public MethodParameterValue (IParameterSymbol parameterSymbol, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-			=> (ParameterSymbol, DynamicallyAccessedMemberTypes) = (parameterSymbol, dynamicallyAccessedMemberTypes);
+		public MethodParameterValue (IMethodSymbol methodSymbol, ILParameterIndex parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+			=> (MethodSymbol, ILIndex, DynamicallyAccessedMemberTypes) = (methodSymbol, parameterIndex,  dynamicallyAccessedMemberTypes);
 
-		public readonly IParameterSymbol ParameterSymbol;
+		public readonly IMethodSymbol MethodSymbol;
+
+		public readonly ILParameterIndex ILIndex;
+
+		private int _sourceIndex => MethodSymbol.IsStatic ? (int)ILIndex : (int)ILIndex - 1;
 
 		public override DynamicallyAccessedMemberTypes DynamicallyAccessedMemberTypes { get; }
 
 		public override IEnumerable<string> GetDiagnosticArgumentsForAnnotationMismatch ()
-			=> new string[] { ParameterSymbol.GetDisplayName (), ParameterSymbol.ContainingSymbol.GetDisplayName () };
+			=> IsThisParameter() ? 
+				new string[] { MethodSymbol.GetDisplayName () }
+				: new string[] { MethodSymbol.Parameters[_sourceIndex].GetDisplayName (), MethodSymbol.GetDisplayName () };
 
 		public override SingleValue DeepCopy () => this; // This value is immutable
 
 		public override string ToString ()
-			=> this.ValueToString (ParameterSymbol, DynamicallyAccessedMemberTypes);
+			=> this.ValueToString (MethodSymbol, DynamicallyAccessedMemberTypes);
+
+		public bool IsThisParameter () => ILIndex == 0 && !MethodSymbol.IsStatic;
 	}
 }

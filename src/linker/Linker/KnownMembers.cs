@@ -1,6 +1,7 @@
 ﻿// Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using ILLink.Shared;
 using Mono.Cecil;
 
 namespace Mono.Linker
@@ -18,7 +19,7 @@ namespace Mono.Linker
 			if (!method.IsConstructor || method.IsStatic || !method.HasParameters)
 				return false;
 
-			if (method.Parameters.Count != 1 || method.Parameters[0].ParameterType.MetadataType != MetadataType.String)
+			if (method.GetNonThisParameterCount () != 1 || method.GetParameterType (method.GetILParameterIndex (0)).MetadataType != MetadataType.String)
 				return false;
 
 			return true;
