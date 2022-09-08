@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using ILLink.Shared;
 using Microsoft.CodeAnalysis;
 
@@ -21,11 +22,13 @@ namespace ILLink.RoslynAnalyzer
 		/// Guard with <see cref="IsThisParameterIndex(IMethodSymbol, ILParameterIndex)"/> to avoid throwing.
 		/// </summary>
 		/// <exception cref="InvalidOperationException">Throws if the ILParameterIndex corresponds to the `this` parameter.</exception>
-		public static IParameterSymbol GetParameter (this IMethodSymbol method, ILParameterIndex index)
+		public static IParameterSymbol? GetParameter (this IMethodSymbol method, ILParameterIndex index)
 		{
 			if (method.IsThisParameterIndex (index))
-				throw new InvalidOperationException ("Cannot get IParameterSymbol for `this` parameter");
+				return null;
 			int paramIndex = (int) method.GetNonThisParameterIndex (index);
+			if (paramIndex >= method.Parameters.Length)
+				return null;
 			return method.Parameters[paramIndex];
 		}
 
@@ -43,11 +46,28 @@ namespace ILLink.RoslynAnalyzer
 		public static int GetNonThisParameterCount (this IMethodSymbol method)
 			=> method.Parameters.Length;
 
-		public static ITypeSymbol GetParameterType (this IMethodSymbol method, ILParameterIndex index)
+		/// <summary>
+		/// Returns the type of the parameter at the index provided, or null if the index is out of range.
+		/// </summary>
+		public static ITypeSymbol? GetParameterType (this IMethodSymbol method, ILParameterIndex index)
 		{
 			if (method.IsThisParameterIndex (index))
 				return method.ContainingType;
-			return method.GetParameter (index).Type;
+			return method.GetParameter (index)?.Type;
+		}
+
+		public static Location GetParameterLocation (this IMethodSymbol method, ILParameterIndex index)
+		{
+			if (method.IsThisParameterIndex (index))
+				return method.Locations[0];
+			return method.GetParameter (index)!.Locations[0];
+		}
+
+		public static DynamicallyAccessedMemberTypes GetParameterDynamicallyAccessedMemberTypes (this IMethodSymbol method, ILParameterIndex index)
+		{
+			if (method.IsThisParameterIndex (index))
+				return method.GetDynamicallyAccessedMemberTypes ();
+			return method.GetParameter (index)!.GetDynamicallyAccessedMemberTypes ();
 		}
 
 		public static NonThisParameterIndex GetNonThisParameterIndex (this IMethodSymbol method, ILParameterIndex index)

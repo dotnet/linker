@@ -26,9 +26,13 @@ namespace ILLink.Shared.TypeSystemProxy
 		internal partial int GetILParametersCount () => Method.Parameters.Length + (Method.IsStatic ? 0 : 1);
 
 		internal partial bool HasParameterOfType (ILParameterIndex parameterIndex, string fullTypeName)
-			=> IsTypeOf (Method.GetParameterType(parameterIndex), fullTypeName);
+		{
+			if (Method.GetParameterType (parameterIndex) is not ITypeSymbol parameterType)
+				return false;
+			return IsTypeOf (parameterType, fullTypeName);
+		}
 
-		internal partial string GetParameterDisplayName (ILParameterIndex parameterIndex) => Method.GetParameter(parameterIndex).GetDisplayName ();
+		internal partial string GetParameterDisplayName (ILParameterIndex parameterIndex) => Method.GetParameter(parameterIndex)!.GetDisplayName ();
 
 		internal partial bool HasGenericParameters () => Method.IsGenericMethod;
 
@@ -63,7 +67,7 @@ namespace ILLink.Shared.TypeSystemProxy
 		{
 			if (Method.IsThisParameterIndex (index))
 				return Method.ContainingType.IsValueType ? ReferenceKind.Ref : ReferenceKind.None;
-			return Method.GetParameter(index).RefKind switch {
+			return Method.GetParameter(index)!.RefKind switch {
 				RefKind.In => ReferenceKind.In,
 				RefKind.Out => ReferenceKind.Out,
 				RefKind.Ref => ReferenceKind.Ref,

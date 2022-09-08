@@ -28,7 +28,7 @@ namespace ILLink.Shared.TrimAnalysis
 			if (GetMethodReturnValueAnnotation (method) != DynamicallyAccessedMemberTypes.None)
 				return true;
 
-			for (int i = 0; i < method.Parameters.Length; i++) {
+			for (int i = 0; i < method.GetILParameterCount(); i++) {
 				if (GetMethodParameterAnnotation (method, (ILParameterIndex)i) != DynamicallyAccessedMemberTypes.None)
 					return true;
 			}
@@ -41,7 +41,7 @@ namespace ILLink.Shared.TrimAnalysis
 			if (IMethodSymbolExtension.IsThisParameterIndex (method, index))
 				return RoslynAnalyzer.ISymbolExtensions.GetDynamicallyAccessedMemberTypes (method);
 
-			IParameterSymbol parameter = IMethodSymbolExtension.GetParameter (method, index);
+			IParameterSymbol parameter = IMethodSymbolExtension.GetParameter (method, index)!;
 			var damt = parameter.GetDynamicallyAccessedMemberTypes ();
 
 			// Is this a property setter parameter?
