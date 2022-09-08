@@ -1342,11 +1342,11 @@ namespace ILLink.Shared.TrimAnalysis
 
 							MarkConstructorsOnType (resolvedType, bindingFlags, parameterlessConstructor ? 0 : null);
 						} else {
-							_diagnosticContext.AddDiagnostic (DiagnosticId.UnrecognizedParameterInMethodCreateInstance, calledMethod.GetParameterDisplayName ((NonThisParameterIndex)1), calledMethod.GetDisplayName ());
+							_diagnosticContext.AddDiagnostic (DiagnosticId.UnrecognizedParameterInMethodCreateInstance, calledMethod.GetParameterDisplayName ((NonThisParameterIndex) 1), calledMethod.GetDisplayName ());
 						}
 					}
 				} else {
-					_diagnosticContext.AddDiagnostic (DiagnosticId.UnrecognizedParameterInMethodCreateInstance, calledMethod.GetParameterDisplayName ((NonThisParameterIndex)0), calledMethod.GetDisplayName ());
+					_diagnosticContext.AddDiagnostic (DiagnosticId.UnrecognizedParameterInMethodCreateInstance, calledMethod.GetParameterDisplayName ((NonThisParameterIndex) 0), calledMethod.GetDisplayName ());
 				}
 			}
 		}

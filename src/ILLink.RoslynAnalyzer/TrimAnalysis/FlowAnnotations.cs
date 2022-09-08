@@ -28,8 +28,8 @@ namespace ILLink.Shared.TrimAnalysis
 			if (GetMethodReturnValueAnnotation (method) != DynamicallyAccessedMemberTypes.None)
 				return true;
 
-			for (int i = 0; i < method.GetILParameterCount(); i++) {
-				if (GetMethodParameterAnnotation (method, (ILParameterIndex)i) != DynamicallyAccessedMemberTypes.None)
+			for (int i = 0; i < method.GetILParameterCount (); i++) {
+				if (GetMethodParameterAnnotation (method, (ILParameterIndex) i) != DynamicallyAccessedMemberTypes.None)
 					return true;
 			}
 

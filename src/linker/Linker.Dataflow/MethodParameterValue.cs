@@ -33,9 +33,9 @@ namespace ILLink.Shared.TrimAnalysis
 		public override DynamicallyAccessedMemberTypes DynamicallyAccessedMemberTypes { get; }
 
 		public override IEnumerable<string> GetDiagnosticArgumentsForAnnotationMismatch ()
-			=> IsThisParameter() ?
-			new string[] { Method.GetDisplayName() }
-			: new string[] { DiagnosticUtilities.GetParameterNameForErrorMessage (Method.GetParameter(ParameterIndex)), DiagnosticUtilities.GetMethodSignatureDisplayName (Method) };
+			=> IsThisParameter () ?
+			new string[] { Method.GetDisplayName () }
+			: new string[] { DiagnosticUtilities.GetParameterNameForErrorMessage (Method.GetParameter (ParameterIndex)), DiagnosticUtilities.GetMethodSignatureDisplayName (Method) };
 
 		public TypeDefinition? StaticType { get; }
 

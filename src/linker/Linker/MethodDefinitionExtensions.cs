@@ -100,7 +100,7 @@ namespace Mono.Linker
 			}
 		}
 
-		public static ICustomAttributeProvider GetParameterCustomAttributeProvider(this MethodDefinition method, ILParameterIndex index)
+		public static ICustomAttributeProvider GetParameterCustomAttributeProvider (this MethodDefinition method, ILParameterIndex index)
 		{
 			if (method.IsImplicitThisParameter (index))
 				return method;

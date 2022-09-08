@@ -7,7 +7,7 @@ using Mono.Linker;
 namespace ILLink.Shared.TrimAnalysis
 {
 	public partial record ParameterReferenceValue (MethodDefinition MethodDefinition, ILParameterIndex ParameterIndex)
-		: ReferenceValue (MethodDefinition.GetParameterType(ParameterIndex))
+		: ReferenceValue (MethodDefinition.GetParameterType (ParameterIndex))
 	{
 		public override SingleValue DeepCopy ()
 		{

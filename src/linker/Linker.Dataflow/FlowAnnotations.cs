@@ -227,8 +227,8 @@ namespace ILLink.Shared.TrimAnalysis
 					DynamicallyAccessedMemberTypes[]? paramAnnotations = null;
 
 					// Warn is there is an annotation on a method without a `this` parameter -- we won't catch it in the for loop if there's no parameters
-					if(GetMemberTypesForDynamicallyAccessedMembersAttribute(method) != DynamicallyAccessedMemberTypes.None
-						&& !method.HasImplicitThis()) {
+					if (GetMemberTypesForDynamicallyAccessedMembersAttribute (method) != DynamicallyAccessedMemberTypes.None
+						&& !method.HasImplicitThis ()) {
 						_context.LogWarning (method, DiagnosticId.DynamicallyAccessedMembersIsNotAllowedOnMethods);
 					}
 
@@ -249,7 +249,7 @@ namespace ILLink.Shared.TrimAnalysis
 						}
 
 						paramAnnotations ??= new DynamicallyAccessedMemberTypes[method.GetILParameterCount ()];
-						paramAnnotations[(int)i] = pa;
+						paramAnnotations[(int) i] = pa;
 					}
 
 					DynamicallyAccessedMemberTypes returnAnnotation = GetMemberTypesForDynamicallyAccessedMembersAttribute (method, providerIfNotMember: method.MethodReturnType);
@@ -319,8 +319,8 @@ namespace ILLink.Shared.TrimAnalysis
 							_context.LogWarning (setMethod, DiagnosticId.DynamicallyAccessedMembersConflictsBetweenPropertyAndAccessor, property.GetDisplayName (), setMethod.GetDisplayName ());
 						} else {
 							int offset = setMethod.HasImplicitThis () ? 1 : 0;
-							if (setMethod.GetNonThisParameterCount() > 0) {
-								DynamicallyAccessedMemberTypes[] paramAnnotations = new DynamicallyAccessedMemberTypes[setMethod.GetILParameterCount()];
+							if (setMethod.GetNonThisParameterCount () > 0) {
+								DynamicallyAccessedMemberTypes[] paramAnnotations = new DynamicallyAccessedMemberTypes[setMethod.GetILParameterCount ()];
 								paramAnnotations[paramAnnotations.Length - 1] = annotation;
 								annotatedMethods.Add (new MethodAnnotations (setMethod, paramAnnotations, DynamicallyAccessedMemberTypes.None, null));
 							}

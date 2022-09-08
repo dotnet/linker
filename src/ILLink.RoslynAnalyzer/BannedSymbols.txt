@@ -1,1 +1,0 @@
-P:Microsoft.CodeAnalysis.IMethodSymbol.Parameters;Use an extension method from IMethodSymbolExtensions instead

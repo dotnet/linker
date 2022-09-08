@@ -28,7 +28,7 @@ namespace ILLink.Shared.TrimAnalysis
 				// System.Reflection.MethodBase.GetMethodFromHandle (RuntimeMethodHandle handle)
 				// System.Reflection.MethodBase.GetMethodFromHandle (RuntimeMethodHandle handle, RuntimeTypeHandle declaringType)
 				"GetMethodFromHandle" when calledMethod.IsDeclaredOnType ("System.Reflection.MethodBase")
-					&&  calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.RuntimeMethodHandle")
+					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.RuntimeMethodHandle")
 					&& (calledMethod.HasNonThisParametersCount (1) || calledMethod.HasNonThisParametersCount (2))
 					=> IntrinsicId.MethodBase_GetMethodFromHandle,
 
@@ -166,7 +166,7 @@ namespace ILLink.Shared.TrimAnalysis
 
 				// System.Type.GetMethods (BindingFlags)
 				"GetMethods" when calledMethod.IsDeclaredOnType ("System.Type")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex)0, "System.Reflection.BindingFlags")
+					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.Reflection.BindingFlags")
 					&& calledMethod.HasNonThisParametersCount (1)
 					&& !calledMethod.IsStatic ()
 					=> IntrinsicId.Type_GetMethods,

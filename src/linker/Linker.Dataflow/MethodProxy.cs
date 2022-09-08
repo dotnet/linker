@@ -26,11 +26,11 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		internal partial int GetNonThisParametersCount () => Method.GetNonThisParameterCount ();
 
-		internal partial int GetILParametersCount () => Method.GetILParameterCount();
+		internal partial int GetILParametersCount () => Method.GetILParameterCount ();
 
 		internal partial bool HasParameterOfType (ILParameterIndex parameterIndex, string fullTypeName) => Method.HasParameterOfType (parameterIndex, fullTypeName);
 
-		internal partial string GetParameterDisplayName (ILParameterIndex parameterIndex) => Method.GetParameter(parameterIndex).Name;
+		internal partial string GetParameterDisplayName (ILParameterIndex parameterIndex) => Method.GetParameter (parameterIndex).Name;
 
 		internal partial ILParameterIndex GetILParameterIndex (NonThisParameterIndex parameterIndex)
 			=> Method.GetILParameterIndex (parameterIndex);

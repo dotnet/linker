@@ -41,7 +41,7 @@ namespace Mono.Linker
 			}
 
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)) {
-				foreach (var c in typeDefinition.GetConstructorsOnType (filter: m => m.IsPublic && m.GetNonThisParameterCount() == 0))
+				foreach (var c in typeDefinition.GetConstructorsOnType (filter: m => m.IsPublic && m.GetNonThisParameterCount () == 0))
 					yield return c;
 			}
 

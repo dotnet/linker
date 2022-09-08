@@ -226,9 +226,9 @@ namespace ILLink.RoslynAnalyzer
 					method.Locations[0], sourceLocation, DAMArgs?.ToImmutableDictionary (), method.GetDisplayName (), overriddenMethod.GetDisplayName ()));
 			}
 
-			for (int i = 0; i < method.GetNonThisParameterCount(); i++) {
+			for (int i = 0; i < method.GetNonThisParameterCount (); i++) {
 				ILParameterIndex paramIndex = method.GetILParameterIndex ((NonThisParameterIndex) i);
-				var methodParameterAnnotation = FlowAnnotations.GetMethodParameterAnnotation (method, paramIndex); 
+				var methodParameterAnnotation = FlowAnnotations.GetMethodParameterAnnotation (method, paramIndex);
 				var overriddenParameterAnnotation = FlowAnnotations.GetMethodParameterAnnotation (overriddenMethod, paramIndex);
 				if (methodParameterAnnotation != overriddenParameterAnnotation) {
 

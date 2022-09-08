@@ -32,7 +32,7 @@ namespace ILLink.Shared.TypeSystemProxy
 			return IsTypeOf (parameterType, fullTypeName);
 		}
 
-		internal partial string GetParameterDisplayName (ILParameterIndex parameterIndex) => Method.GetParameter(parameterIndex)!.GetDisplayName ();
+		internal partial string GetParameterDisplayName (ILParameterIndex parameterIndex) => Method.GetParameter (parameterIndex)!.GetDisplayName ();
 
 		internal partial bool HasGenericParameters () => Method.IsGenericMethod;
 
@@ -67,7 +67,7 @@ namespace ILLink.Shared.TypeSystemProxy
 		{
 			if (Method.IsThisParameterIndex (index))
 				return Method.ContainingType.IsValueType ? ReferenceKind.Ref : ReferenceKind.None;
-			return Method.GetParameter(index)!.RefKind switch {
+			return Method.GetParameter (index)!.RefKind switch {
 				RefKind.In => ReferenceKind.In,
 				RefKind.Out => ReferenceKind.Out,
 				RefKind.Ref => ReferenceKind.Ref,

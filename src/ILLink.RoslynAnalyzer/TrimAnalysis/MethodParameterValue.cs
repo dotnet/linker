@@ -12,22 +12,22 @@ namespace ILLink.Shared.TrimAnalysis
 	partial record MethodParameterValue
 	{
 		public MethodParameterValue (IParameterSymbol parameterSymbol)
-			: this ((IMethodSymbol) parameterSymbol.ContainingSymbol, parameterSymbol.ILIndex(), FlowAnnotations.GetMethodParameterAnnotation ((IMethodSymbol) parameterSymbol.ContainingSymbol, parameterSymbol.ILIndex()))
+			: this ((IMethodSymbol) parameterSymbol.ContainingSymbol, parameterSymbol.ILIndex (), FlowAnnotations.GetMethodParameterAnnotation ((IMethodSymbol) parameterSymbol.ContainingSymbol, parameterSymbol.ILIndex ()))
 		{ }
 
 		public MethodParameterValue (IMethodSymbol methodSymbol, ILParameterIndex parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-			=> (MethodSymbol, ILIndex, DynamicallyAccessedMemberTypes) = (methodSymbol, parameterIndex,  dynamicallyAccessedMemberTypes);
+			=> (MethodSymbol, ILIndex, DynamicallyAccessedMemberTypes) = (methodSymbol, parameterIndex, dynamicallyAccessedMemberTypes);
 
 		public readonly IMethodSymbol MethodSymbol;
 
 		public readonly ILParameterIndex ILIndex;
 
-		private int _sourceIndex => MethodSymbol.IsStatic ? (int)ILIndex : (int)ILIndex - 1;
+		private int _sourceIndex => MethodSymbol.IsStatic ? (int) ILIndex : (int) ILIndex - 1;
 
 		public override DynamicallyAccessedMemberTypes DynamicallyAccessedMemberTypes { get; }
 
 		public override IEnumerable<string> GetDiagnosticArgumentsForAnnotationMismatch ()
-			=> IsThisParameter() ? 
+			=> IsThisParameter () ?
 				new string[] { MethodSymbol.GetDisplayName () }
 				: new string[] { MethodSymbol.Parameters[_sourceIndex].GetDisplayName (), MethodSymbol.GetDisplayName () };
 
