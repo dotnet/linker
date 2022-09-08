@@ -437,9 +437,11 @@ namespace Mono.Linker.Dataflow
 		private static bool ComDangerousMethod (MethodDefinition methodDefinition, LinkContext context)
 		{
 			bool comDangerousMethod = IsComInterop (methodDefinition.MethodReturnType, methodDefinition.ReturnType, context);
+#pragma warning disable RS0030
 			foreach (ParameterDefinition pd in methodDefinition.Parameters) {
 				comDangerousMethod |= IsComInterop (pd, pd.ParameterType, context);
 			}
+#pragma warning restore RS0030
 
 			return comDangerousMethod;
 		}
