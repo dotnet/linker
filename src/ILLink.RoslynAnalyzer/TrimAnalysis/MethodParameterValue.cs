@@ -36,6 +36,6 @@ namespace ILLink.Shared.TrimAnalysis
 		public override string ToString ()
 			=> this.ValueToString (MethodSymbol, DynamicallyAccessedMemberTypes);
 
-		public bool IsThisParameter () => ILIndex == 0 && !MethodSymbol.IsStatic;
+		public bool IsThisParameter () => MethodSymbol.IsThisParameterIndex(ILIndex);
 	}
 }

@@ -226,7 +226,7 @@ namespace ILLink.Shared.TrimAnalysis
 				foreach (MethodDefinition method in type.Methods) {
 					DynamicallyAccessedMemberTypes[]? paramAnnotations = null;
 
-					// Warn is there is an annotation on a method without a `this` parameter -- we won't catch it in the for loop if there's no parameters
+					// Warn if there is an annotation on a method without a `this` parameter -- we won't catch it in the for loop if there's no parameters
 					if (GetMemberTypesForDynamicallyAccessedMembersAttribute (method) != DynamicallyAccessedMemberTypes.None
 						&& !method.HasImplicitThis ()) {
 						_context.LogWarning (method, DiagnosticId.DynamicallyAccessedMembersIsNotAllowedOnMethods);
