@@ -22,20 +22,20 @@ namespace ILLink.Shared.TrimAnalysis
 
 		public readonly ILParameterIndex ILIndex;
 
-		private int _sourceIndex => MethodSymbol.IsStatic ? (int) ILIndex : (int) ILIndex - 1;
+		private int SourceIndex => MethodSymbol.IsStatic ? (int) ILIndex : (int) ILIndex - 1;
 
 		public override DynamicallyAccessedMemberTypes DynamicallyAccessedMemberTypes { get; }
 
 		public override IEnumerable<string> GetDiagnosticArgumentsForAnnotationMismatch ()
 			=> IsThisParameter () ?
 				new string[] { MethodSymbol.GetDisplayName () }
-				: new string[] { MethodSymbol.Parameters[_sourceIndex].GetDisplayName (), MethodSymbol.GetDisplayName () };
+				: new string[] { MethodSymbol.Parameters[SourceIndex].GetDisplayName (), MethodSymbol.GetDisplayName () };
 
 		public override SingleValue DeepCopy () => this; // This value is immutable
 
 		public override string ToString ()
 			=> this.ValueToString (MethodSymbol, DynamicallyAccessedMemberTypes);
 
-		public bool IsThisParameter () => MethodSymbol.IsThisParameterIndex(ILIndex);
+		public bool IsThisParameter () => MethodSymbol.IsThisParameterIndex (ILIndex);
 	}
 }
