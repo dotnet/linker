@@ -4,7 +4,6 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using ILLink.RoslynAnalyzer;
 using ILLink.Shared.TypeSystemProxy;
 using Microsoft.CodeAnalysis;
@@ -38,10 +37,10 @@ namespace ILLink.Shared.TrimAnalysis
 
 		public static DynamicallyAccessedMemberTypes GetMethodParameterAnnotation (IMethodSymbol method, ILParameterIndex index)
 		{
-			if (IMethodSymbolExtension.IsThisParameterIndex (method, index))
-				return RoslynAnalyzer.ISymbolExtensions.GetDynamicallyAccessedMemberTypes (method);
+			if (method.IsThisParameterIndex (index))
+				return method.GetDynamicallyAccessedMemberTypes ();
 
-			IParameterSymbol parameter = IMethodSymbolExtension.GetParameter (method, index)!;
+			IParameterSymbol parameter = method.GetParameter (index)!;
 			var damt = parameter.GetDynamicallyAccessedMemberTypes ();
 
 			// Is this a property setter parameter?

@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis;
 
 namespace ILLink.RoslynAnalyzer
 {
-	public static class IMethodSymbolExtension
+	public static class IMethodSymbolExtensions
 	{
 		/// <summary>
 		/// Returns whether or not the ILParameterIndex represents the `this` Parameter
