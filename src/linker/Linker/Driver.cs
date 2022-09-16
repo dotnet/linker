@@ -1412,8 +1412,7 @@ namespace Mono.Linker
 
 		public void Dispose ()
 		{
-			if (context != null)
-				context.Dispose ();
+			context?.Dispose ();
 		}
 	}
 }

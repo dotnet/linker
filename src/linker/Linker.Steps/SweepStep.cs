@@ -191,8 +191,8 @@ namespace Mono.Linker.Steps
 				break;
 
 			case AssemblyAction.AddBypassNGen:
-				// FIXME: AddBypassNGen is just wrong, it should not be action as we need to
-				// turn it to Action.Save here to e.g. correctly update debug symbols
+			// FIXME: AddBypassNGen is just wrong, it should not be action as we need to
+			// turn it to Action.Save here to e.g. correctly update debug symbols
 			case AssemblyAction.Save:
 				if (SweepTypeForwarders (assembly)) {
 					// Need to sweep references, in case sweeping type forwarders removed any
