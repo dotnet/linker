@@ -50,6 +50,8 @@ namespace Mono.Linker.Steps
 
 	public partial class MarkStep : IStep
 	{
+		string IStep.Name => nameof (MarkStep);
+
 		LinkContext? _context;
 		protected LinkContext Context {
 			get {

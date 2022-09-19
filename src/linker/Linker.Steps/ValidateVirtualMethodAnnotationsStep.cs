@@ -9,6 +9,8 @@ namespace Mono.Linker.Steps
 {
 	public class ValidateVirtualMethodAnnotationsStep : BaseStep
 	{
+		protected override string Name => nameof (ValidateVirtualMethodAnnotationsStep);
+
 		protected override void Process ()
 		{
 			var annotations = Context.Annotations;

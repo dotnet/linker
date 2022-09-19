@@ -7,6 +7,7 @@ namespace Mono.Linker.Steps
 {
 	public class BodySubstituterStep : ProcessLinkerXmlStepBase
 	{
+		protected override string Name => nameof (BodySubstituterStep);
 		public BodySubstituterStep (Stream documentStream, string xmlDocumentLocation)
 			: base (documentStream, xmlDocumentLocation)
 		{

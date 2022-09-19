@@ -5,6 +5,7 @@ namespace Mono.Linker.Steps
 {
 	public class ProcessWarningsStep : BaseStep
 	{
+		protected override string Name => nameof (ProcessWarningsStep);
 		protected override void Process ()
 		{
 			// Flush all cached messages before the sweep and clean steps are run to be confident 

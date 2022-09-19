@@ -9,6 +9,8 @@ namespace Mono.Linker.Steps
 {
 	public class RootAssemblyInput : BaseStep
 	{
+		protected override string Name => nameof (RootAssemblyInput);
+
 		readonly string fileName;
 		readonly AssemblyRootMode rootMode;
 

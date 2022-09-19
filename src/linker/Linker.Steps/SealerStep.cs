@@ -10,6 +10,8 @@ namespace Mono.Linker.Steps
 {
 	public class SealerStep : BaseStep
 	{
+		protected override string Name => nameof (SealerStep);
+
 		HashSet<TypeDefinition>? referencedBaseTypeCache;
 
 		public SealerStep ()

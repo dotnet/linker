@@ -159,7 +159,9 @@ namespace Mono.Linker
 		{
 			while (_steps.Count > 0) {
 				IStep step = _steps[0];
+				LinkerEventSource.Log.LinkerStepStart (step.Name);
 				ProcessStep (context, step);
+				LinkerEventSource.Log.LinkerStepStop (step.Name);
 				_steps.Remove (step);
 			}
 		}

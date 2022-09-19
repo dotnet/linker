@@ -42,6 +42,8 @@ namespace Mono.Linker.Steps
 {
 	public class SweepStep : BaseStep
 	{
+		protected override string Name => nameof (SweepStep);
+
 		readonly bool sweepSymbols;
 		readonly HashSet<AssemblyDefinition> BypassNGenToSave = new HashSet<AssemblyDefinition> ();
 

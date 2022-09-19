@@ -42,6 +42,8 @@ namespace Mono.Linker.Steps
 
 	public class OutputStep : BaseStep
 	{
+		protected override string Name => nameof (OutputStep);
+
 		private Dictionary<UInt16, TargetArchitecture>? architectureMap;
 
 		private enum NativeOSOverride

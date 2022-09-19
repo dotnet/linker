@@ -26,6 +26,9 @@ namespace Mono.Linker.Steps
 	//
 	public abstract class SubStepsDispatcher : IStep
 	{
+		protected abstract string Name { get; }
+		string IStep.Name => Name;
+
 		readonly List<ISubStep> substeps;
 
 		CategorizedSubSteps? categorized;
