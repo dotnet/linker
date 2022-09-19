@@ -9,8 +9,6 @@ namespace Mono.Linker.Steps
 {
 	public class ProcessReferencesStep : BaseStep
 	{
-		protected override string Name => nameof (ProcessReferencesStep);
-
 		protected override void Process ()
 		{
 			// Walk over all -reference inputs and resolve any that may need to be rooted.

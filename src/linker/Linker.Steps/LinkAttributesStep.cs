@@ -7,8 +7,6 @@ namespace Mono.Linker.Steps
 {
 	public class LinkAttributesStep : ProcessLinkerXmlStepBase
 	{
-		protected override string Name => nameof (LinkAttributesStep);
-
 		public LinkAttributesStep (Stream documentStream, string xmlDocumentLocation)
 			: base (documentStream, xmlDocumentLocation)
 		{

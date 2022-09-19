@@ -10,7 +10,6 @@ namespace Mono.Linker.Steps
 {
 	public class CheckSuppressionsDispatcher : SubStepsDispatcher
 	{
-		protected override string Name => nameof (CheckSuppressionsDispatcher);
 		public CheckSuppressionsDispatcher () : base (new List<ISubStep> { new CheckSuppressionsStep () })
 		{
 

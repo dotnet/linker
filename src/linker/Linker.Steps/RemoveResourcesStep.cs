@@ -9,8 +9,6 @@ namespace Mono.Linker.Steps
 {
 	public class RemoveResourcesStep : BaseStep
 	{
-		protected override string Name => nameof (RemoveResourcesStep);
-
 		protected override void ProcessAssembly (AssemblyDefinition assembly)
 		{
 			if (!ShouldProcess (assembly)) return;

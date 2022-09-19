@@ -38,7 +38,6 @@ namespace Mono.Linker.Steps
 
 	public class RegenerateGuidStep : BaseStep
 	{
-		protected override string Name => nameof (RegenerateGuidStep);
 
 		protected override void ProcessAssembly (AssemblyDefinition assembly)
 		{

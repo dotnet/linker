@@ -37,8 +37,6 @@ namespace Mono.Linker.Steps
 
 	public abstract class BaseStep : IStep
 	{
-		protected abstract string Name { get; }
-		string IStep.Name => Name;
 
 		private LinkContext? _context;
 

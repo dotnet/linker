@@ -5,9 +5,8 @@ using System.IO;
 
 namespace Mono.Linker.Steps
 {
-	public abstract class ProcessLinkerXmlStepBase : BaseStep
+	public class ProcessLinkerXmlStepBase : BaseStep
 	{
-		protected abstract override string Name { get; }
 		protected readonly string _xmlDocumentLocation;
 		protected readonly Stream _documentStream;
 

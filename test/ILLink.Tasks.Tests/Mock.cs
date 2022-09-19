@@ -201,7 +201,6 @@ namespace ILLink.Tasks.Tests
 
 	public class MockCustomStep : IStep
 	{
-		string IStep.Name => nameof (MockCustomStep);
 		public void Process (LinkContext context) { }
 	}
 

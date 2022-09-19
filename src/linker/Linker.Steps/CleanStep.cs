@@ -36,7 +36,6 @@ namespace Mono.Linker.Steps
 
 	public class CleanStep : BaseStep
 	{
-		protected override string Name => nameof (CleanStep);
 
 		protected override void ProcessAssembly (AssemblyDefinition assembly)
 		{

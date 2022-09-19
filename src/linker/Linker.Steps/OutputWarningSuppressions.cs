@@ -7,8 +7,6 @@ namespace Mono.Linker.Steps
 {
 	public class OutputWarningSuppressions : BaseStep
 	{
-		protected override string Name => nameof (OutputWarningSuppressions);
-
 		protected override bool ConditionToProcess ()
 		{
 			return Context.WarningSuppressionWriter?.IsEmpty == false;

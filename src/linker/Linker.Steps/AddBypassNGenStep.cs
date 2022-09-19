@@ -11,7 +11,6 @@ namespace Mono.Linker.Steps
 
 	public class AddBypassNGenStep : BaseStep
 	{
-		protected override string Name => nameof (AddBypassNGenStep);
 
 		AssemblyDefinition? coreLibAssembly;
 		CustomAttribute? bypassNGenAttribute;

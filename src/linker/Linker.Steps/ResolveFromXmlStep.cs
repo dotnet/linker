@@ -37,7 +37,6 @@ namespace Mono.Linker.Steps
 {
 	public class ResolveFromXmlStep : ProcessLinkerXmlStepBase
 	{
-		protected override string Name => nameof (ResolveFromXmlStep);
 		public ResolveFromXmlStep (Stream documentStream, string xmlDocumentLocation)
 			: base (documentStream, xmlDocumentLocation)
 		{

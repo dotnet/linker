@@ -9,8 +9,6 @@ namespace Mono.Linker.Steps
 {
 	public class ReflectionBlockedStep : BaseStep
 	{
-		protected override string Name => nameof (ReflectionBlockedStep);
-
 		AssemblyDefinition? assembly;
 		AssemblyDefinition Assembly {
 			get {

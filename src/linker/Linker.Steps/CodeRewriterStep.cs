@@ -11,8 +11,6 @@ namespace Mono.Linker.Steps
 {
 	public class CodeRewriterStep : BaseStep
 	{
-		protected override string Name => nameof (CodeRewriterStep);
-
 		AssemblyDefinition? assembly;
 		AssemblyDefinition Assembly {
 			get {
