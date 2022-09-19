@@ -43,7 +43,6 @@ namespace Mono.Linker.Steps
 	public class SweepStep : BaseStep
 	{
 		readonly bool sweepSymbols;
-		readonly HashSet<AssemblyDefinition> BypassNGenToSave = new HashSet<AssemblyDefinition> ();
 
 		public SweepStep (bool sweepSymbols = true)
 		{
@@ -155,7 +154,6 @@ namespace Mono.Linker.Steps
 						goto case AssemblyAction.AddBypassNGen;
 
 					case AssemblyAction.AddBypassNGen:
-						BypassNGenToSave.Add (assembly);
 						continue;
 					}
 				}
