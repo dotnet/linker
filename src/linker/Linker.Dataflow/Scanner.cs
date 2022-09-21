@@ -156,7 +156,7 @@ namespace Mono.Linker.Dataflow
 					break;
 
 				case Code.Ldtoken:
-					ScanLdtoken (operation, state, thisMethod.Body);
+					ScanLdtoken (operation, state);
 					break;
 
 				case Code.Ldind_I:
@@ -349,7 +349,7 @@ namespace Mono.Linker.Dataflow
 				case Code.Call:
 				case Code.Callvirt:
 				case Code.Newobj:
-								  //TrackNestedFunctionReference ((MethodReference) operation.Operand, ref interproceduralState);
+					//TrackNestedFunctionReference ((MethodReference) operation.Operand, ref interproceduralState);
 					HandleCall (thisMethod.Body, operation, state);
 					//ValidateNoReferenceToReference (locals, methodBody.Method, operation.Offset);
 					break;
@@ -425,7 +425,7 @@ namespace Mono.Linker.Dataflow
 		{
 			Scan (block, state);
 		}
-		
+
 		public abstract void HandleReturnValue ();
 
 		protected abstract SingleValue GetMethodParameterValue (MethodDefinition method, int parameterIndex);
@@ -512,8 +512,8 @@ namespace Mono.Linker.Dataflow
 				newSlot = new MultiValue (state.Get (new LocalKey (localDef)));
 			state.Push (newSlot);
 		}
-		
-		void ScanLdtoken (Instruction operation, BlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state, MethodBody methodBody)
+
+		void ScanLdtoken (Instruction operation, BlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state)
 		{
 			switch (operation.Operand) {
 			case GenericParameter genericParameter:
@@ -565,7 +565,7 @@ namespace Mono.Linker.Dataflow
 			}
 			state.Set (new LocalKey (localDef), valueToStore);
 		}
-		
+
 		private void ScanIndirectStore (
 			Instruction operation,
 			BlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state,
@@ -637,12 +637,12 @@ namespace Mono.Linker.Dataflow
 			Code code = operation.OpCode.Code;
 			if (code == Code.Ldfld || code == Code.Ldflda)
 				PopUnknown (state, 1, methodBody, operation.Offset);
-			
+
 			bool isByRef = code == Code.Ldflda || code == Code.Ldsflda;
 
 			FieldDefinition? field = _context.TryResolve ((FieldReference) operation.Operand);
 			if (field == null) {
-				PushUnknown(state);
+				PushUnknown (state);
 				return;
 			}
 
@@ -685,7 +685,7 @@ namespace Mono.Linker.Dataflow
 			FieldDefinition? field = _context.TryResolve ((FieldReference) operation.Operand);
 			if (field != null) {
 				if (CompilerGeneratedState.IsHoistedLocal (field)) {
-				//	interproceduralState.SetHoistedLocal (new HoistedLocalKey (field), valueToStoreSlot);
+					//	interproceduralState.SetHoistedLocal (new HoistedLocalKey (field), valueToStoreSlot);
 					return;
 				}
 
@@ -722,7 +722,7 @@ namespace Mono.Linker.Dataflow
 			out SingleValue? newObjValue)
 		{
 			newObjValue = null;
-			
+
 			int countToPop = 0;
 			if (!isNewObj && methodCalled.HasThis && !methodCalled.ExplicitThis)
 				countToPop++;
@@ -809,7 +809,7 @@ namespace Mono.Linker.Dataflow
 
 			SingleValue? newObjValue;
 			ValueNodeList methodArguments = PopCallArguments (state, calledMethod, callingMethodBody, isNewObj, operation.Offset, out newObjValue);
-			
+
 			var dereferencedMethodParams = new List<MultiValue> ();
 			foreach (var argument in methodArguments)
 				dereferencedMethodParams.Add (DereferenceValue (argument, state));
@@ -970,7 +970,7 @@ namespace Mono.Linker.Dataflow
 		{
 			if (count < 1)
 				throw new InvalidOperationException ();
-			
+
 			CheckForInvalidStack (state, count, method, ilOffset);
 
 			return state.Pop (count);

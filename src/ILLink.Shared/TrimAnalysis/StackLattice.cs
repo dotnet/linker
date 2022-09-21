@@ -16,16 +16,16 @@ namespace ILLink.Shared.TrimAnalysis
 
 		public StructStack<TValue> Top { get; }
 
-		public StackLattice(TValueLattice valueLattice)
+		public StackLattice (TValueLattice valueLattice)
 		{
 			ValueLattice = valueLattice;
-			Top = new StructStack<TValue>();
+			Top = new StructStack<TValue> ();
 		}
 
-		public StructStack<TValue> Meet(StructStack<TValue> left, StructStack<TValue> right)
+		public StructStack<TValue> Meet (StructStack<TValue> left, StructStack<TValue> right)
 		{
 			// Meet(value, Top) = value
-			if (left.Equals (Top)) return new StructStack<TValue> (new StructStack<TValue>(right));
+			if (left.Equals (Top)) return new StructStack<TValue> (new StructStack<TValue> (right));
 
 			if (right.Equals (Top)) return new StructStack<TValue> (new StructStack<TValue> (left));
 
@@ -39,16 +39,15 @@ namespace ILLink.Shared.TrimAnalysis
 					right.Push (ValueLattice.UnknownValue);
 			}
 
-			StructStack<TValue> newStack = new StructStack<TValue>(left.Count);
-			IEnumerator<TValue> aEnum = left.GetEnumerator();
-			IEnumerator<TValue> bEnum = right.GetEnumerator();
-			while (aEnum.MoveNext() && bEnum.MoveNext())
-			{
-				newStack.Push(ValueLattice.Meet(aEnum.Current, bEnum.Current));
+			StructStack<TValue> newStack = new StructStack<TValue> (left.Count);
+			IEnumerator<TValue> aEnum = left.GetEnumerator ();
+			IEnumerator<TValue> bEnum = right.GetEnumerator ();
+			while (aEnum.MoveNext () && bEnum.MoveNext ()) {
+				newStack.Push (ValueLattice.Meet (aEnum.Current, bEnum.Current));
 			}
 
 			// The new stack is reversed. Use the copy constructor to reverse it back
-			return new StructStack<TValue>(newStack);
+			return new StructStack<TValue> (newStack);
 		}
 	}
 }

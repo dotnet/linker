@@ -2,9 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using Mono.Cecil.Cil;
 using ILLink.Shared.DataFlow;
 using ILLink.Shared.TrimAnalysis;
+using Mono.Cecil.Cil;
 
 namespace Mono.Linker.Dataflow
 {
@@ -12,7 +12,7 @@ namespace Mono.Linker.Dataflow
 	{
 		readonly VariableDefinition variableDefinition;
 
-		public LocalKey(VariableDefinition variableDefinition) => this.variableDefinition = variableDefinition;
+		public LocalKey (VariableDefinition variableDefinition) => this.variableDefinition = variableDefinition;
 
 		public bool Equals (LocalKey other)
 		{
@@ -56,12 +56,12 @@ namespace Mono.Linker.Dataflow
 
 		public TValue Pop () => Stack.Pop ();
 
-		public TValue Pop (int count) => Stack.Pop(count);
+		public TValue Pop (int count) => Stack.Pop (count);
 	}
 
 	public readonly struct BlockStateLattice<TValue, TValueLattice> : ILattice<BlockState<TValue>>
-		where TValue: IEquatable<TValue>
-		where TValueLattice: ILatticeWithUnknownValue<TValue>
+		where TValue : IEquatable<TValue>
+		where TValueLattice : ILatticeWithUnknownValue<TValue>
 	{
 		public readonly DictionaryLattice<LocalKey, TValue, TValueLattice> Lattice;
 		public readonly StackLattice<TValue, TValueLattice> StackLattice;

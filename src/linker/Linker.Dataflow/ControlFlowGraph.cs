@@ -4,13 +4,12 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using ILLink.Shared.DataFlow;
 using Mono.Cecil.Cil;
-using System.Diagnostics.CodeAnalysis;
-
 using Predecessor = ILLink.Shared.DataFlow.IControlFlowGraph<
-	Mono.Linker.Dataflow.BasicBlock, 
+	Mono.Linker.Dataflow.BasicBlock,
 	Mono.Linker.Dataflow.Region
 >.Predecessor;
 
@@ -24,7 +23,7 @@ namespace Mono.Linker.Dataflow
 	public struct BasicBlock : IEquatable<BasicBlock>
 	{
 		private readonly int _id;
-		
+
 		private readonly MethodBody _methodBody;
 
 		private readonly int _start;
@@ -79,12 +78,12 @@ namespace Mono.Linker.Dataflow
 			var nodes = new List<string> ();
 
 			foreach (var block in Blocks) {
-				var predecessors = GetPredecessors (block).Select(o => o.Block.Id).ToList();
-				nodes.Add($"Id: {block.Id}, Range: {block}, Predecessors: [{string.Join (",", predecessors)}]");
+				var predecessors = GetPredecessors (block).Select (o => o.Block.Id).ToList ();
+				nodes.Add ($"Id: {block.Id}, Range: {block}, Predecessors: [{string.Join (",", predecessors)}]");
 			}
 			return string.Join (" | ", nodes);
 		}
-		
+
 		public IEnumerable<BasicBlock> Blocks => _blocks;
 
 		public BasicBlock Entry => _blocks[0];
@@ -110,7 +109,7 @@ namespace Mono.Linker.Dataflow
 			var firstInstructionToBlock = new Dictionary<int, BasicBlock> ();
 			var blocks = ConstructBasicBlocks (method, firstInstructionToBlock);
 			var edges = GetEdges (firstInstructionToBlock, blocks);
-			
+
 			return new ControlFlowGraph (blocks, edges);
 		}
 
@@ -168,8 +167,8 @@ namespace Mono.Linker.Dataflow
 
 		public static List<List<int>> GetEdges (Dictionary<int, BasicBlock> firstInstructionToBlock, List<BasicBlock> blocks)
 		{
-			var edges = new List<List<int>>(blocks.Count);
-			
+			var edges = new List<List<int>> (blocks.Count);
+
 			foreach (var _ in blocks) {
 				edges.Add (new List<int> ());
 			}
@@ -179,12 +178,12 @@ namespace Mono.Linker.Dataflow
 
 			foreach (var basicBlock in blocks) {
 
-				if(basicBlock.LastInstruction == null) {
+				if (basicBlock.LastInstruction == null) {
 					continue;
 				}
 
 				// Handle conditional branches
-				if (basicBlock.LastInstruction.OpCode.IsControlFlowInstruction()) {
+				if (basicBlock.LastInstruction.OpCode.IsControlFlowInstruction ()) {
 					var jumpTargets = basicBlock.LastInstruction.GetJumpTargets ();
 
 					foreach (var jumpTarget in jumpTargets) {
@@ -199,8 +198,8 @@ namespace Mono.Linker.Dataflow
 				}
 				// Handle last block predecessors
 				else if (basicBlock.LastInstruction.OpCode.FlowControl == FlowControl.Return) {
-					edges[blocks.Count-1].Add (basicBlock.Id);
-				} 
+					edges[blocks.Count - 1].Add (basicBlock.Id);
+				}
 				// Handle fall through
 				else if ((basicBlock.LastInstruction.OpCode.FlowControl == FlowControl.Next || basicBlock.LastInstruction.OpCode.FlowControl == FlowControl.Call) && basicBlock.LastInstruction.Next != null) {
 					var targetId = firstInstructionToBlock[basicBlock.LastInstruction.Next.Offset].Id;
@@ -217,14 +216,13 @@ namespace Mono.Linker.Dataflow
 			int blockStart = 0;
 
 			// Add extra first block
-			AddBlock(methodBody, blocks, firstInstructionToBlock, - 1, -1);
-			
+			AddBlock (methodBody, blocks, firstInstructionToBlock, -1, -1);
+
 			var leaders = methodBody.GetInitialBasicBlockInstructions ();
-			
-			for (int i = 1; i < methodBody.Instructions.Count; i++)
-			{
-				if (leaders.Contains (methodBody.Instructions[i].Offset)){
-					AddBlock(methodBody, blocks, firstInstructionToBlock, blockStart, i - 1);
+
+			for (int i = 1; i < methodBody.Instructions.Count; i++) {
+				if (leaders.Contains (methodBody.Instructions[i].Offset)) {
+					AddBlock (methodBody, blocks, firstInstructionToBlock, blockStart, i - 1);
 					blockStart = i;
 				}
 			}
@@ -242,7 +240,7 @@ namespace Mono.Linker.Dataflow
 			var block = new BasicBlock (methodBody, blocks.Count, ilStart, ilEnd);
 			blocks.Add (block);
 
-			if(ilStart >= 0) {
+			if (ilStart >= 0) {
 				if (!firstInstructionToBlock.TryAdd (methodBody.Instructions[ilStart].Offset, block))
 					firstInstructionToBlock[methodBody.Instructions[ilStart].Offset] = block;
 			}

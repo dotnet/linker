@@ -15,7 +15,7 @@ namespace ILLink.Shared.TrimAnalysis
 			_unknownValue = unknownValue;
 		}
 
-		public ValueSet<TValue> UnknownValue => new ValueSet<TValue>(_unknownValue);
+		public ValueSet<TValue> UnknownValue => new ValueSet<TValue> (_unknownValue);
 
 		public ValueSet<TValue> Top => default;
 

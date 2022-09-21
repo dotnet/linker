@@ -38,7 +38,7 @@ namespace ILLink.Shared.DataFlow
 			IEnumerator<TValue> thisEnum = GetEnumerator ();
 			IEnumerator<TValue> otherEnum = other.GetEnumerator ();
 			while (thisEnum.MoveNext () && otherEnum.MoveNext ()) {
-				equals &= thisEnum.Current.Equals(otherEnum.Current);
+				equals &= thisEnum.Current.Equals (otherEnum.Current);
 			}
 
 			return equals;
@@ -62,8 +62,8 @@ namespace ILLink.Shared.DataFlow
 			if (Stack.Count < 1) throw new InvalidOperationException ("Stack is empty");
 			return Stack.Pop ();
 		}
-		
-		internal TValue Pop(int count)
+
+		internal TValue Pop (int count)
 		{
 			TValue topOfStack = Pop ();
 

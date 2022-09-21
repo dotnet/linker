@@ -4,10 +4,8 @@
 using System;
 using System.Collections.Generic;
 using Mono.Cecil;
-using Mono.Linker;
 using Mono.Linker.Dataflow;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
-using Mono.Linker.Tests.Cases.Expectations.Helpers;
 using Mono.Linker.Tests.TestCasesRunner;
 using NUnit.Framework;
 
@@ -24,11 +22,11 @@ namespace Mono.Linker.Tests
 			// show up in a warning are printed in a way that is friendly to the user.
 			if (customAttribute.AttributeType.Name != nameof (ControlFlowGraphAttribute))
 				throw new NotImplementedException ();
-			
+
 			var expectedDisplayName = (string) customAttribute.ConstructorArguments[0].Value;
 
 			if (member.MetadataToken.TokenType == TokenType.Method) {
-				Assert.AreEqual (expectedDisplayName, ControlFlowGraph.Create ((member as MethodReference).Resolve().Body).ToString());
+				Assert.AreEqual (expectedDisplayName, ControlFlowGraph.Create ((member as MethodReference).Resolve ().Body).ToString ());
 			}
 		}
 
@@ -51,7 +49,7 @@ namespace Mono.Linker.Tests
 		{
 			var foo = true;
 
-			if(foo == true) {
+			if (foo == true) {
 				Console.WriteLine ("foo");
 			}
 
@@ -101,16 +99,16 @@ namespace Mono.Linker.Tests
 			"Id: 7, Range: [IL_0027, IL_0027], Predecessors: [4] | " +
 			"Id: 8, Range: [IL_0029, IL_0029], Predecessors: [5,6,7] | " +
 			"Id: 9, Range: Empty, Predecessors: [8]")]
-		public static void BranchSwitch () 
+		public static void BranchSwitch ()
 		{
 			var a = 1;
 
 			switch (a) {
-			case 1: 
+			case 1:
 				Console.WriteLine (a);
-				break; 
-			case 2: 
-				Console.WriteLine (a+1);
+				break;
+			case 2:
+				Console.WriteLine (a + 1);
 				break;
 			default:
 				break;
@@ -148,7 +146,7 @@ namespace Mono.Linker.Tests
 
 		public static string GetTestString () => "test";
 
-		public static void GetString(string s)
+		public static void GetString (string s)
 		{
 
 		}
