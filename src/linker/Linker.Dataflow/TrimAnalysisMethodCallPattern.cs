@@ -42,7 +42,7 @@ namespace Mono.Linker.Dataflow
 			Origin = origin;
 		}
 
-		public TrimAnalysisMethodCallPattern Merge (ValueSetLattice<SingleValue> lattice, TrimAnalysisMethodCallPattern other)
+		public TrimAnalysisMethodCallPattern Merge (ValueSetLatticeWithUnknownValue<SingleValue> lattice, TrimAnalysisMethodCallPattern other)
 		{
 			Debug.Assert (Operation == other.Operation);
 			Debug.Assert (Origin == other.Origin);

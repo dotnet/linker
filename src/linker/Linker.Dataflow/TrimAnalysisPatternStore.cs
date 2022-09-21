@@ -12,10 +12,10 @@ namespace Mono.Linker.Dataflow
 	{
 		readonly Dictionary<(MessageOrigin, bool), TrimAnalysisAssignmentPattern> AssignmentPatterns;
 		readonly Dictionary<MessageOrigin, TrimAnalysisMethodCallPattern> MethodCallPatterns;
-		readonly ValueSetLattice<SingleValue> Lattice;
+		readonly ValueSetLatticeWithUnknownValue<SingleValue> Lattice;
 		readonly LinkContext _context;
 
-		public TrimAnalysisPatternStore (ValueSetLattice<SingleValue> lattice, LinkContext context)
+		public TrimAnalysisPatternStore (ValueSetLatticeWithUnknownValue<SingleValue> lattice, LinkContext context)
 		{
 			AssignmentPatterns = new Dictionary<(MessageOrigin, bool), TrimAnalysisAssignmentPattern> ();
 			MethodCallPatterns = new Dictionary<MessageOrigin, TrimAnalysisMethodCallPattern> ();
@@ -47,6 +47,7 @@ namespace Mono.Linker.Dataflow
 			}
 
 			MethodCallPatterns[pattern.Origin] = pattern.Merge (Lattice, existingPattern);
+
 		}
 
 		public void MarkAndProduceDiagnostics (ReflectionMarker reflectionMarker, MarkStep markStep)

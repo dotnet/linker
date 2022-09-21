@@ -7,6 +7,7 @@ using Mono.Cecil;
 using Mono.Linker;
 using Mono.Linker.Dataflow;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
+using Mono.Linker.Tests.Cases.Expectations.Helpers;
 using Mono.Linker.Tests.TestCasesRunner;
 using NUnit.Framework;
 
@@ -27,7 +28,7 @@ namespace Mono.Linker.Tests
 			var expectedDisplayName = (string) customAttribute.ConstructorArguments[0].Value;
 
 			if (member.MetadataToken.TokenType == TokenType.Method) {
-				Assert.AreEqual (expectedDisplayName, new ControlFlowGraph((member as MethodReference).Resolve().Body).ToString());
+				Assert.AreEqual (expectedDisplayName, ControlFlowGraph.Create ((member as MethodReference).Resolve().Body).ToString());
 			}
 		}
 
@@ -115,5 +116,42 @@ namespace Mono.Linker.Tests
 				break;
 			}
 		}
+
+		[ControlFlowGraph ("Id: 0, Range: Empty, Predecessors: [] | " +
+			"Id: 1, Range: [IL_0000, IL_0007], Predecessors: [0] | " +
+			"Id: 2, Range: [IL_0009, IL_000A], Predecessors: [1] | " +
+			"Id: 3, Range: [IL_000F, IL_0010], Predecessors: [1,2] | " +
+			"Id: 4, Range: Empty, Predecessors: [3]")]
+		public static void NullCoalesce ()
+		{
+			string str = Console.ReadLine () ?? Console.ReadLine ();
+		}
+
+		[ControlFlowGraph ("Id: 0, Range: Empty, Predecessors: [] | " +
+			"Id: 1, Range: [IL_0000, IL_0003], Predecessors: [0] | " +
+			"Id: 2, Range: [IL_0005, IL_000D], Predecessors: [3] | " +
+			"Id: 3, Range: [IL_000F, IL_0016], Predecessors: [1] | " +
+			"Id: 4, Range: [IL_0018, IL_0018], Predecessors: [2] | " +
+			"Id: 5, Range: Empty, Predecessors: [4]")]
+		public static void TestBackwardsEdgeGoto ()
+		{
+			string str = null;
+			goto ForwardTarget;
+		BackwardTarget:
+			GetString (str);
+			return;
+
+		ForwardTarget:
+			str = GetTestString ();
+			goto BackwardTarget;
+		}
+
+		public static string GetTestString () => "test";
+
+		public static void GetString(string s)
+		{
+
+		}
+
 	}
 }

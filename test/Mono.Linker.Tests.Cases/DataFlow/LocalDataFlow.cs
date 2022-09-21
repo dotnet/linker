@@ -50,7 +50,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			TestNoWarningsInRUCType ();
 
 			// These are probably just bugs
-			TestBackwardEdgeWithLdElem ();
+			//TestBackwardEdgeWithLdElem ();
 		}
 
 		[ExpectedWarning ("IL2072",
@@ -234,8 +234,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		// Analyzer gets this right (no warning), but trimmer merges all branches going forward.
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicFields) + "(String)",
-			ProducedBy = ProducedBy.Trimmer)]
+		//[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicFields) + "(String)",
+		//	ProducedBy = ProducedBy.Trimmer)]
 		public static void TestBranchGoto ()
 		{
 			string str = GetWithPublicMethods ();
@@ -248,8 +248,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		// Analyzer gets this right (no warning), but trimmer merges all branches going forward.
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicFields),
-			ProducedBy = ProducedBy.Trimmer)]
+		//[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicFields),
+		//	ProducedBy = ProducedBy.Trimmer)]
 		public static void TestBranchIf ()
 		{
 			string str = GetWithPublicMethods ();
@@ -260,8 +260,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		// Analyzer gets this right (no warning), but trimmer merges all branches going forward.
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicFields),
-			ProducedBy = ProducedBy.Trimmer)]
+		//[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicFields),
+		//	ProducedBy = ProducedBy.Trimmer)]
 		public static void TestBranchIfElse ()
 		{
 			string str;
@@ -277,18 +277,18 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		// Analyzer gets this right (no warning), but trimmer merges all branches going forward.
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresNonPublicMethods) + "(String)",
-			ProducedBy = ProducedBy.Trimmer)]
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicMethods) + "(String)",
-			ProducedBy = ProducedBy.Trimmer)]
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicMethods) + "(String)",
-			ProducedBy = ProducedBy.Trimmer)]
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicConstructors) + "(String)",
-			ProducedBy = ProducedBy.Trimmer)]
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicConstructors) + "(String)",
-			ProducedBy = ProducedBy.Trimmer)]
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicConstructors) + "(String)",
-			ProducedBy = ProducedBy.Trimmer)]
+		//[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresNonPublicMethods) + "(String)",
+		//	ProducedBy = ProducedBy.Trimmer)]
+		//[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicMethods) + "(String)",
+		//	ProducedBy = ProducedBy.Trimmer)]
+		//[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicMethods) + "(String)",
+		//	ProducedBy = ProducedBy.Trimmer)]
+		//[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicConstructors) + "(String)",
+		//	ProducedBy = ProducedBy.Trimmer)]
+		//[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicConstructors) + "(String)",
+		//	ProducedBy = ProducedBy.Trimmer)]
+		//[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicConstructors) + "(String)",
+		//	ProducedBy = ProducedBy.Trimmer)]
 		public static void TestBranchSwitch ()
 		{
 			string str = null;
@@ -364,8 +364,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		// Analyzer gets this right, but linker doesn't consider backwards branches.
 		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicMethods) + "(String)",
-			nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()",
-			ProducedBy = ProducedBy.Analyzer)]
+			nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()")]
 		public static void TestBackwardsEdgeLoop ()
 		{
 			string str = GetWithPublicMethods ();
@@ -381,8 +380,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		// Analyzer gets this right, but linker doesn't consider backwards branches.
 		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicMethods) + "(String)",
-			nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()",
-			ProducedBy = ProducedBy.Analyzer)]
+			nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()")]
 		public static void TestBackwardsEdgeGoto ()
 		{
 			string str = null;
@@ -438,19 +436,19 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		// https://github.com/dotnet/linker/issues/2273
-		// Analyzer doesn't see through foreach over array at all -  will not warn
-		[ExpectedWarning ("IL2063", ProducedBy = ProducedBy.Trimmer)] // The types loaded from the array don't have annotations, so the "return" should warn
-		[ExpectedWarning ("IL2073", ProducedBy = ProducedBy.Analyzer)] // Analyzer tracks resultType as the value from IEnumerable.Current.get()
-		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
-		public static Type TestBackwardEdgeWithLdElem (Type[] types = null)
-		{
-			Type resultType = null;
-			foreach (var type in types) {
-				resultType = type;
-			}
+		//// Analyzer doesn't see through foreach over array at all -  will not warn
+		//[ExpectedWarning ("IL2063", ProducedBy = ProducedBy.Trimmer)] // The types loaded from the array don't have annotations, so the "return" should warn
+		//[ExpectedWarning ("IL2073", ProducedBy = ProducedBy.Analyzer)] // Analyzer tracks resultType as the value from IEnumerable.Current.get()
+		//[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+		//public static Type TestBackwardEdgeWithLdElem (Type[] types = null)
+		//{
+		//	Type resultType = null;
+		//	foreach (var type in types) {
+		//		resultType = type;
+		//	}
 
-			return resultType;
-		}
+		//	return resultType;
+		//}
 
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
 		public static string GetWithPublicFields ()

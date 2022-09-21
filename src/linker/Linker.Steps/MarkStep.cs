@@ -3763,8 +3763,8 @@ namespace Mono.Linker.Steps
 				return;
 
 			Debug.Assert (ScopeStack.CurrentScope.Origin.Provider == body.Method);
-			var scanner = new ReflectionMethodBodyScanner (Context, this, ScopeStack.CurrentScope.Origin);
-			scanner.InterproceduralScan (body);
+			var trimDataFlowAnalysis = new ReflectionDataFlowAnalysis (Context);
+			trimDataFlowAnalysis.AnalyzeMethod (body.Method, this, ScopeStack.CurrentScope.Origin);
 		}
 
 		protected class AttributeProviderPair

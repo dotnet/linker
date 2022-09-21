@@ -47,7 +47,7 @@ namespace Mono.Linker.Dataflow
 	{
 		protected readonly LinkContext _context;
 		protected readonly InterproceduralStateLattice InterproceduralStateLattice;
-		protected static ValueSetLattice<SingleValue> MultiValueLattice => default;
+		protected static ValueSetLatticeWithUnknownValue<SingleValue> MultiValueLattice => default;
 
 		protected MethodBodyScanner (LinkContext context)
 		{
