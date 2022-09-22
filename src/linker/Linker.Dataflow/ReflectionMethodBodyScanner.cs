@@ -292,7 +292,6 @@ namespace Mono.Linker.Dataflow
 						if (staticType is null) {
 							// We don't know anything about the type GetType was called on. Track this as a usual result of a method call without any annotations
 							AddReturnValue (context.Annotations.FlowAnnotations.GetMethodReturnValue (calledMethodDefinition));
-							//AddReturnValue (UnknownValue.Instance);
 						} else if (staticType.IsSealed || staticType.IsTypeOf ("System", "Delegate")) {
 							// We can treat this one the same as if it was a typeof() expression
 
@@ -437,7 +436,7 @@ namespace Mono.Linker.Dataflow
 		private static bool ComDangerousMethod (MethodDefinition methodDefinition, LinkContext context)
 		{
 			bool comDangerousMethod = IsComInterop (methodDefinition.MethodReturnType, methodDefinition.ReturnType, context);
-#pragma warning disable RS0030
+#pragma warning disable RS0030 // MethodDefinition.Parameters is banned. Here we iterate through the parameters and don't need to worry about the 'this' parameter.
 			foreach (ParameterDefinition pd in methodDefinition.Parameters) {
 				comDangerousMethod |= IsComInterop (pd, pd.ParameterType, context);
 			}

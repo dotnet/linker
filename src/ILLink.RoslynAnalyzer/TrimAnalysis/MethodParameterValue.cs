@@ -12,7 +12,7 @@ namespace ILLink.Shared.TrimAnalysis
 	partial record MethodParameterValue
 	{
 		public MethodParameterValue (IParameterSymbol parameterSymbol)
-			: this ((IMethodSymbol) parameterSymbol.ContainingSymbol, parameterSymbol.ILIndex (), FlowAnnotations.GetMethodParameterAnnotation ((IMethodSymbol) parameterSymbol.ContainingSymbol, parameterSymbol.ILIndex ()))
+			: this ((IMethodSymbol) parameterSymbol.ContainingSymbol, parameterSymbol.GetILParameterIndex (), FlowAnnotations.GetMethodParameterAnnotation ((IMethodSymbol) parameterSymbol.ContainingSymbol, parameterSymbol.GetILParameterIndex ()))
 		{ }
 
 		public MethodParameterValue (IMethodSymbol methodSymbol, ILParameterIndex parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)

@@ -8,7 +8,7 @@ namespace ILLink.RoslynAnalyzer
 {
 	internal static class IParameterSymbolExtensions
 	{
-		public static ILParameterIndex ILIndex (this IParameterSymbol parameterSymbol)
+		public static ILParameterIndex GetILParameterIndex (this IParameterSymbol parameterSymbol)
 			=> (ILParameterIndex) (((IMethodSymbol) parameterSymbol.ContainingSymbol).IsStatic ? parameterSymbol.Ordinal : parameterSymbol.Ordinal + 1);
 	}
 }
