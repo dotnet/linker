@@ -2,37 +2,37 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ILLink.Shared.DataFlow
 {
-	public struct StructStack<TValue> : IEquatable<StructStack<TValue>>
+	public struct ValueStack<TValue> : IEquatable<ValueStack<TValue>>
 		where TValue : IEquatable<TValue>
 	{
-		private Stack<TValue>? Stack;
+		private Stack<TValue>? _stack;
 
-		private readonly int _count = 0;
+		private readonly int _capacity = 0;
 
-		public StructStack ()
+		public ValueStack ()
 		{
 		}
 
-		public StructStack (StructStack<TValue> newStack)
+		public ValueStack (ValueStack<TValue> stack)
 		{
-			Stack = newStack.Stack == null ? null : new Stack<TValue> (newStack.Stack);
+			_stack = stack._stack == null ? null : new Stack<TValue> (stack._stack);
 		}
 
-		public StructStack (int count)
+		public ValueStack (int capacity)
 		{
-			_count = count;
+			_capacity = capacity;
 		}
 
-		public int Count => Stack == null ? 0 : Stack.Count;
+		public int Count => _stack == null ? 0 : _stack.Count;
 
-		public bool Equals (StructStack<TValue> other)
+		public bool Equals (ValueStack<TValue> other)
 		{
-			if (this.Count != other.Count)
+			if (Count != other.Count)
 				return false;
 			bool equals = true;
 			IEnumerator<TValue> thisEnum = GetEnumerator ();
@@ -46,21 +46,20 @@ namespace ILLink.Shared.DataFlow
 
 		internal IEnumerator<TValue> GetEnumerator ()
 		{
-			Stack ??= new Stack<TValue> (_count);
-			return Stack.GetEnumerator ();
+			return _stack?.GetEnumerator () ?? Enumerable.Empty<TValue> ().GetEnumerator ();
+
 		}
 
 		internal void Push (TValue value)
 		{
-			Stack ??= new Stack<TValue> (_count);
-			Stack.Push (value);
+			_stack ??= new Stack<TValue> (_capacity);
+			_stack.Push (value);
 		}
 
 		internal TValue Pop ()
 		{
-			if (Stack == null) throw new InvalidOperationException ("Stack is null");
-			if (Stack.Count < 1) throw new InvalidOperationException ("Stack is empty");
-			return Stack.Pop ();
+			if (_stack == null) throw new InvalidOperationException ("Stack is null");
+			return _stack.Pop ();
 		}
 
 		internal TValue Pop (int count)

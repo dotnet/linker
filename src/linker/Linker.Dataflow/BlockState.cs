@@ -25,7 +25,7 @@ namespace Mono.Linker.Dataflow
 	{
 		public DefaultValueDictionary<LocalKey, TValue> Dictionary;
 
-		public StructStack<TValue> Stack;
+		public ValueStack<TValue> Stack;
 
 		public bool Equals (BlockState<TValue> other)
 		{
@@ -33,18 +33,18 @@ namespace Mono.Linker.Dataflow
 		}
 
 		public BlockState (TValue defaultValue)
-			: this (new DefaultValueDictionary<LocalKey, TValue> (defaultValue), new StructStack<TValue> ())
+			: this (new DefaultValueDictionary<LocalKey, TValue> (defaultValue), new ValueStack<TValue> ())
 		{
 		}
 
-		public BlockState (DefaultValueDictionary<LocalKey, TValue> dictionary, StructStack<TValue> stack)
+		public BlockState (DefaultValueDictionary<LocalKey, TValue> dictionary, ValueStack<TValue> stack)
 		{
 			Dictionary = dictionary;
 			Stack = stack;
 		}
 
 		public BlockState (DefaultValueDictionary<LocalKey, TValue> dictionary)
-			: this (dictionary, new StructStack<TValue> ())
+			: this (dictionary, new ValueStack<TValue> ())
 		{
 		}
 

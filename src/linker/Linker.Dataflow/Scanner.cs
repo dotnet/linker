@@ -352,7 +352,7 @@ namespace Mono.Linker.Dataflow
 				case Code.Callvirt:
 				case Code.Newobj:
 					//TrackNestedFunctionReference ((MethodReference) operation.Operand, ref interproceduralState);
-					HandleCall (thisMethod.Body, operation, block, state);
+					HandleCall (thisMethod.Body, operation, state);
 					//ValidateNoReferenceToReference (locals, methodBody.Method, operation.Offset);
 					break;
 
@@ -796,7 +796,6 @@ namespace Mono.Linker.Dataflow
 		private void HandleCall (
 			MethodBody callingMethodBody,
 			Instruction operation,
-			BasicBlock block,
 			BlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state)
 		{
 			MethodReference calledMethod = (MethodReference) operation.Operand;
