@@ -64,7 +64,7 @@ namespace Mono.Linker.Dataflow
 			_method = method;
 		}
 
-		public override void Scan (BasicBlock block, BlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state)
+		public override void Scan (BasicBlock block, BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state)
 		{
 			base.Scan (block, state);
 		}

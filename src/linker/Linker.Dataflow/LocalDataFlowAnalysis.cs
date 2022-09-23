@@ -12,8 +12,8 @@ namespace Mono.Linker.Dataflow
 {
 	abstract class LocalDataFlowAnalysis<TTransfer>
 		: ForwardDataFlowAnalysis<
-			BlockState<MultiValue>,
-			BlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>>,
+			BasicBlockState<MultiValue>,
+			BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>>,
 			BlockStateLattice<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>>,
 			BasicBlock,
 			Region,

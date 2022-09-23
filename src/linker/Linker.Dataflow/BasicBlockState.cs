@@ -20,30 +20,30 @@ namespace Mono.Linker.Dataflow
 		}
 	}
 
-	public struct BlockState<TValue> : IEquatable<BlockState<TValue>>
+	public struct BasicBlockState<TValue> : IEquatable<BasicBlockState<TValue>>
 		where TValue : IEquatable<TValue>
 	{
 		public DefaultValueDictionary<LocalKey, TValue> Dictionary;
 
 		public ValueStack<TValue> Stack;
 
-		public bool Equals (BlockState<TValue> other)
+		public bool Equals (BasicBlockState<TValue> other)
 		{
 			return Dictionary.Equals (other.Dictionary) && Stack.Equals (other.Stack);
 		}
 
-		public BlockState (TValue defaultValue)
+		public BasicBlockState (TValue defaultValue)
 			: this (new DefaultValueDictionary<LocalKey, TValue> (defaultValue), new ValueStack<TValue> ())
 		{
 		}
 
-		public BlockState (DefaultValueDictionary<LocalKey, TValue> dictionary, ValueStack<TValue> stack)
+		public BasicBlockState (DefaultValueDictionary<LocalKey, TValue> dictionary, ValueStack<TValue> stack)
 		{
 			Dictionary = dictionary;
 			Stack = stack;
 		}
 
-		public BlockState (DefaultValueDictionary<LocalKey, TValue> dictionary)
+		public BasicBlockState (DefaultValueDictionary<LocalKey, TValue> dictionary)
 			: this (dictionary, new ValueStack<TValue> ())
 		{
 		}
@@ -59,13 +59,13 @@ namespace Mono.Linker.Dataflow
 		public TValue Pop (int count) => Stack.Pop (count);
 	}
 
-	public readonly struct BlockStateLattice<TValue, TValueLattice> : ILattice<BlockState<TValue>>
+	public readonly struct BlockStateLattice<TValue, TValueLattice> : ILattice<BasicBlockState<TValue>>
 		where TValue : IEquatable<TValue>
 		where TValueLattice : ILatticeWithUnknownValue<TValue>
 	{
 		public readonly DictionaryLattice<LocalKey, TValue, TValueLattice> LocalsLattice;
 		public readonly StackLattice<TValue, TValueLattice> StackLattice;
-		public BlockState<TValue> Top { get; }
+		public BasicBlockState<TValue> Top { get; }
 
 		public BlockStateLattice (TValueLattice valueLattice)
 		{
@@ -74,11 +74,11 @@ namespace Mono.Linker.Dataflow
 			Top = new (LocalsLattice.Top);
 		}
 
-		public BlockState<TValue> Meet (BlockState<TValue> left, BlockState<TValue> right)
+		public BasicBlockState<TValue> Meet (BasicBlockState<TValue> left, BasicBlockState<TValue> right)
 		{
 			var dictionary = LocalsLattice.Meet (left.Dictionary, right.Dictionary);
 			var stack = StackLattice.Meet (left.Stack, right.Stack);
-			return new BlockState<TValue> (dictionary, stack);
+			return new BasicBlockState<TValue> (dictionary, stack);
 		}
 	}
 }

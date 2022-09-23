@@ -7,18 +7,18 @@ using ILLink.Shared.TrimAnalysis;
 
 namespace Mono.Linker.Dataflow
 {
-	public class BlockDataFlowState<TValue, TValueLattice>
-		: IDataFlowState<BlockState<TValue>, BlockStateLattice<TValue, TValueLattice>>
+	public class BasicBlockDataFlowState<TValue, TValueLattice>
+		: IDataFlowState<BasicBlockState<TValue>, BlockStateLattice<TValue, TValueLattice>>
 		where TValue : IEquatable<TValue>
 		where TValueLattice : ILatticeWithUnknownValue<TValue>
 	{
-		BlockState<TValue> current;
-		public BlockState<TValue> Current {
+		BasicBlockState<TValue> current;
+		public BasicBlockState<TValue> Current {
 			get => current;
 			set => current = value;
 		}
 
-		public Box<BlockState<TValue>>? Exception { get; set; }
+		public Box<BasicBlockState<TValue>>? Exception { get; set; }
 
 		public BlockStateLattice<TValue, TValueLattice> Lattice { get; init; }
 
