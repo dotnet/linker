@@ -16,7 +16,7 @@ namespace Mono.Linker.Dataflow
 
 		public bool Equals (LocalKey other)
 		{
-			return variableDefinition.ToString () == other.variableDefinition.ToString ();
+			return variableDefinition == other.variableDefinition;
 		}
 	}
 
@@ -29,7 +29,7 @@ namespace Mono.Linker.Dataflow
 
 		public bool Equals (BlockState<TValue> other)
 		{
-			return Dictionary.Equals (other.Dictionary);
+			return Dictionary.Equals (other.Dictionary) && Stack.Equals (other.Stack);
 		}
 
 		public BlockState (TValue defaultValue)
@@ -48,9 +48,9 @@ namespace Mono.Linker.Dataflow
 		{
 		}
 
-		public TValue Get (LocalKey key) => Dictionary.Get (key);
+		public TValue GetLocal (LocalKey key) => Dictionary.Get (key);
 
-		public void Set (LocalKey key, TValue value) => Dictionary.Set (key, value);
+		public void SetLocal (LocalKey key, TValue value) => Dictionary.Set (key, value);
 
 		public void Push (TValue value) => Stack.Push (value);
 
@@ -63,20 +63,20 @@ namespace Mono.Linker.Dataflow
 		where TValue : IEquatable<TValue>
 		where TValueLattice : ILatticeWithUnknownValue<TValue>
 	{
-		public readonly DictionaryLattice<LocalKey, TValue, TValueLattice> Lattice;
+		public readonly DictionaryLattice<LocalKey, TValue, TValueLattice> LocalsLattice;
 		public readonly StackLattice<TValue, TValueLattice> StackLattice;
 		public BlockState<TValue> Top { get; }
 
 		public BlockStateLattice (TValueLattice valueLattice)
 		{
-			Lattice = new DictionaryLattice<LocalKey, TValue, TValueLattice> (valueLattice);
+			LocalsLattice = new DictionaryLattice<LocalKey, TValue, TValueLattice> (valueLattice);
 			StackLattice = new StackLattice<TValue, TValueLattice> (valueLattice);
-			Top = new (Lattice.Top);
+			Top = new (LocalsLattice.Top);
 		}
 
 		public BlockState<TValue> Meet (BlockState<TValue> left, BlockState<TValue> right)
 		{
-			var dictionary = Lattice.Meet (left.Dictionary, right.Dictionary);
+			var dictionary = LocalsLattice.Meet (left.Dictionary, right.Dictionary);
 			var stack = StackLattice.Meet (left.Stack, right.Stack);
 			return new BlockState<TValue> (dictionary, stack);
 		}

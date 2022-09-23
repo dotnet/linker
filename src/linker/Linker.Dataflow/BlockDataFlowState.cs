@@ -22,14 +22,14 @@ namespace Mono.Linker.Dataflow
 
 		public BlockStateLattice<TValue, TValueLattice> Lattice { get; init; }
 
-		public void Set (LocalKey key, TValue value)
+		public void SetLocal (LocalKey key, TValue value)
 		{
-			current.Set (key, value);
+			current.SetLocal (key, value);
 			if (Exception != null)
 				Exception.Value = Lattice.Meet (Exception.Value, current);
 		}
 
-		public TValue Get (LocalKey key) => current.Get (key);
+		public TValue GetLocal (LocalKey key) => current.GetLocal (key);
 
 		public TValue Pop () => current.Pop ();
 

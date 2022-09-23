@@ -499,7 +499,7 @@ namespace Mono.Linker.Dataflow
 			if (isByRef) {
 				newSlot = new MultiValue (new LocalVariableReferenceValue (localDef));
 			} else
-				newSlot = new MultiValue (state.Get (new LocalKey (localDef)));
+				newSlot = new MultiValue (state.GetLocal (new LocalKey (localDef)));
 			state.Push (newSlot);
 		}
 
@@ -553,7 +553,7 @@ namespace Mono.Linker.Dataflow
 				WarnAboutInvalidILInMethod (methodBody, operation.Offset);
 				return;
 			}
-			state.Set (new LocalKey (localDef), valueToStore);
+			state.SetLocal (new LocalKey (localDef), valueToStore);
 		}
 
 		private void ScanIndirectStore (
@@ -580,7 +580,7 @@ namespace Mono.Linker.Dataflow
 			foreach (var value in target) {
 				switch (value) {
 				case LocalVariableReferenceValue localReference:
-					state.Set (new LocalKey (localReference.LocalDefinition), source);
+					state.SetLocal (new LocalKey (localReference.LocalDefinition), source);
 					break;
 				case FieldReferenceValue fieldReference
 				when GetFieldValue (fieldReference.FieldDefinition).AsSingleValue () is FieldValue fieldValue:
@@ -747,7 +747,7 @@ namespace Mono.Linker.Dataflow
 						GetMethodParameterValue (parameterReferenceValue.MethodDefinition, parameterReferenceValue.ParameterIndex));
 					break;
 				case LocalVariableReferenceValue localVariableReferenceValue:
-					dereferencedValue = MultiValue.Meet (dereferencedValue, state.Get (new LocalKey (localVariableReferenceValue.LocalDefinition)));
+					dereferencedValue = MultiValue.Meet (dereferencedValue, state.GetLocal (new LocalKey (localVariableReferenceValue.LocalDefinition)));
 					break;
 				case ThisParameterReferenceValue thisParameterReferenceValue:
 					dereferencedValue = MultiValue.Meet (

@@ -13,7 +13,7 @@ namespace Mono.Linker.Dataflow
 		public ReflectionDataFlowAnalysis (LinkContext context)
 			: base (context)
 		{
-			TrimAnalysisPatterns = new TrimAnalysisPatternStore (Lattice.Lattice.ValueLattice, context);
+			TrimAnalysisPatterns = new TrimAnalysisPatternStore (Lattice.LocalsLattice.ValueLattice, context);
 		}
 
 		public void AnalyzeMethod (MethodDefinition method, MarkStep parent, MessageOrigin origin)
