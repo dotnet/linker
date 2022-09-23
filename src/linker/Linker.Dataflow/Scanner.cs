@@ -327,6 +327,7 @@ namespace Mono.Linker.Dataflow
 				case Code.Brfalse_S:
 				case Code.Brtrue:
 				case Code.Brtrue_S:
+					PopUnknown (state, 1, thisMethod.Body, operation.Offset);
 					break;
 
 				case Code.Calli: {
@@ -351,7 +352,7 @@ namespace Mono.Linker.Dataflow
 				case Code.Callvirt:
 				case Code.Newobj:
 					//TrackNestedFunctionReference ((MethodReference) operation.Operand, ref interproceduralState);
-					HandleCall (thisMethod.Body, operation, state);
+					HandleCall (thisMethod.Body, operation, block, state);
 					//ValidateNoReferenceToReference (locals, methodBody.Method, operation.Offset);
 					break;
 
@@ -795,6 +796,7 @@ namespace Mono.Linker.Dataflow
 		private void HandleCall (
 			MethodBody callingMethodBody,
 			Instruction operation,
+			BasicBlock block,
 			BlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state)
 		{
 			MethodReference calledMethod = (MethodReference) operation.Operand;
@@ -834,13 +836,13 @@ namespace Mono.Linker.Dataflow
 
 			AssignRefAndOutParameters (callingMethodBody, calledMethod, methodArguments, operation, state);
 
-			//foreach (var param in methodArguments) {
-			//	foreach (var v in param) {
-			//		if (v is ArrayValue arr) {
-			//			MarkArrayValuesAsUnknown (arr, curBasicBlock);
-			//		}
-			//	}
-			//}
+			foreach (var param in methodArguments) {
+				foreach (var v in param) {
+					if (v is ArrayValue arr) {
+						MarkArrayValuesAsUnknown (arr);
+					}
+				}
+			}
 		}
 
 		public TypeDefinition? ResolveToTypeDefinition (TypeReference typeReference) => typeReference.ResolveToTypeDefinition (_context);
@@ -855,14 +857,11 @@ namespace Mono.Linker.Dataflow
 		// Limit tracking array values to 32 values for performance reasons. There are many arrays much longer than 32 elements in .NET, but the interesting ones for the linker are nearly always less than 32 elements.
 		private const int MaxTrackedArrayValues = 32;
 
-		private static void MarkArrayValuesAsUnknown (ArrayValue arrValue, int curBasicBlock)
+		private static void MarkArrayValuesAsUnknown (ArrayValue arrValue)
 		{
 			// Since we can't know the current index we're storing the value at, clear all indices.
 			// That way we won't accidentally think we know the value at a given index when we cannot.
-			foreach (var knownIndex in arrValue.IndexValues.Keys) {
-				// Don't pass MaxTrackedArrayValues since we are only looking at keys we've already seen.
-				StoreMethodLocalValue (arrValue.IndexValues, UnknownValue.Instance, knownIndex, curBasicBlock);
-			}
+			arrValue.IndexValues.Clear ();
 		}
 
 		private void ScanStelem (
@@ -878,7 +877,7 @@ namespace Mono.Linker.Dataflow
 			foreach (var array in arrayToStoreIn) {
 				if (array is ArrayValue arrValue) {
 					if (indexToStoreAtInt == null) {
-						MarkArrayValuesAsUnknown (arrValue, block.Id);
+						MarkArrayValuesAsUnknown (arrValue);
 					} else {
 						// When we know the index, we can record the value at that index.
 						StoreMethodLocalValue (arrValue.IndexValues, valueToStore, indexToStoreAtInt.Value, block.Id, MaxTrackedArrayValues);
@@ -895,28 +894,43 @@ namespace Mono.Linker.Dataflow
 		{
 			MultiValue indexToLoadFrom = PopUnknown (state, 1, methodBody, operation.Offset);
 			MultiValue arrayToLoadFrom = PopUnknown (state, 1, methodBody, operation.Offset);
-			if (arrayToLoadFrom.AsSingleValue () is not ArrayValue arr) {
-				PushUnknown (state);
-				return;
-			}
-			// We don't yet handle arrays of references or pointers
+
 			bool isByRef = operation.OpCode.Code == Code.Ldelema;
 
 			int? index = indexToLoadFrom.AsConstInt ();
 			if (index == null) {
 				PushUnknown (state);
-				if (isByRef) {
-					MarkArrayValuesAsUnknown (arr, block.Id);
+				foreach (var value in arrayToLoadFrom) {
+					if (isByRef && value is ArrayValue arr) {
+						MarkArrayValuesAsUnknown (arr);
+					}
 				}
+				return;
 			}
-			// Don't try to track refs to array elements. Set it as unknown, then push unknown to the stack
-			else if (isByRef) {
-				arr.IndexValues[index.Value] = new ValueBasicBlockPair (UnknownValue.Instance, block.Id);
+
+			if (isByRef) {
+				foreach (var value in arrayToLoadFrom) {
+					if (value is ArrayValue arr) {
+						arr.IndexValues[index.Value] = new ValueBasicBlockPair (UnknownValue.Instance, block.Id);
+					}
+				}
 				PushUnknown (state);
-			} else if (arr.IndexValues.TryGetValue (index.Value, out ValueBasicBlockPair arrayIndexValue))
-				state.Push (new MultiValue (arrayIndexValue.Value));
+				return;
+			}
+
+			MultiValue result = MultiValueLattice.Top;
+
+			foreach (var value in arrayToLoadFrom) {
+				if (value is ArrayValue arr && arr.TryGetValueByIndex (index.Value, out var elementValue))
+					result = MultiValueLattice.Meet (result, elementValue);
+				else
+					result = MultiValueLattice.Meet (result, UnknownValue.Instance);
+			}
+
+			if (result.Equals (MultiValueLattice.Top))
+				PushUnknown (state);
 			else
-				PushUnknown (state);
+				state.Push (result);
 		}
 
 		protected static void StoreMethodLocalValue<KeyType> (
