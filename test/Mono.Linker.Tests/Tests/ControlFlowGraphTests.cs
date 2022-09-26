@@ -26,7 +26,9 @@ namespace Mono.Linker.Tests
 			var expectedDisplayName = (string) customAttribute.ConstructorArguments[0].Value;
 
 			if (member.MetadataToken.TokenType == TokenType.Method) {
-				Assert.AreEqual (expectedDisplayName, ControlFlowGraph.Create ((member as MethodReference).Resolve ().Body).ToString ());
+				ControlFlowGraph cfg = default;
+				ControlFlowGraph.TryCreate((member as MethodReference).Resolve ().Body, out cfg);
+				Assert.AreEqual (expectedDisplayName, cfg.ToString ());
 			}
 		}
 

@@ -26,15 +26,15 @@ namespace Mono.Linker.Dataflow
 
 		private readonly MethodBody _methodBody;
 
-		private readonly int _start;
+		private readonly int _startInstructionIndex;
 
-		private readonly int _end;
+		private readonly int _endInstructionIndex;
 
 		public BasicBlock (MethodBody methodBody, int id, int start, int end)
 		{
 			_methodBody = methodBody;
-			_start = start;
-			_end = end;
+			_startInstructionIndex = start;
+			_endInstructionIndex = end;
 			_id = id;
 		}
 
@@ -42,34 +42,34 @@ namespace Mono.Linker.Dataflow
 
 		public int Id => _id;
 
-		public Instruction? FirstInstruction => _start >= 0 ? _methodBody.Instructions[_start] : null;
+		public Instruction? FirstInstruction => _startInstructionIndex >= 0 ? _methodBody.Instructions[_startInstructionIndex] : null;
 
-		public Instruction? LastInstruction => _end >= 0 ? _methodBody.Instructions[_end] : null;
+		public Instruction? LastInstruction => _endInstructionIndex >= 0 ? _methodBody.Instructions[_endInstructionIndex] : null;
 
 		public IEnumerable<Instruction> GetInstructions ()
 		{
-			for (int i = _start; i <= _end; i++) {
+			for (int i = _startInstructionIndex; i <= _endInstructionIndex; i++) {
 				yield return _methodBody.Instructions[i];
 			}
 		}
 
 		public bool Equals (BasicBlock other)
 		{
-			return _start == other._start && _end == other._end;
+			return _startInstructionIndex == other._startInstructionIndex && _endInstructionIndex == other._endInstructionIndex;
 		}
 
 		public override string ToString ()
 		{
-			if (_end == -1) return "Empty";
+			if (_endInstructionIndex == -1) return "Empty";
 
-			return $"[IL_{_methodBody.Instructions[_start].Offset:X4}, IL_{_methodBody.Instructions[_end].Offset:X4}]";
+			return $"[IL_{_methodBody.Instructions[_startInstructionIndex].Offset:X4}, IL_{_methodBody.Instructions[_endInstructionIndex].Offset:X4}]";
 		}
 	}
 
 	public struct ControlFlowGraph : IControlFlowGraph<BasicBlock, Region>
 	{
 		private readonly List<BasicBlock> _blocks;
-		private readonly List<List<int>> edges;
+		private readonly List<List<int>> _predecessors;
 
 		public override string ToString ()
 		{
@@ -88,10 +88,10 @@ namespace Mono.Linker.Dataflow
 
 		public BasicBlock Entry => _blocks[0];
 
-		private ControlFlowGraph (List<BasicBlock> blocks, List<List<int>> edges)
+		private ControlFlowGraph (List<BasicBlock> blocks, List<List<int>> predecessors)
 		{
 			_blocks = blocks;
-			this.edges = edges;
+			_predecessors = predecessors;
 		}
 
 		public static bool TryCreate (MethodBody method, out ControlFlowGraph cfg)
@@ -104,7 +104,7 @@ namespace Mono.Linker.Dataflow
 			return false;
 		}
 
-		public static ControlFlowGraph Create (MethodBody method)
+		private static ControlFlowGraph Create (MethodBody method)
 		{
 			var firstInstructionToBlock = new Dictionary<int, BasicBlock> ();
 			var blocks = ConstructBasicBlocks (method, firstInstructionToBlock);
@@ -120,7 +120,7 @@ namespace Mono.Linker.Dataflow
 
 		public IEnumerable<Predecessor> GetPredecessors (BasicBlock block)
 		{
-			foreach (var prevBlockId in edges[block.Id]) {
+			foreach (var prevBlockId in _predecessors[block.Id]) {
 				yield return new Predecessor (_blocks[prevBlockId], ImmutableArray<Region>.Empty);
 			}
 		}
@@ -167,14 +167,14 @@ namespace Mono.Linker.Dataflow
 
 		public static List<List<int>> GetEdges (Dictionary<int, BasicBlock> firstInstructionToBlock, List<BasicBlock> blocks)
 		{
-			var edges = new List<List<int>> (blocks.Count);
+			var predecessors = new List<List<int>> (blocks.Count);
 
 			foreach (var _ in blocks) {
-				edges.Add (new List<int> ());
+				predecessors.Add (new List<int> ());
 			}
 
 			//Add initial block connections
-			edges[1].Add (0);
+			predecessors[1].Add (0);
 
 			foreach (var basicBlock in blocks) {
 
@@ -188,26 +188,26 @@ namespace Mono.Linker.Dataflow
 
 					foreach (var jumpTarget in jumpTargets) {
 						var targetId = firstInstructionToBlock[jumpTarget.Offset].Id;
-						edges[targetId].Add (basicBlock.Id);
+						predecessors[targetId].Add (basicBlock.Id);
 					}
 
 					if (basicBlock.LastInstruction.OpCode.FlowControl == FlowControl.Cond_Branch && basicBlock.LastInstruction.Next != null) {
 						var targetId = firstInstructionToBlock[basicBlock.LastInstruction.Next.Offset].Id;
-						edges[targetId].Add (basicBlock.Id);
+						predecessors[targetId].Add (basicBlock.Id);
 					}
 				}
 				// Handle last block predecessors
 				else if (basicBlock.LastInstruction.OpCode.FlowControl == FlowControl.Return) {
-					edges[blocks.Count - 1].Add (basicBlock.Id);
+					predecessors[blocks.Count - 1].Add (basicBlock.Id);
 				}
 				// Handle fall through
 				else if ((basicBlock.LastInstruction.OpCode.FlowControl == FlowControl.Next || basicBlock.LastInstruction.OpCode.FlowControl == FlowControl.Call) && basicBlock.LastInstruction.Next != null) {
 					var targetId = firstInstructionToBlock[basicBlock.LastInstruction.Next.Offset].Id;
-					edges[targetId].Add (basicBlock.Id);
+					predecessors[targetId].Add (basicBlock.Id);
 				}
 			}
 
-			return edges;
+			return predecessors;
 		}
 
 		private static List<BasicBlock> ConstructBasicBlocks (MethodBody methodBody, Dictionary<int, BasicBlock> firstInstructionToBlock)
@@ -241,8 +241,7 @@ namespace Mono.Linker.Dataflow
 			blocks.Add (block);
 
 			if (ilStart >= 0) {
-				if (!firstInstructionToBlock.TryAdd (methodBody.Instructions[ilStart].Offset, block))
-					firstInstructionToBlock[methodBody.Instructions[ilStart].Offset] = block;
+				firstInstructionToBlock[methodBody.Instructions[ilStart].Offset] = block;
 			}
 		}
 	}
