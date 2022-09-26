@@ -2406,10 +2406,13 @@ namespace Mono.Linker.Steps
 		{
 			var @base = overrideInformation.Base;
 			var method = overrideInformation.Override;
+			if (@base is null || method is null || @base.DeclaringType is null)
+				return false;
+
 			if (Annotations.IsMarked (method))
 				return false;
 
-			if (@base.DeclaringType is null || !@base.DeclaringType.IsInterface)
+			if (!@base.DeclaringType.IsInterface)
 				return false;
 
 			// If the interface implementation is not marked, do not mark the implementation method
