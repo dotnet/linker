@@ -611,7 +611,7 @@ namespace Mono.Linker.Steps
 						if (bases is null)
 							continue;
 						foreach (var @base in bases) {
-							if (@base.DeclaringType.IsInterface && IgnoreScope (@base.DeclaringType.Scope))
+							if (@base.DeclaringType is not null && @base.DeclaringType.IsInterface && IgnoreScope (@base.DeclaringType.Scope))
 								_interfaceOverrides.Add ((new OverrideInformation (@base, method, Context), ScopeStack.CurrentScope));
 						}
 					}
@@ -2409,7 +2409,7 @@ namespace Mono.Linker.Steps
 			if (Annotations.IsMarked (method))
 				return false;
 
-			if (!@base.DeclaringType.IsInterface)
+			if (@base.DeclaringType is null || !@base.DeclaringType.IsInterface)
 				return false;
 
 			// If the interface implementation is not marked, do not mark the implementation method
@@ -2433,7 +2433,7 @@ namespace Mono.Linker.Steps
 			// A static method may only be called through a constrained call if the type is relevant to variant casting.
 			if (@base.IsStatic)
 				return Annotations.IsRelevantToVariantCasting (method.DeclaringType)
-					|| IgnoreScope (@base.DeclaringType.Scope);
+					|| @base.DeclaringType is not null && !IgnoreScope (@base.DeclaringType.Scope);
 
 			// If the implementing type is marked as instantiated, mark the implementation method.
 			// If the type is not instantiated, do not mark the implementation method
