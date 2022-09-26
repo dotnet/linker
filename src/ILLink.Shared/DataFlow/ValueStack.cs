@@ -2,25 +2,26 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace ILLink.Shared.DataFlow
 {
-	public struct ValueStack<TValue> : IEquatable<ValueStack<TValue>>
+	public struct ValueStack<TValue> : IEquatable<ValueStack<TValue>>, IEnumerable<TValue>
 		where TValue : IEquatable<TValue>
 	{
 		private Stack<TValue>? _stack;
 
 		private readonly int _capacity = 0;
-
+		
 		public ValueStack ()
 		{
 		}
 
-		public ValueStack (ValueStack<TValue> stack)
+		public ValueStack (IEnumerable<TValue> collection)
 		{
-			_stack = stack._stack == null ? null : new Stack<TValue> (stack._stack);
+			_stack = collection == null ? null : new Stack<TValue> (collection);
 		}
 
 		public ValueStack (int capacity)
@@ -44,19 +45,19 @@ namespace ILLink.Shared.DataFlow
 			return equals;
 		}
 
-		internal IEnumerator<TValue> GetEnumerator ()
+		public IEnumerator<TValue> GetEnumerator ()
 		{
 			return _stack?.GetEnumerator () ?? Enumerable.Empty<TValue> ().GetEnumerator ();
 
 		}
 
-		internal void Push (TValue value)
+		public void Push (TValue value)
 		{
 			_stack ??= new Stack<TValue> (_capacity);
 			_stack.Push (value);
 		}
 
-		internal TValue Pop ()
+		public TValue Pop ()
 		{
 			if (_stack == null) throw new InvalidOperationException ("Stack is null");
 			return _stack.Pop ();
@@ -71,5 +72,7 @@ namespace ILLink.Shared.DataFlow
 			}
 			return topOfStack;
 		}
+
+		IEnumerator IEnumerable.GetEnumerator () => GetEnumerator ();
 	}
 }
