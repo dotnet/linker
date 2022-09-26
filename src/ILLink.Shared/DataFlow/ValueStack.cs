@@ -14,7 +14,7 @@ namespace ILLink.Shared.DataFlow
 		private Stack<TValue>? _stack;
 
 		private readonly int _capacity = 0;
-		
+
 		public ValueStack ()
 		{
 		}

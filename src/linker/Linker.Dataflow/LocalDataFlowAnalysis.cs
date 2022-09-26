@@ -35,7 +35,7 @@ namespace Mono.Linker.Dataflow
 		public bool TryAnalyzeMethod (MethodDefinition method, MarkStep parent, MessageOrigin origin)
 		{
 			if (ControlFlowGraph.TryCreate (method.Body, out var cfg) && !Context.CompilerGeneratedState.TryGetCompilerGeneratedCalleesForUserMethod (method, out List<IMemberDefinition>? _)) {
-				var bodyScanner = GetBodyScanner (Context, method, parent, origin);
+				var bodyScanner = GetBodyScanner (Context, parent, origin);
 				Fixpoint (cfg, Lattice, bodyScanner);
 				return true;
 			}
@@ -44,6 +44,6 @@ namespace Mono.Linker.Dataflow
 		}
 
 		protected abstract TTransfer GetBodyScanner (
-			LinkContext context, MethodDefinition method, MarkStep parent, MessageOrigin origin);
+			LinkContext context, MarkStep parent, MessageOrigin origin);
 	}
 }
