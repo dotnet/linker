@@ -1,42 +1,85 @@
 ﻿// Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using ILLink.Shared.DataFlow;
 using ILLink.Shared.TrimAnalysis;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Mono.Linker.Steps;
+using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>;
+
 
 namespace Mono.Linker.Dataflow
 {
-	sealed class ReflectionDataFlowAnalysis : LocalDataFlowAnalysis<ReflectionScanner>
+	sealed class ReflectionDataFlowAnalysis
+		: ForwardDataFlowAnalysis<
+			BasicBlockState<MultiValue>,
+			BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>>,
+			BlockStateLattice<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>>,
+			BasicBlock,
+			Region,
+			ControlFlowGraph,
+			ReflectionScanner
+		>
 	{
-		public TrimAnalysisPatternStore TrimAnalysisPatterns { get; }
+		private readonly BlockStateLattice<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> _lattice;
+		private readonly InterproceduralStateLattice _interproceduralStateLattice;
+		private readonly LinkContext _context;
+		private readonly TrimAnalysisPatternStore _trimAnalysisPatternStore;
+
 
 		public ReflectionDataFlowAnalysis (LinkContext context)
-			: base (context)
 		{
-			TrimAnalysisPatterns = new TrimAnalysisPatternStore (Lattice.LocalsLattice.ValueLattice, context);
+			_lattice = new (new ValueSetLatticeWithUnknownValue<SingleValue> ());
+			_interproceduralStateLattice = default;
+			_context = context;
+			_trimAnalysisPatternStore = new TrimAnalysisPatternStore (_lattice.LocalsLattice.ValueLattice, context);
 		}
 
-		public void AnalyzeMethod (MethodDefinition method, MarkStep parent, MessageOrigin origin)
+		public void InterproceduralScan (MethodDefinition startingMethod, MarkStep parent)
 		{
-			if (TryAnalyzeMethod (method, parent, origin)) {
-				var reflectionMarker = new ReflectionMarker (Context, parent, enabled: true);
-				TrimAnalysisPatterns.MarkAndProduceDiagnostics (reflectionMarker, parent);
-			} else {
-				var scanner = new ReflectionMethodBodyScanner (Context, parent, origin, TrimAnalysisPatterns);
-				scanner.InterproceduralScan (method.Body);
+			var interproceduralState = _interproceduralStateLattice.Top;
+
+			var oldInterproceduralState = interproceduralState.Clone ();
+			interproceduralState.TrackMethod (startingMethod);
+
+			while (!interproceduralState.Equals (oldInterproceduralState)) {
+				oldInterproceduralState = interproceduralState.Clone ();
+
+				// Flow state through all methods encountered so far, as long as there
+				// are changes discovered in the hoisted local state on entry to any method.
+				foreach (var methodBodyValue in oldInterproceduralState.MethodBodies)
+					AnalyzeMethod (methodBodyValue.MethodBody, parent, ref interproceduralState);
 			}
 
+			var reflectionMarker = new ReflectionMarker (_context, parent, enabled: true);
+			_trimAnalysisPatternStore.MarkAndProduceDiagnostics (reflectionMarker, parent);
 		}
 
-		protected override ReflectionScanner GetBodyScanner (
-			LinkContext context, MarkStep parent, MessageOrigin origin)
-		 => new (context, parent, origin, TrimAnalysisPatterns);
-
-
-		public static void InterproceduralScan ()
+		private void AnalyzeMethod (MethodBody methodBody, MarkStep parent, ref InterproceduralState interproceduralState)
 		{
+			var reflectionHandler = new ReflectionHandler (_context, parent, new MessageOrigin (methodBody.Method), _trimAnalysisPatternStore);
+			if (!TryControlFlowGraphScan (methodBody, reflectionHandler, ref interproceduralState)) {
+				var scanner = new ReflectionMethodBodyScanner (_context, reflectionHandler);
+				scanner.Scan (methodBody, ref interproceduralState);
+			}
+		}
 
+		private bool TryControlFlowGraphScan (MethodBody methodBody, ReflectionHandler handler, ref InterproceduralState interproceduralState)
+		{
+			if (ControlFlowGraph.TryCreate (methodBody, out var cfg)) {
+				var bodyScanner = new ReflectionScanner (_context, handler, interproceduralState);
+				Fixpoint (cfg, _lattice, bodyScanner);
+
+				bodyScanner.HandleReturnValue (methodBody.Method);
+
+				// The interprocedural state struct is stored as a field of the visitor and modified
+				// in-place there, but we also need those modifications to be reflected here.
+				interproceduralState = bodyScanner.InterproceduralState;
+				return true;
+			}
+
+			return false;
 		}
 
 		public static bool RequiresReflectionMethodBodyScannerForCallSite (LinkContext context, MethodReference calledMethod)

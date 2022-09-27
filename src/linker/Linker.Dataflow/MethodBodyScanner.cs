@@ -273,7 +273,7 @@ namespace Mono.Linker.Dataflow
 			interproceduralState.TrackMethod (method);
 		}
 
-		protected virtual void Scan (MethodBody methodBody, ref InterproceduralState interproceduralState)
+		public virtual void Scan (MethodBody methodBody, ref InterproceduralState interproceduralState)
 		{
 			MethodDefinition thisMethod = methodBody.Method;
 

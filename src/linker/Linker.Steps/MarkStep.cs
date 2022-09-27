@@ -3764,7 +3764,7 @@ namespace Mono.Linker.Steps
 
 			Debug.Assert (ScopeStack.CurrentScope.Origin.Provider == body.Method);
 			var trimDataFlowAnalysis = new ReflectionDataFlowAnalysis (Context);
-			trimDataFlowAnalysis.AnalyzeMethod (body.Method, this, ScopeStack.CurrentScope.Origin);
+			trimDataFlowAnalysis.InterproceduralScan (body.Method, this);
 		}
 
 		protected class AttributeProviderPair

@@ -17,9 +17,9 @@ using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.Single
 
 namespace Mono.Linker.Dataflow
 {
-	sealed class ReflectionHandler
+	class ReflectionHandler
 	{
-		public MessageOrigin Origin { get; set; }
+		private MessageOrigin _origin;
 		private readonly LinkContext _context;
 		private readonly ReflectionMarker _reflectionMarker;
 		private readonly FlowAnnotations _annotations;
@@ -32,7 +32,7 @@ namespace Mono.Linker.Dataflow
 		{
 			_context = context;
 			_markStep = parent;
-			Origin = origin;
+			_origin = origin;
 			_reflectionMarker = new ReflectionMarker (context, parent, enabled: false);
 			_annotations = context.Annotations.FlowAnnotations;
 			_trimAnalysisPatternStore = trimAnalysisPatternStore;
@@ -59,12 +59,12 @@ namespace Mono.Linker.Dataflow
 			if (reflectionProcessed)
 				return false;
 
-			Debug.Assert (callingMethodBody.Method == Origin.Provider);
+			Debug.Assert (callingMethodBody.Method == _origin.Provider);
 			var calledMethodDefinition = _context.TryResolve (calledMethod);
 			if (calledMethodDefinition == null)
 				return false;
 
-			Origin = Origin.WithInstructionOffset (operation.Offset);
+			_origin = _origin.WithInstructionOffset (operation.Offset);
 
 			MultiValue instanceValue;
 			ImmutableArray<MultiValue> arguments;
@@ -81,10 +81,10 @@ namespace Mono.Linker.Dataflow
 				calledMethod,
 				instanceValue,
 				arguments,
-				Origin
+				_origin
 			));
 
-			var diagnosticContext = new DiagnosticContext (Origin, diagnosticsEnabled: false, _context);
+			var diagnosticContext = new DiagnosticContext (_origin, diagnosticsEnabled: false, _context);
 			return HandleCall (
 				operation,
 				calledMethod,
@@ -305,7 +305,7 @@ namespace Mono.Linker.Dataflow
 		private void HandleStoreValueWithDynamicallyAccessedMembers (ValueWithDynamicallyAccessedMembers targetValue, Instruction operation, MultiValue sourceValue)
 		{
 			if (targetValue.DynamicallyAccessedMemberTypes != 0) {
-				Origin = Origin.WithInstructionOffset (operation.Offset);
+				_origin = _origin.WithInstructionOffset (operation.Offset);
 				HandleAssignmentPattern (sourceValue, targetValue);
 			}
 		}
@@ -314,7 +314,7 @@ namespace Mono.Linker.Dataflow
 			in MultiValue value,
 			ValueWithDynamicallyAccessedMembers targetValue)
 		{
-			_trimAnalysisPatternStore.Add (new TrimAnalysisAssignmentPattern (value, targetValue, Origin));
+			_trimAnalysisPatternStore.Add (new TrimAnalysisAssignmentPattern (value, targetValue, _origin));
 		}
 
 		public ValueWithDynamicallyAccessedMembers GetMethodThisParameterValue (MethodDefinition method)
@@ -422,27 +422,13 @@ namespace Mono.Linker.Dataflow
 
 	sealed class ReflectionMethodBodyScanner : MethodBodyScanner
 	{
-		private readonly MarkStep _markStep;
-		private readonly TrimAnalysisPatternStore _trimAnalysisPatternStore;
-
-		public ReflectionMethodBodyScanner (LinkContext context, MarkStep parent, MessageOrigin origin, TrimAnalysisPatternStore trimAnalysisPatternStore)
-			: base (context, new ReflectionHandler (context, parent, origin, trimAnalysisPatternStore))
+		public ReflectionMethodBodyScanner (LinkContext context, ReflectionHandler handler)
+			: base (context, handler)
 		{
-			_markStep = parent;
-			_trimAnalysisPatternStore = trimAnalysisPatternStore;
 		}
 
-		public override void InterproceduralScan (MethodBody methodBody)
+		public override void Scan (MethodBody methodBody, ref InterproceduralState interproceduralState)
 		{
-			base.InterproceduralScan (methodBody);
-
-			var reflectionMarker = new ReflectionMarker (_context, _markStep, enabled: true);
-			_trimAnalysisPatternStore.MarkAndProduceDiagnostics (reflectionMarker, _markStep);
-		}
-
-		protected override void Scan (MethodBody methodBody, ref InterproceduralState interproceduralState)
-		{
-			_handler.Origin = new MessageOrigin (methodBody.Method);
 			base.Scan (methodBody, ref interproceduralState);
 			_handler.HandleReturnValue (methodBody.Method, ReturnValue);
 		}
@@ -450,10 +436,9 @@ namespace Mono.Linker.Dataflow
 
 	sealed class ReflectionScanner : Scanner
 	{
-		public ReflectionScanner (LinkContext context, MarkStep parent, MessageOrigin origin, TrimAnalysisPatternStore trimAnalysisPatternStore)
-			: base (context, new ReflectionHandler (context, parent, origin, trimAnalysisPatternStore))
+		public ReflectionScanner (LinkContext context, ReflectionHandler handler, InterproceduralState interproceduralState)
+			: base (context, handler, interproceduralState)
 		{
-
 		}
 
 		public override void Scan (BasicBlock block, BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state)

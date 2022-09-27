@@ -26,14 +26,28 @@ namespace Mono.Linker.Dataflow
 		protected readonly ReflectionHandler _handler;
 		private readonly LinkContext _context;
 		private static ValueSetLatticeWithUnknownValue<SingleValue> MultiValueLattice => default;
+		public InterproceduralState InterproceduralState;
+
 
 		public MultiValue ReturnValue { private set; get; }
 
 
-		public Scanner (LinkContext context, ReflectionHandler handler)
+		public Scanner (LinkContext context, ReflectionHandler handler, InterproceduralState interproceduralState)
 		{
 			_context = context;
 			_handler = handler;
+			InterproceduralState = interproceduralState;
+		}
+
+		void TrackNestedFunctionReference (MethodReference referencedMethod)
+		{
+			if (_context.TryResolve (referencedMethod) is not MethodDefinition method)
+				return;
+
+			if (!CompilerGeneratedNames.IsLambdaOrLocalFunction (method.Name))
+				return;
+
+			InterproceduralState.TrackMethod (method);
 		}
 
 		public virtual void Scan (BasicBlock block, BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state)
@@ -130,7 +144,7 @@ namespace Mono.Linker.Dataflow
 					break;
 
 				case Code.Ldftn:
-					//TrackNestedFunctionReference ((MethodReference) operation.Operand, ref interproceduralState);
+					TrackNestedFunctionReference ((MethodReference) operation.Operand);
 					PushUnknown (state);
 					break;
 
@@ -358,7 +372,7 @@ namespace Mono.Linker.Dataflow
 				case Code.Call:
 				case Code.Callvirt:
 				case Code.Newobj:
-					//TrackNestedFunctionReference ((MethodReference) operation.Operand, ref interproceduralState);
+					TrackNestedFunctionReference ((MethodReference) operation.Operand);
 					HandleCall (thisMethod.Body, operation, state);
 					//ValidateNoReferenceToReference (locals, methodBody.Method, operation.Offset);
 					break;
@@ -395,7 +409,6 @@ namespace Mono.Linker.Dataflow
 							ReturnValue = MultiValueLattice.Meet (ReturnValue, DereferenceValue (retValue, state));
 							//ValidateNoReferenceToReference (locals, methodBody.Method, operation.Offset);
 						}
-						_handler.HandleReturnValue (thisMethod, ReturnValue); // Should be done once, after end of the analysis
 						break;
 					}
 
@@ -637,8 +650,8 @@ namespace Mono.Linker.Dataflow
 			MultiValue value;
 			if (isByRef) {
 				value = new FieldReferenceValue (field);
-				//} else if (CompilerGeneratedState.IsHoistedLocal (field)) {
-				//	value = interproceduralState.GetHoistedLocal (new HoistedLocalKey (field));
+			} else if (CompilerGeneratedState.IsHoistedLocal (field)) {
+				value = InterproceduralState.GetHoistedLocal (new HoistedLocalKey (field));
 			} else {
 				value = _handler.GetFieldValue (field);
 			}
@@ -657,7 +670,7 @@ namespace Mono.Linker.Dataflow
 			FieldDefinition? field = _context.TryResolve ((FieldReference) operation.Operand);
 			if (field != null) {
 				if (CompilerGeneratedState.IsHoistedLocal (field)) {
-					//	interproceduralState.SetHoistedLocal (new HoistedLocalKey (field), valueToStoreSlot);
+					InterproceduralState.SetHoistedLocal (new HoistedLocalKey (field), valueToStoreSlot);
 					return;
 				}
 
@@ -722,7 +735,9 @@ namespace Mono.Linker.Dataflow
 				case FieldReferenceValue fieldReferenceValue:
 					dereferencedValue = MultiValue.Meet (
 						dereferencedValue,
-						_handler.GetFieldValue (fieldReferenceValue.FieldDefinition));
+						CompilerGeneratedState.IsHoistedLocal (fieldReferenceValue.FieldDefinition)
+							? InterproceduralState.GetHoistedLocal (new HoistedLocalKey (fieldReferenceValue.FieldDefinition))
+							: _handler.GetFieldValue (fieldReferenceValue.FieldDefinition)); ;
 					break;
 				case ParameterReferenceValue parameterReferenceValue:
 					dereferencedValue = MultiValue.Meet (
