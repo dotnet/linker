@@ -23,7 +23,7 @@ namespace Mono.Linker.Dataflow
 		}
 	}
 
-	sealed class ReflectionScanner : Scanner
+	sealed class ReflectionScanner : LocalDataFlowScanner
 	{
 		public ReflectionScanner (LinkContext context, ReflectionHandler handler, InterproceduralState interproceduralState)
 			: base (context, handler, interproceduralState)

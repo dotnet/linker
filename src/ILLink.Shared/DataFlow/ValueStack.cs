@@ -48,7 +48,6 @@ namespace ILLink.Shared.DataFlow
 		public IEnumerator<TValue> GetEnumerator ()
 		{
 			return _stack?.GetEnumerator () ?? Enumerable.Empty<TValue> ().GetEnumerator ();
-
 		}
 
 		public void Push (TValue value)

@@ -15,7 +15,7 @@ using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.Single
 
 namespace Mono.Linker.Dataflow
 {
-	abstract class Scanner
+	abstract class LocalDataFlowScanner
 		: ITransfer<
 			BasicBlock,
 			BasicBlockState<MultiValue>,
@@ -32,7 +32,7 @@ namespace Mono.Linker.Dataflow
 		public MultiValue ReturnValue { private set; get; }
 
 
-		public Scanner (LinkContext context, ReflectionHandler handler, InterproceduralState interproceduralState)
+		public LocalDataFlowScanner (LinkContext context, ReflectionHandler handler, InterproceduralState interproceduralState)
 		{
 			_context = context;
 			_handler = handler;
