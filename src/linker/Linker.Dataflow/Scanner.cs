@@ -19,13 +19,13 @@ namespace Mono.Linker.Dataflow
 		: ITransfer<
 			BasicBlock,
 			BasicBlockState<MultiValue>,
-			BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>>,
-			BlockStateLattice<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>>
+			BasicBlockDataFlowState<MultiValue, ValueSetLattice<SingleValue>>,
+			BlockStateLattice<MultiValue, ValueSetLattice<SingleValue>>
 		>
 	{
 		protected readonly ReflectionHandler _handler;
 		private readonly LinkContext _context;
-		private static ValueSetLatticeWithUnknownValue<SingleValue> MultiValueLattice => default;
+		private static ValueSetLattice<SingleValue> MultiValueLattice => default;
 		public InterproceduralState InterproceduralState;
 
 
@@ -50,7 +50,7 @@ namespace Mono.Linker.Dataflow
 			InterproceduralState.TrackMethod (method);
 		}
 
-		public virtual void Scan (BasicBlock block, BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state)
+		public virtual void Scan (BasicBlock block, BasicBlockDataFlowState<MultiValue, ValueSetLattice<SingleValue>> state)
 		{
 			MethodDefinition thisMethod = block.MethodBody.Method;
 
@@ -82,7 +82,7 @@ namespace Mono.Linker.Dataflow
 				case Code.Shr:
 				case Code.Shr_Un:
 				case Code.Ceq:
-					PopUnknown (state, 2, thisMethod.Body, operation.Offset);
+					PopUnknown (state, 2);
 					PushUnknown (state);
 					break;
 
@@ -237,7 +237,7 @@ namespace Mono.Linker.Dataflow
 				case Code.Box:
 				case Code.Neg:
 				case Code.Not:
-					PopUnknown (state, 1, thisMethod.Body, operation.Offset);
+					PopUnknown (state, 1);
 					PushUnknown (state);
 					break;
 
@@ -252,11 +252,11 @@ namespace Mono.Linker.Dataflow
 				case Code.Ldsfld:
 				case Code.Ldflda:
 				case Code.Ldsflda:
-					ScanLdfld (operation, state, thisMethod.Body);
+					ScanLdfld (operation, state);
 					break;
 
 				case Code.Newarr: {
-						MultiValue count = PopUnknown (state, 1, thisMethod.Body, operation.Offset);
+						MultiValue count = PopUnknown (state, 1);
 						state.Push (new MultiValue (ArrayValue.Create (count, (TypeReference) operation.Operand)));
 					}
 					break;
@@ -270,7 +270,7 @@ namespace Mono.Linker.Dataflow
 				case Code.Stelem_R8:
 				case Code.Stelem_Any:
 				case Code.Stelem_Ref:
-					ScanStelem (operation, block, state, thisMethod.Body);
+					ScanStelem (block, state);
 					break;
 
 				case Code.Ldelem_I:
@@ -286,21 +286,21 @@ namespace Mono.Linker.Dataflow
 				case Code.Ldelem_Any:
 				case Code.Ldelem_Ref:
 				case Code.Ldelema:
-					ScanLdelem (operation, block, state, thisMethod.Body);
+					ScanLdelem (operation, block, state);
 					break;
 
 				case Code.Cpblk:
 				case Code.Initblk:
-					PopUnknown (state, 3, thisMethod.Body, operation.Offset);
+					PopUnknown (state, 3);
 					break;
 
 				case Code.Stfld:
 				case Code.Stsfld:
-					ScanStfld (operation, state, thisMethod);
+					ScanStfld (operation, state);
 					break;
 
 				case Code.Cpobj:
-					PopUnknown (state, 2, thisMethod.Body, operation.Offset);
+					PopUnknown (state, 2);
 					break;
 
 				case Code.Stind_I:
@@ -318,7 +318,7 @@ namespace Mono.Linker.Dataflow
 
 				case Code.Initobj:
 				case Code.Pop:
-					PopUnknown (state, 1, thisMethod.Body, operation.Offset);
+					PopUnknown (state, 1);
 					break;
 
 				case Code.Starg:
@@ -348,21 +348,21 @@ namespace Mono.Linker.Dataflow
 				case Code.Brfalse_S:
 				case Code.Brtrue:
 				case Code.Brtrue_S:
-					PopUnknown (state, 1, thisMethod.Body, operation.Offset);
+					PopUnknown (state, 1);
 					break;
 
 				case Code.Calli: {
 						var signature = (CallSite) operation.Operand;
 						if (signature.HasThis && !signature.ExplicitThis) {
-							PopUnknown (state, 1, thisMethod.Body, operation.Offset);
+							PopUnknown (state, 1);
 						}
 
 						// Pop arguments
 						if (signature.Parameters.Count > 0)
-							PopUnknown (state, 1, thisMethod.Body, operation.Offset);
+							PopUnknown (state, 1);
 
 						// Pop function pointer
-						PopUnknown (state, 1, thisMethod.Body, operation.Offset);
+						PopUnknown (state, 1);
 
 						if (!signature.ReturnsVoid ())
 							PushUnknown (state);
@@ -400,10 +400,10 @@ namespace Mono.Linker.Dataflow
 						bool hasReturnValue = !thisMethod.ReturnsVoid ();
 
 						if (state.Current.Stack.Count != (hasReturnValue ? 1 : 0)) {
-							ReflectionHandler.WarnAboutInvalidILInMethod (thisMethod.Body, operation.Offset);
+							throw new InvalidOperationException ("Incorrect stack depth at return");
 						}
 						if (hasReturnValue) {
-							MultiValue retValue = PopUnknown (state, 1, thisMethod.Body, operation.Offset);
+							MultiValue retValue = PopUnknown (state, 1);
 							// If the return value is a reference, treat it as the value itself for now
 							//	We can handle ref return values better later
 							ReturnValue = MultiValueLattice.Meet (ReturnValue, DereferenceValue (retValue, state));
@@ -413,7 +413,7 @@ namespace Mono.Linker.Dataflow
 					}
 
 				case Code.Switch: {
-						PopUnknown (state, 1, thisMethod.Body, operation.Offset);
+						PopUnknown (state, 1);
 						break;
 					}
 
@@ -437,18 +437,18 @@ namespace Mono.Linker.Dataflow
 				case Code.Blt_S:
 				case Code.Blt_Un:
 				case Code.Blt_Un_S:
-					PopUnknown (state, 2, thisMethod.Body, operation.Offset);
+					PopUnknown (state, 2);
 					break;
 				}
 			}
 		}
 
-		public void Transfer (BasicBlock block, BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state)
+		public void Transfer (BasicBlock block, BasicBlockDataFlowState<MultiValue, ValueSetLattice<SingleValue>> state)
 		{
 			Scan (block, state);
 		}
 
-		private void ScanLdarg (Instruction operation, BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state, MethodDefinition thisMethod)
+		private void ScanLdarg (Instruction operation, BasicBlockDataFlowState<MultiValue, ValueSetLattice<SingleValue>> state, MethodDefinition thisMethod)
 		{
 			Code code = operation.OpCode.Code;
 			bool isByRef = code == Code.Ldarga || code == Code.Ldarga_S;
@@ -478,10 +478,10 @@ namespace Mono.Linker.Dataflow
 
 		private void ScanStarg (
 			Instruction operation,
-			BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state,
+			BasicBlockDataFlowState<MultiValue, ValueSetLattice<SingleValue>> state,
 			MethodDefinition thisMethod)
 		{
-			var valueToStore = PopUnknown (state, 1, thisMethod.Body, operation.Offset);
+			var valueToStore = PopUnknown (state, 1);
 			switch (GetSourceParameterIndex (thisMethod, operation, out var sourceParameterIndex)) {
 			case SourceParameterKind.Numbered:
 				var targetValue = _handler.GetMethodParameterValue (thisMethod, sourceParameterIndex);
@@ -498,13 +498,12 @@ namespace Mono.Linker.Dataflow
 
 		private static void ScanLdloc (
 			Instruction operation,
-			BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state,
+			BasicBlockDataFlowState<MultiValue, ValueSetLattice<SingleValue>> state,
 			MethodDefinition method)
 		{
 			VariableDefinition localDef = GetLocalDef (operation, method.Body.Variables);
 			if (localDef == null) {
-				PushUnknownAndWarnAboutInvalidIL (state, method.Body, operation.Offset);
-				return;
+				throw new InvalidOperationException ("Invalid local variable index");
 			}
 
 			bool isByRef = operation.OpCode.Code == Code.Ldloca || operation.OpCode.Code == Code.Ldloca_S;
@@ -517,7 +516,7 @@ namespace Mono.Linker.Dataflow
 			state.Push (newSlot);
 		}
 
-		void ScanLdtoken (Instruction operation, BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state)
+		void ScanLdtoken (Instruction operation, BasicBlockDataFlowState<MultiValue, ValueSetLattice<SingleValue>> state)
 		{
 			switch (operation.Operand) {
 			case GenericParameter genericParameter:
@@ -558,25 +557,24 @@ namespace Mono.Linker.Dataflow
 
 		private static void ScanStloc (
 			Instruction operation,
-			BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state,
+			BasicBlockDataFlowState<MultiValue, ValueSetLattice<SingleValue>> state,
 			MethodBody methodBody)
 		{
-			MultiValue valueToStore = PopUnknown (state, 1, methodBody, operation.Offset);
+			MultiValue valueToStore = PopUnknown (state, 1);
 			VariableDefinition localDef = GetLocalDef (operation, methodBody.Variables);
 			if (localDef == null) {
-				ReflectionHandler.WarnAboutInvalidILInMethod (methodBody, operation.Offset);
-				return;
+				throw new InvalidOperationException ("Invalid local variable index");
 			}
 			state.SetLocal (new LocalKey (localDef), valueToStore);
 		}
 
 		private void ScanIndirectStore (
 			Instruction operation,
-			BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state,
+			BasicBlockDataFlowState<MultiValue, ValueSetLattice<SingleValue>> state,
 			MethodBody methodBody)
 		{
-			MultiValue valueToStore = PopUnknown (state, 1, methodBody, operation.Offset);
-			MultiValue destination = PopUnknown (state, 1, methodBody, operation.Offset);
+			MultiValue valueToStore = PopUnknown (state, 1);
+			MultiValue destination = PopUnknown (state, 1);
 
 			StoreInReference (destination, valueToStore, methodBody.Method, operation, state);
 		}
@@ -589,7 +587,7 @@ namespace Mono.Linker.Dataflow
 		/// <param name="method">The method body that contains the operation causing the store</param>
 		/// <param name="operation">The instruction causing the store</param>
 		/// <exception cref="LinkerFatalErrorException">Throws if <paramref name="target"/> is not a valid target for an indirect store.</exception>
-		protected void StoreInReference (MultiValue target, MultiValue source, MethodDefinition method, Instruction operation, BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state)
+		protected void StoreInReference (MultiValue target, MultiValue source, MethodDefinition method, Instruction operation, BasicBlockDataFlowState<MultiValue, ValueSetLattice<SingleValue>> state)
 		{
 			foreach (var value in target) {
 				switch (value) {
@@ -632,12 +630,11 @@ namespace Mono.Linker.Dataflow
 
 		private void ScanLdfld (
 			Instruction operation,
-			BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state,
-			MethodBody methodBody)
+			BasicBlockDataFlowState<MultiValue, ValueSetLattice<SingleValue>> state)
 		{
 			Code code = operation.OpCode.Code;
 			if (code == Code.Ldfld || code == Code.Ldflda)
-				PopUnknown (state, 1, methodBody, operation.Offset);
+				PopUnknown (state, 1);
 
 			bool isByRef = code == Code.Ldflda || code == Code.Ldsflda;
 
@@ -660,12 +657,11 @@ namespace Mono.Linker.Dataflow
 
 		private void ScanStfld (
 			Instruction operation,
-			BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state,
-			MethodDefinition method)
+			BasicBlockDataFlowState<MultiValue, ValueSetLattice<SingleValue>> state)
 		{
-			MultiValue valueToStoreSlot = PopUnknown (state, 1, method.Body, operation.Offset);
+			MultiValue valueToStoreSlot = PopUnknown (state, 1);
 			if (operation.OpCode.Code == Code.Stfld)
-				PopUnknown (state, 1, method.Body, operation.Offset);
+				PopUnknown (state, 1);
 
 			FieldDefinition? field = _context.TryResolve ((FieldReference) operation.Operand);
 			if (field != null) {
@@ -700,10 +696,9 @@ namespace Mono.Linker.Dataflow
 		}
 
 		private static ValueNodeList PopCallArguments (
-			BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state,
+			BasicBlockDataFlowState<MultiValue, ValueSetLattice<SingleValue>> state,
 			MethodReference methodCalled,
-			MethodBody containingMethodBody,
-			bool isNewObj, int ilOffset,
+			bool isNewObj,
 			out SingleValue? newObjValue)
 		{
 			newObjValue = null;
@@ -715,7 +710,7 @@ namespace Mono.Linker.Dataflow
 
 			ValueNodeList methodParams = new ValueNodeList (countToPop);
 			for (int iParam = 0; iParam < countToPop; ++iParam) {
-				MultiValue slot = PopUnknown (state, 1, containingMethodBody, ilOffset);
+				MultiValue slot = PopUnknown (state, 1);
 				methodParams.Add (slot);
 			}
 
@@ -727,7 +722,7 @@ namespace Mono.Linker.Dataflow
 			return methodParams;
 		}
 
-		internal MultiValue DereferenceValue (MultiValue maybeReferenceValue, BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state)
+		internal MultiValue DereferenceValue (MultiValue maybeReferenceValue, BasicBlockDataFlowState<MultiValue, ValueSetLattice<SingleValue>> state)
 		{
 			MultiValue dereferencedValue = MultiValueLattice.Top;
 			foreach (var value in maybeReferenceValue) {
@@ -774,7 +769,7 @@ namespace Mono.Linker.Dataflow
 			MethodReference calledMethod,
 			ValueNodeList methodArguments,
 			Instruction operation,
-			BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state)
+			BasicBlockDataFlowState<MultiValue, ValueSetLattice<SingleValue>> state)
 		{
 			MethodDefinition? calledMethodDefinition = _context.Resolve (calledMethod);
 			bool methodIsResolved = calledMethodDefinition is not null;
@@ -794,14 +789,14 @@ namespace Mono.Linker.Dataflow
 		private void HandleCall (
 			MethodBody callingMethodBody,
 			Instruction operation,
-			BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state)
+			BasicBlockDataFlowState<MultiValue, ValueSetLattice<SingleValue>> state)
 		{
 			MethodReference calledMethod = (MethodReference) operation.Operand;
 
 			bool isNewObj = operation.OpCode.Code == Code.Newobj;
 
 			SingleValue? newObjValue;
-			ValueNodeList methodArguments = PopCallArguments (state, calledMethod, callingMethodBody, isNewObj, operation.Offset, out newObjValue);
+			ValueNodeList methodArguments = PopCallArguments (state, calledMethod, isNewObj, out newObjValue);
 
 			var dereferencedMethodParams = new List<MultiValue> ();
 			foreach (var argument in methodArguments)
@@ -855,14 +850,12 @@ namespace Mono.Linker.Dataflow
 		}
 
 		private static void ScanStelem (
-			Instruction operation,
 			BasicBlock block,
-			BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state,
-			MethodBody methodBody)
+			BasicBlockDataFlowState<MultiValue, ValueSetLattice<SingleValue>> state)
 		{
-			MultiValue valueToStore = PopUnknown (state, 1, methodBody, operation.Offset);
-			MultiValue indexToStoreAt = PopUnknown (state, 1, methodBody, operation.Offset);
-			MultiValue arrayToStoreIn = PopUnknown (state, 1, methodBody, operation.Offset);
+			MultiValue valueToStore = PopUnknown (state, 1);
+			MultiValue indexToStoreAt = PopUnknown (state, 1);
+			MultiValue arrayToStoreIn = PopUnknown (state, 1);
 			int? indexToStoreAtInt = indexToStoreAt.AsConstInt ();
 			foreach (var array in arrayToStoreIn) {
 				if (array is ArrayValue arrValue) {
@@ -879,11 +872,10 @@ namespace Mono.Linker.Dataflow
 		private static void ScanLdelem (
 			Instruction operation,
 			BasicBlock block,
-			BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state,
-			MethodBody methodBody)
+			BasicBlockDataFlowState<MultiValue, ValueSetLattice<SingleValue>> state)
 		{
-			MultiValue indexToLoadFrom = PopUnknown (state, 1, methodBody, operation.Offset);
-			MultiValue arrayToLoadFrom = PopUnknown (state, 1, methodBody, operation.Offset);
+			MultiValue indexToLoadFrom = PopUnknown (state, 1);
+			MultiValue arrayToLoadFrom = PopUnknown (state, 1);
 
 			bool isByRef = operation.OpCode.Code == Code.Ldelema;
 
@@ -950,35 +942,21 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		private static void CheckForInvalidStack (BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state, int depthRequired, MethodBody method, int ilOffset)
-		{
-			if (state.Current.Stack.Count < depthRequired) {
-				ReflectionHandler.WarnAboutInvalidILInMethod (method, ilOffset);
-				while (state.Current.Stack.Count < depthRequired)
-					state.Push (new MultiValue (UnknownValue.Instance)); // Push dummy values to avoid crashes.
-																		 // Analysis of this method will be incorrect.
-			}
-		}
-
-		private static MultiValue PopUnknown (BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state, int count, MethodBody method, int ilOffset)
+		private static MultiValue PopUnknown (BasicBlockDataFlowState<MultiValue, ValueSetLattice<SingleValue>> state, int count)
 		{
 			if (count < 1)
 				throw new InvalidOperationException ();
 
-			CheckForInvalidStack (state, count, method, ilOffset);
+			if (state.Current.Stack.Count < count) {
+				throw new InvalidOperationException ("Not enough values on the stack");
+			}
 
 			return state.Pop (count);
 		}
 
-		private static void PushUnknown (BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state)
+		private static void PushUnknown (BasicBlockDataFlowState<MultiValue, ValueSetLattice<SingleValue>> state)
 		{
 			state.Push (new MultiValue (UnknownValue.Instance));
-		}
-
-		private static void PushUnknownAndWarnAboutInvalidIL (BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state, MethodBody methodBody, int offset)
-		{
-			ReflectionHandler.WarnAboutInvalidILInMethod (methodBody, offset);
-			PushUnknown (state);
 		}
 	}
 }

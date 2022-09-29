@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using ILLink.Shared.DataFlow;
-using ILLink.Shared.TrimAnalysis;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>;
@@ -31,7 +30,7 @@ namespace Mono.Linker.Dataflow
 		{
 		}
 
-		public override void Scan (BasicBlock block, BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> state)
+		public override void Scan (BasicBlock block, BasicBlockDataFlowState<MultiValue, ValueSetLattice<SingleValue>> state)
 		{
 			base.Scan (block, state);
 		}

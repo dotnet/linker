@@ -10,7 +10,7 @@ namespace ILLink.Shared.TrimAnalysis
 	// A lattice over stacks where the stored values are also from a lattice.
 	public readonly struct StackLattice<TValue, TValueLattice> : ILattice<ValueStack<TValue>>
 		where TValue : IEquatable<TValue>
-		where TValueLattice : ILatticeWithUnknownValue<TValue>
+		where TValueLattice : ILattice<TValue>
 	{
 		public readonly TValueLattice ValueLattice;
 
@@ -30,13 +30,7 @@ namespace ILLink.Shared.TrimAnalysis
 			if (right.Equals (Top)) return new ValueStack<TValue> (new ValueStack<TValue> (left));
 
 			if (left.Count != right.Count) {
-				// Force stacks to be of equal size to avoid crashes.
-				// Analysis of this method will be incorrect.
-				while (left.Count < right.Count)
-					left.Push (ValueLattice.UnknownValue);
-
-				while (right.Count < left.Count)
-					right.Push (ValueLattice.UnknownValue);
+				throw new InvalidOperationException ("Stacks have different sizes");
 			}
 
 			ValueStack<TValue> newStack = new ValueStack<TValue> (left.Count);

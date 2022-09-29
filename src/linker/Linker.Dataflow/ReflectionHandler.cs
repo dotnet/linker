@@ -25,7 +25,7 @@ namespace Mono.Linker.Dataflow
 		private readonly FlowAnnotations _annotations;
 		private readonly MarkStep _markStep;
 		private readonly TrimAnalysisPatternStore _trimAnalysisPatternStore;
-		private static ValueSetLatticeWithUnknownValue<SingleValue> MultiValueLattice => default;
+		private static ValueSetLattice<SingleValue> MultiValueLattice => default;
 
 
 		public ReflectionHandler (LinkContext context, MarkStep parent, MessageOrigin origin, TrimAnalysisPatternStore trimAnalysisPatternStore)

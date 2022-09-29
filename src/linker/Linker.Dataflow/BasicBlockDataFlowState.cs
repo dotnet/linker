@@ -3,14 +3,13 @@
 
 using System;
 using ILLink.Shared.DataFlow;
-using ILLink.Shared.TrimAnalysis;
 
 namespace Mono.Linker.Dataflow
 {
 	public class BasicBlockDataFlowState<TValue, TValueLattice>
 		: IDataFlowState<BasicBlockState<TValue>, BlockStateLattice<TValue, TValueLattice>>
 		where TValue : IEquatable<TValue>
-		where TValueLattice : ILatticeWithUnknownValue<TValue>
+		where TValueLattice : ILattice<TValue>
 	{
 		BasicBlockState<TValue> current;
 		public BasicBlockState<TValue> Current {

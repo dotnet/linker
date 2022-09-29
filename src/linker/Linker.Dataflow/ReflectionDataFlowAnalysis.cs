@@ -1,6 +1,7 @@
 ﻿// Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-
+using System;
+using ILLink.Shared;
 using ILLink.Shared.DataFlow;
 using ILLink.Shared.TrimAnalysis;
 using Mono.Cecil;
@@ -14,15 +15,15 @@ namespace Mono.Linker.Dataflow
 	sealed class ReflectionDataFlowAnalysis
 		: ForwardDataFlowAnalysis<
 			BasicBlockState<MultiValue>,
-			BasicBlockDataFlowState<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>>,
-			BlockStateLattice<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>>,
+			BasicBlockDataFlowState<MultiValue, ValueSetLattice<SingleValue>>,
+			BlockStateLattice<MultiValue, ValueSetLattice<SingleValue>>,
 			BasicBlock,
 			Region,
 			ControlFlowGraph,
 			ReflectionScanner
 		>
 	{
-		private readonly BlockStateLattice<MultiValue, ValueSetLatticeWithUnknownValue<SingleValue>> _lattice;
+		private readonly BlockStateLattice<MultiValue, ValueSetLattice<SingleValue>> _lattice;
 		private readonly InterproceduralStateLattice _interproceduralStateLattice;
 		private readonly LinkContext _context;
 		private readonly TrimAnalysisPatternStore _trimAnalysisPatternStore;
@@ -30,7 +31,7 @@ namespace Mono.Linker.Dataflow
 
 		public ReflectionDataFlowAnalysis (LinkContext context)
 		{
-			_lattice = new (new ValueSetLatticeWithUnknownValue<SingleValue> ());
+			_lattice = new (new ValueSetLattice<SingleValue> ());
 			_interproceduralStateLattice = default;
 			_context = context;
 			_trimAnalysisPatternStore = new TrimAnalysisPatternStore (_lattice.LocalsLattice.ValueLattice, context);
@@ -58,10 +59,14 @@ namespace Mono.Linker.Dataflow
 
 		private void AnalyzeMethod (MethodBody methodBody, MarkStep parent, ref InterproceduralState interproceduralState)
 		{
-			var reflectionHandler = new ReflectionHandler (_context, parent, new MessageOrigin (methodBody.Method), _trimAnalysisPatternStore);
-			if (!TryControlFlowGraphScan (methodBody, reflectionHandler, ref interproceduralState)) {
-				var scanner = new ReflectionMethodBodyScanner (_context, reflectionHandler);
-				scanner.Scan (methodBody, ref interproceduralState);
+			try {
+				var reflectionHandler = new ReflectionHandler (_context, parent, new MessageOrigin (methodBody.Method), _trimAnalysisPatternStore);
+				if (!TryControlFlowGraphScan (methodBody, reflectionHandler, ref interproceduralState)) {
+					var scanner = new ReflectionMethodBodyScanner (_context, reflectionHandler);
+					scanner.Scan (methodBody, ref interproceduralState);
+				}
+			} catch (InvalidOperationException) {
+				_context.LogWarning (new MessageOrigin (methodBody.Method), DiagnosticId.InvalidIL);
 			}
 		}
 

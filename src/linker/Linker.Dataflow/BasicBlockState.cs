@@ -61,7 +61,7 @@ namespace Mono.Linker.Dataflow
 
 	public readonly struct BlockStateLattice<TValue, TValueLattice> : ILattice<BasicBlockState<TValue>>
 		where TValue : IEquatable<TValue>
-		where TValueLattice : ILatticeWithUnknownValue<TValue>
+		where TValueLattice : ILattice<TValue>
 	{
 		public readonly DictionaryLattice<LocalKey, TValue, TValueLattice> LocalsLattice;
 		public readonly StackLattice<TValue, TValueLattice> StackLattice;
