@@ -23,13 +23,13 @@ namespace Mono.Linker.Dataflow
 	public struct BasicBlockState<TValue> : IEquatable<BasicBlockState<TValue>>
 		where TValue : IEquatable<TValue>
 	{
-		public DefaultValueDictionary<LocalKey, TValue> Dictionary;
+		public DefaultValueDictionary<LocalKey, TValue> Locals;
 
 		public ValueStack<TValue> Stack;
 
 		public bool Equals (BasicBlockState<TValue> other)
 		{
-			return Dictionary.Equals (other.Dictionary) && Stack.Equals (other.Stack);
+			return Locals.Equals (other.Locals) && Stack.Equals (other.Stack);
 		}
 
 		public BasicBlockState (TValue defaultValue)
@@ -39,7 +39,7 @@ namespace Mono.Linker.Dataflow
 
 		public BasicBlockState (DefaultValueDictionary<LocalKey, TValue> dictionary, ValueStack<TValue> stack)
 		{
-			Dictionary = dictionary;
+			Locals = dictionary;
 			Stack = stack;
 		}
 
@@ -48,9 +48,9 @@ namespace Mono.Linker.Dataflow
 		{
 		}
 
-		public TValue GetLocal (LocalKey key) => Dictionary.Get (key);
+		public TValue GetLocal (LocalKey key) => Locals.Get (key);
 
-		public void SetLocal (LocalKey key, TValue value) => Dictionary.Set (key, value);
+		public void SetLocal (LocalKey key, TValue value) => Locals.Set (key, value);
 
 		public void Push (TValue value) => Stack.Push (value);
 
@@ -76,7 +76,7 @@ namespace Mono.Linker.Dataflow
 
 		public BasicBlockState<TValue> Meet (BasicBlockState<TValue> left, BasicBlockState<TValue> right)
 		{
-			var dictionary = LocalsLattice.Meet (left.Dictionary, right.Dictionary);
+			var dictionary = LocalsLattice.Meet (left.Locals, right.Locals);
 			var stack = StackLattice.Meet (left.Stack, right.Stack);
 			return new BasicBlockState<TValue> (dictionary, stack);
 		}
