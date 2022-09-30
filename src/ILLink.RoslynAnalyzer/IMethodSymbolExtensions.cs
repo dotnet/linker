@@ -2,13 +2,15 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using ILLink.Shared;
+using ILLink.Shared.TypeSystemProxy;
 using Microsoft.CodeAnalysis;
 
 namespace ILLink.RoslynAnalyzer
 {
-	public static class IMethodSymbolExtensions
+	internal static class IMethodSymbolExtensions
 	{
 		/// <summary>
 		/// Returns whether or not the ILParameterIndex represents the `this` Parameter
@@ -30,6 +32,22 @@ namespace ILLink.RoslynAnalyzer
 			if (paramIndex >= method.Parameters.Length)
 				return null;
 			return method.Parameters[paramIndex];
+		}
+
+		public static List<ParameterProxy> GetParameters (this IMethodSymbol method)
+		{
+			List<ParameterProxy> parameters = new ();
+			if (method.IsStatic)
+				parameters.Add (new (new MethodProxy (method), ParameterIndex.This));
+			int paramsNum = method.Parameters.Length;
+			for (ParameterIndex i = 0; i < paramsNum; i++)
+				parameters.Add (new (new MethodProxy (method), i));
+			return parameters;
+		}
+
+		public static ParameterProxy GetParameter (this IMethodSymbol method, ParameterIndex index)
+		{
+			return new ParameterProxy (new (method), index);
 		}
 
 		/// <summary>
@@ -70,10 +88,10 @@ namespace ILLink.RoslynAnalyzer
 			return method.GetParameter (index)!.GetDynamicallyAccessedMemberTypes ();
 		}
 
-		public static NonThisParameterIndex GetNonThisParameterIndex (this IMethodSymbol method, ILParameterIndex index)
-			=> (NonThisParameterIndex) (method.IsStatic ? index : index - 1);
+		public static ParameterIndex GetNonThisParameterIndex (this IMethodSymbol method, ILParameterIndex index)
+			=> (ParameterIndex) (method.IsStatic ? index : index - 1);
 
-		public static ILParameterIndex GetILParameterIndex (this IMethodSymbol method, NonThisParameterIndex index)
+		public static ILParameterIndex GetILParameterIndex (this IMethodSymbol method, ParameterIndex index)
 			=> (ILParameterIndex) (method.IsStatic ? index : index + 1);
 	}
 }

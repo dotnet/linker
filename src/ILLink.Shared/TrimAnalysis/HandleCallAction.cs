@@ -254,7 +254,7 @@ namespace ILLink.Shared.TrimAnalysis
 			case var callType when (callType == IntrinsicId.Type_GetConstructors || callType == IntrinsicId.Type_GetMethods || callType == IntrinsicId.Type_GetFields ||
 				callType == IntrinsicId.Type_GetProperties || callType == IntrinsicId.Type_GetEvents || callType == IntrinsicId.Type_GetNestedTypes || callType == IntrinsicId.Type_GetMembers)
 				&& calledMethod.IsDeclaredOnType ("System.Type")
-				&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.Reflection.BindingFlags")
+				&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.Reflection.BindingFlags")
 				&& !calledMethod.IsStatic (): {
 
 					BindingFlags? bindingFlags;
@@ -309,7 +309,7 @@ namespace ILLink.Shared.TrimAnalysis
 			//
 			case var fieldPropertyOrEvent when (fieldPropertyOrEvent == IntrinsicId.Type_GetField || fieldPropertyOrEvent == IntrinsicId.Type_GetProperty || fieldPropertyOrEvent == IntrinsicId.Type_GetEvent)
 				&& calledMethod.IsDeclaredOnType ("System.Type")
-				&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.String")
+				&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.String")
 				&& !calledMethod.IsStatic (): {
 
 					if (instanceValue.IsEmpty () || argumentValues[0].IsEmpty ()) {
@@ -318,7 +318,7 @@ namespace ILLink.Shared.TrimAnalysis
 					}
 
 					BindingFlags? bindingFlags;
-					if (calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.Reflection.BindingFlags"))
+					if (calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.Reflection.BindingFlags"))
 						bindingFlags = GetBindingFlagsFromValue (argumentValues[1]);
 					else
 						// Assume a default value for BindingFlags for methods that don't use BindingFlags as a parameter
@@ -376,9 +376,9 @@ namespace ILLink.Shared.TrimAnalysis
 					if (calledMethod.HasNonThisParametersCount (1)) {
 						// Assume a default value for BindingFlags for methods that don't use BindingFlags as a parameter
 						bindingFlags = BindingFlags.Public | BindingFlags.Instance;
-					} else if (calledMethod.HasNonThisParametersCount (2) && calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.Reflection.BindingFlags"))
+					} else if (calledMethod.HasNonThisParametersCount (2) && calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.Reflection.BindingFlags"))
 						bindingFlags = GetBindingFlagsFromValue (argumentValues[1]);
-					else if (calledMethod.HasNonThisParametersCount (3) && calledMethod.HasParameterOfType ((NonThisParameterIndex) 2, "System.Reflection.BindingFlags")) {
+					else if (calledMethod.HasNonThisParametersCount (3) && calledMethod.HasParameterOfType ((ParameterIndex) 2, "System.Reflection.BindingFlags")) {
 						bindingFlags = GetBindingFlagsFromValue (argumentValues[2]);
 					} else // Non recognized intrinsic
 						throw new ArgumentException ($"Reflection call '{calledMethod.GetDisplayName ()}' inside '{GetContainingSymbolDisplayName ()}' is an unexpected intrinsic.");
@@ -425,9 +425,9 @@ namespace ILLink.Shared.TrimAnalysis
 					}
 
 					BindingFlags? bindingFlags;
-					if (calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.Reflection.BindingFlags"))
+					if (calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.Reflection.BindingFlags"))
 						bindingFlags = GetBindingFlagsFromValue (argumentValues[1]);
-					else if (calledMethod.HasParameterOfType ((NonThisParameterIndex) 2, "System.Reflection.BindingFlags"))
+					else if (calledMethod.HasParameterOfType ((ParameterIndex) 2, "System.Reflection.BindingFlags"))
 						bindingFlags = GetBindingFlagsFromValue (argumentValues[2]);
 					else
 						// Assume a default value for BindingFlags for methods that don't use BindingFlags as a parameter
@@ -473,7 +473,7 @@ namespace ILLink.Shared.TrimAnalysis
 					}
 
 					BindingFlags? bindingFlags;
-					if (calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.Reflection.BindingFlags"))
+					if (calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.Reflection.BindingFlags"))
 						bindingFlags = GetBindingFlagsFromValue (argumentValues[1]);
 					else
 						// Assume a default value for BindingFlags for methods that don't use BindingFlags as a parameter
@@ -611,7 +611,7 @@ namespace ILLink.Shared.TrimAnalysis
 			//
 			// static Property (Expression, MethodInfo)
 			//
-			case IntrinsicId.Expression_Property when calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.Reflection.MethodInfo"): {
+			case IntrinsicId.Expression_Property when calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.Reflection.MethodInfo"): {
 					if (argumentValues[1].IsEmpty ()) {
 						returnValue = MultiValueLattice.Top;
 						break;
@@ -631,7 +631,7 @@ namespace ILLink.Shared.TrimAnalysis
 						// In all other cases we may not even know which type this is about, so there's nothing we can do
 						// report it as a warning.
 						_diagnosticContext.AddDiagnostic (DiagnosticId.PropertyAccessorParameterInLinqExpressionsCannotBeStaticallyDetermined,
-							_annotations.GetMethodParameterValue (calledMethod, (ILParameterIndex) 1, DynamicallyAccessedMemberTypes.None).GetDiagnosticArgumentsForAnnotationMismatch ().ToArray ());
+							_annotations.GetMethodParameterValue (calledMethod.GetParameter ((ParameterIndex) 1), DynamicallyAccessedMemberTypes.None).GetDiagnosticArgumentsForAnnotationMismatch ().ToArray ());
 					}
 				}
 				break;
@@ -764,7 +764,7 @@ namespace ILLink.Shared.TrimAnalysis
 						break;
 					}
 
-					if ((calledMethod.HasNonThisParametersCount (3) && calledMethod.HasParameterOfType ((NonThisParameterIndex) 2, "System.Boolean") && argumentValues[2].AsConstInt () != 0) ||
+					if ((calledMethod.HasNonThisParametersCount (3) && calledMethod.HasParameterOfType ((ParameterIndex) 2, "System.Boolean") && argumentValues[2].AsConstInt () != 0) ||
 						(calledMethod.HasNonThisParametersCount (5) && argumentValues[4].AsConstInt () != 0)) {
 						_diagnosticContext.AddDiagnostic (DiagnosticId.CaseInsensitiveTypeGetTypeCallIsNotSupported, calledMethod.GetDisplayName ());
 						returnValue = MultiValueLattice.Top; // This effectively disables analysis of anything which uses the return value
@@ -940,7 +940,7 @@ namespace ILLink.Shared.TrimAnalysis
 					}
 
 					BindingFlags? bindingFlags;
-					if (calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.Reflection.BindingFlags"))
+					if (calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.Reflection.BindingFlags"))
 						bindingFlags = GetBindingFlagsFromValue (argumentValues[0]);
 					else
 						// Assume a default value for BindingFlags for methods that don't use BindingFlags as a parameter
@@ -1019,7 +1019,7 @@ namespace ILLink.Shared.TrimAnalysis
 					int? ctorParameterCount = null;
 					BindingFlags bindingFlags = BindingFlags.Instance;
 					if (calledMethod.GetNonThisParametersCount () > 1) {
-						if (calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.Boolean")) {
+						if (calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.Boolean")) {
 							// The overload that takes a "nonPublic" bool
 							bool nonPublic = argumentValues[1].AsConstInt () != 0;
 
@@ -1141,15 +1141,10 @@ namespace ILLink.Shared.TrimAnalysis
 			case IntrinsicId.None:
 				// Verify the argument values match the annotations on the parameter definition
 				if (requiresDataFlowAnalysis) {
-					int offset = 0;
-					if (!calledMethod.IsStatic ()) {
-						_requireDynamicallyAccessedMembersAction.Invoke (instanceValue, _annotations.GetMethodThisParameterValue (calledMethod));
-						offset = 1;
-					}
-					for (int argumentIndex = 0; argumentIndex < argumentValues.Count; argumentIndex++) {
-						if (argumentIndex >= calledMethod.GetNonThisParametersCount () || calledMethod.ParameterReferenceKind (calledMethod.GetILParameterIndex ((NonThisParameterIndex) argumentIndex)) == ReferenceKind.Out)
+					foreach (var parameter in calledMethod.GetParameters ()) {
+						if (parameter.ReferenceKind is ReferenceKind.Out)
 							continue;
-						_requireDynamicallyAccessedMembersAction.Invoke (argumentValues[argumentIndex], _annotations.GetMethodParameterValue (calledMethod, (ILParameterIndex) (argumentIndex + offset)));
+						_requireDynamicallyAccessedMembersAction.Invoke (argumentValues[parameter.Sequence], _annotations.GetParameterValue (parameter));
 					}
 				}
 				break;
@@ -1311,7 +1306,7 @@ namespace ILLink.Shared.TrimAnalysis
 		{
 			BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
 			bool parameterlessConstructor = true;
-			if (calledMethod.HasNonThisParametersCount (8) && calledMethod.HasParameterOfType ((NonThisParameterIndex) 2, "System.Boolean")) {
+			if (calledMethod.HasNonThisParametersCount (8) && calledMethod.HasParameterOfType ((ParameterIndex) 2, "System.Boolean")) {
 				parameterlessConstructor = false;
 				bindingFlags = BindingFlags.Instance;
 				if (argumentValues[3].AsConstInt () is int bindingFlagsInt)
@@ -1342,11 +1337,11 @@ namespace ILLink.Shared.TrimAnalysis
 
 							MarkConstructorsOnType (resolvedType, bindingFlags, parameterlessConstructor ? 0 : null);
 						} else {
-							_diagnosticContext.AddDiagnostic (DiagnosticId.UnrecognizedParameterInMethodCreateInstance, calledMethod.GetParameterDisplayName ((NonThisParameterIndex) 1), calledMethod.GetDisplayName ());
+							_diagnosticContext.AddDiagnostic (DiagnosticId.UnrecognizedParameterInMethodCreateInstance, calledMethod.GetParameterDisplayName ((ParameterIndex) 1), calledMethod.GetDisplayName ());
 						}
 					}
 				} else {
-					_diagnosticContext.AddDiagnostic (DiagnosticId.UnrecognizedParameterInMethodCreateInstance, calledMethod.GetParameterDisplayName ((NonThisParameterIndex) 0), calledMethod.GetDisplayName ());
+					_diagnosticContext.AddDiagnostic (DiagnosticId.UnrecognizedParameterInMethodCreateInstance, calledMethod.GetParameterDisplayName ((ParameterIndex) 0), calledMethod.GetDisplayName ());
 				}
 			}
 		}

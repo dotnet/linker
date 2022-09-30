@@ -203,7 +203,7 @@ namespace Mono.Linker.Steps
 					if (i > 0)
 						sb.Append (",");
 
-					sb.Append (meth.GetParameterType ((NonThisParameterIndex) i).FullName);
+					sb.Append (meth.GetParameterType ((ParameterIndex) i).FullName);
 				}
 			}
 			sb.Append (")");

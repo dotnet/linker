@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using Mono.Cecil;
 using Mono.Linker;
@@ -26,16 +27,18 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		internal partial int GetNonThisParametersCount () => Method.GetNonThisParameterCount ();
 
-		internal partial int GetILParametersCount () => Method.GetILParameterCount ();
+		internal partial int GetILParametersCount () => Method.GetILArgumentCount ();
 
-		internal partial bool HasParameterOfType (ILParameterIndex parameterIndex, string fullTypeName) => Method.HasParameterOfType (parameterIndex, fullTypeName);
+		/// <summary>
+		/// Use only when iterating over all parameters. When wanting to index, use GetParameters(ParameterIndex)
+		/// </summary>
+		internal partial List<ParameterProxy> GetParameters () => Method.GetParameters ();
+		internal partial ParameterProxy GetParameter (ParameterIndex index) => Method.GetParameter (index);
 
-		internal partial string GetParameterDisplayName (ILParameterIndex parameterIndex) => Method.GetParameter (parameterIndex).Name;
-
-		internal partial ILParameterIndex GetILParameterIndex (NonThisParameterIndex parameterIndex)
+		internal partial ILParameterIndex GetILParameterIndex (ParameterIndex parameterIndex)
 			=> Method.GetILParameterIndex (parameterIndex);
 
-		internal partial NonThisParameterIndex GetNonThisParameterIndex (ILParameterIndex parameterIndex)
+		internal partial ParameterIndex GetNonThisParameterIndex (ILParameterIndex parameterIndex)
 			=> Method.GetNonThisParameterIndex (parameterIndex);
 
 		internal partial bool HasGenericParameters () => Method.HasGenericParameters;
@@ -56,12 +59,13 @@ namespace ILLink.Shared.TypeSystemProxy
 		}
 
 		internal partial bool IsStatic () => Method.IsStatic;
+		internal partial bool HasImplicitThis () => Method.HasImplicitThis ();
 
 		internal partial bool ReturnsVoid () => Method.ReturnsVoid ();
 
 		public override string ToString () => Method.ToString ();
 
-		public ReferenceKind ParameterReferenceKind (ILParameterIndex index) => Method.ParameterReferenceKind (index);
+		public ReferenceKind GetParameterReferenceKind (ParameterIndex index) => Method.ParameterReferenceKind (index);
 
 		public bool Equals (MethodProxy other) => Method.Equals (other.Method);
 

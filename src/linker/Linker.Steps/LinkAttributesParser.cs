@@ -188,7 +188,7 @@ namespace Mono.Linker.Steps
 					//
 					// No candidates betterness, only exact matches are supported
 					//
-					var parameterType = _context.TryResolve (method.GetParameterType ((NonThisParameterIndex) ii));
+					var parameterType = _context.TryResolve (method.GetParameterType ((ParameterIndex) ii));
 					if (parameterType == null || parameterType != _context.TryResolve (args[ii].Type))
 						match = false;
 				}

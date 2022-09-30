@@ -107,7 +107,7 @@ namespace Mono.Linker
 			foreach (VariableDefinition var in body.Variables)
 				AddIfResolved (types, var.VariableType);
 
-			for (int i = 0; i < method.GetILParameterCount (); i++)
+			for (int i = 0; i < method.GetILArgumentCount (); i++)
 				AddIfResolved (types, method.GetParameterType ((ILParameterIndex) i));
 
 			foreach (ExceptionHandler eh in body.ExceptionHandlers) {
@@ -130,7 +130,7 @@ namespace Mono.Linker
 					var resolvedMethod = context.TryResolve (methodReference);
 					if (resolvedMethod != null) {
 						if (resolvedMethod.HasParameters) {
-							for (int i = 0; i < resolvedMethod.GetILParameterCount (); i++)
+							for (int i = 0; i < resolvedMethod.GetILArgumentCount (); i++)
 								AddIfResolved (types, resolvedMethod.GetParameterType ((ILParameterIndex) i));
 						}
 

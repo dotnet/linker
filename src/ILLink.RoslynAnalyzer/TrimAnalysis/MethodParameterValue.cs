@@ -15,12 +15,12 @@ namespace ILLink.Shared.TrimAnalysis
 			: this ((IMethodSymbol) parameterSymbol.ContainingSymbol, parameterSymbol.GetILParameterIndex (), FlowAnnotations.GetMethodParameterAnnotation ((IMethodSymbol) parameterSymbol.ContainingSymbol, parameterSymbol.GetILParameterIndex ()))
 		{ }
 
-		public MethodParameterValue (IMethodSymbol methodSymbol, ILParameterIndex parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+		public MethodParameterValue (IMethodSymbol methodSymbol, ParameterIndex parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 			=> (MethodSymbol, ILIndex, DynamicallyAccessedMemberTypes) = (methodSymbol, parameterIndex, dynamicallyAccessedMemberTypes);
 
 		public readonly IMethodSymbol MethodSymbol;
 
-		public readonly ILParameterIndex ILIndex;
+		public readonly ParameterIndex ILIndex;
 
 		private int SourceIndex => MethodSymbol.IsStatic ? (int) ILIndex : (int) ILIndex - 1;
 

@@ -5,7 +5,7 @@ namespace ILLink.Shared
 {
 	/// <summary>
 	/// Represents the index of arguments passed to a function in IL (i.e. (ILParameterIndex)0 represents `this` for non-static methods.
-	/// This enum and <see cref="ILLink.Shared.NonThisParameterIndex"/> is used to enforce a differentiation between scenarios where the 0
+	/// This enum and <see cref="ILLink.Shared.ParameterIndex"/> is used to enforce a differentiation between scenarios where the 0
 	/// index should be `this` and when the 0 index should be the first non-this parameter in the type system.
 	/// Using an int for both of these scenarios can easily cause array bound exceptions, so extensions using one of these enums should be used whenever possible.
 	/// There are no named enum values, the underlying integer value represents the index value.
@@ -13,11 +13,16 @@ namespace ILLink.Shared
 	/// </summary>
 	/// <example>
 	/// In a call to a non-static function Foo(int a, int b, int c)
-	/// 0 refers to `this`,
-	/// 1 refers to a,
-	/// 2 refers to b.
-	/// 3 referes to c.
+	/// -1 refers to `this`,
+	/// 0 refers to a,
+	/// 1 refers to b.
+	/// 2 referes to c.
 	/// </example>
+	public enum ParameterIndex
+	{
+		This = -1
+	}
+
 	public enum ILParameterIndex
 	{
 	}

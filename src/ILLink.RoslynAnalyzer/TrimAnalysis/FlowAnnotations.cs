@@ -35,6 +35,28 @@ namespace ILLink.Shared.TrimAnalysis
 			return false;
 		}
 
+		public static DynamicallyAccessedMemberTypes GetMethodParameterAnnotation (ParameterProxy param)
+		{
+			IMethodSymbol method = param.Method.Method;
+			if (param.IsImplicitThis)
+				return method.GetDynamicallyAccessedMemberTypes ();
+
+			IParameterSymbol parameter = param.Parameter;
+			var damt = parameter.GetDynamicallyAccessedMemberTypes ();
+
+			// Is this a property setter parameter?
+			Debug.Assert (method != null);
+			// If there are conflicts between the setter and the property annotation,
+			// the setter annotation wins. (But DAMT.None is ignored)
+			if (method!.MethodKind == MethodKind.PropertySet && damt == DynamicallyAccessedMemberTypes.None) {
+				var property = (IPropertySymbol) method.AssociatedSymbol!;
+				Debug.Assert (property != null);
+				damt = property!.GetDynamicallyAccessedMemberTypes ();
+			}
+
+			return damt;
+		}
+
 		public static DynamicallyAccessedMemberTypes GetMethodParameterAnnotation (IMethodSymbol method, ILParameterIndex index)
 		{
 			if (method.IsThisParameterIndex (index))
@@ -95,8 +117,11 @@ namespace ILLink.Shared.TrimAnalysis
 		internal partial MethodParameterValue GetMethodThisParameterValue (MethodProxy method)
 			=> GetMethodThisParameterValue (method, method.Method.GetDynamicallyAccessedMemberTypes ());
 
-		internal partial MethodParameterValue GetMethodParameterValue (MethodProxy method, ILParameterIndex parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+		internal MethodParameterValue GetMethodParameterValue (MethodProxy method, ILParameterIndex parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 			=> new MethodParameterValue (method.Method, parameterIndex, dynamicallyAccessedMemberTypes);
+
+		internal partial MethodParameterValue GetParameterValue (ParameterProxy param)
+			=> new MethodParameterValue (param, GetMethodParameterAnnotation (param));
 
 		internal partial MethodParameterValue GetMethodParameterValue (MethodProxy method, ILParameterIndex parameterIndex)
 		{

@@ -722,7 +722,8 @@ namespace Mono.Linker.Dataflow
 			Code code = operation.OpCode.Code;
 
 			ILParameterIndex paramNum = ParameterHelpers.GetILParameterIndex (thisMethod, operation);
-			TypeReference paramType = thisMethod.GetParameterType (paramNum);
+			ParameterProxy param = thisMethod.GetParameter (paramNum);
+			TypeReference paramType = param.ParameterType;
 
 			bool isByRef = code == Code.Ldarga || code == Code.Ldarga_S;
 			isByRef |= paramType.IsByRefOrPointer ();
@@ -1055,17 +1056,22 @@ namespace Mono.Linker.Dataflow
 			int curBasicBlock,
 			ref InterproceduralState ipState)
 		{
-			MethodDefinition? calledMethodDefinition = _context.Resolve (calledMethod);
-			bool methodIsResolved = calledMethodDefinition is not null;
-			int offset = calledMethod.HasImplicitThis () ? 1 : 0;
-			int parameterIndex = 0;
-			for (int ilArgumentIndex = offset; ilArgumentIndex < methodArguments.Count; ilArgumentIndex++, parameterIndex++) {
-				if (calledMethod.ParameterReferenceKind ((ILParameterIndex) ilArgumentIndex) is not (ReferenceKind.Ref or ReferenceKind.Out))
-					continue;
-				SingleValue newByRefValue = methodIsResolved ?
-					_context.Annotations.FlowAnnotations.GetMethodParameterValue (calledMethodDefinition!, (ILParameterIndex) ilArgumentIndex)
-					: UnknownValue.Instance;
-				StoreInReference (methodArguments[ilArgumentIndex], newByRefValue, callingMethodBody.Method, operation, locals, curBasicBlock, ref ipState);
+			if (_context.TryResolve (calledMethod) is MethodDefinition calledMethodDefinition) {
+				// We resolved the method and can put the ref/out values into the arguments
+				foreach (var parameter in calledMethodDefinition.GetParameters ()) {
+					if (parameter.ReferenceKind is not (ReferenceKind.Ref or ReferenceKind.Out))
+						continue;
+					var newByRefValue = _context.Annotations.FlowAnnotations.GetParameterValue (parameter);
+					StoreInReference (methodArguments[parameter.Sequence], newByRefValue, callingMethodBody.Method, operation, locals, curBasicBlock, ref ipState);
+				}
+			} else {
+				// We couldn't resolve the method, so we put unknown values into the ref and out arguments
+				// Should be a very cold path, so using Linq.Zip should be okay
+				foreach (var (argument, refKind) in methodArguments.Zip (calledMethod.GetParameterReferenceKinds ())) {
+					if (refKind is not (ReferenceKind.Ref or ReferenceKind.Out))
+						continue;
+					StoreInReference (argument, UnknownValue.Instance, callingMethodBody.Method, operation, locals, curBasicBlock, ref ipState);
+				}
 			}
 		}
 

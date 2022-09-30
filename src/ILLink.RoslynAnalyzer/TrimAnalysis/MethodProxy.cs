@@ -1,6 +1,7 @@
 // Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using ILLink.RoslynAnalyzer;
 using Microsoft.CodeAnalysis;
@@ -25,14 +26,11 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		internal partial int GetILParametersCount () => Method.Parameters.Length + (Method.IsStatic ? 0 : 1);
 
-		internal partial bool HasParameterOfType (ILParameterIndex parameterIndex, string fullTypeName)
-		{
-			if (Method.GetParameterType (parameterIndex) is not ITypeSymbol parameterType)
-				return false;
-			return IsTypeOf (parameterType, fullTypeName);
-		}
-
 		internal partial string GetParameterDisplayName (ILParameterIndex parameterIndex) => Method.GetParameter (parameterIndex)!.GetDisplayName ();
+
+		internal partial List<ParameterProxy> GetParameters () => Method.GetParameters ();
+
+		internal partial ParameterProxy GetParameter (ParameterIndex index) => Method.GetParameter (index);
 
 		internal partial bool HasGenericParameters () => Method.IsGenericMethod;
 
@@ -52,6 +50,7 @@ namespace ILLink.Shared.TypeSystemProxy
 		}
 
 		internal partial bool IsStatic () => Method.IsStatic;
+		internal partial bool HasImplicitThis () => Method.IsStatic;
 
 		internal partial bool ReturnsVoid () => Method.ReturnType.SpecialType == SpecialType.System_Void;
 
@@ -63,7 +62,7 @@ namespace ILLink.Shared.TypeSystemProxy
 			return namedType.HasName (fullTypeName);
 		}
 
-		public ReferenceKind ParameterReferenceKind (ILParameterIndex index)
+		public ReferenceKind GetParameterReferenceKind (ILParameterIndex index)
 		{
 			if (Method.IsThisParameterIndex (index))
 				return Method.ContainingType.IsValueType ? ReferenceKind.Ref : ReferenceKind.None;
@@ -75,10 +74,10 @@ namespace ILLink.Shared.TypeSystemProxy
 			};
 		}
 
-		internal partial ILParameterIndex GetILParameterIndex (NonThisParameterIndex parameterIndex)
+		internal partial ILParameterIndex GetILParameterIndex (ParameterIndex parameterIndex)
 			=> Method.GetILParameterIndex (parameterIndex);
 
-		internal partial NonThisParameterIndex GetNonThisParameterIndex (ILParameterIndex parameterIndex)
+		internal partial ParameterIndex GetNonThisParameterIndex (ILParameterIndex parameterIndex)
 			=> Method.GetNonThisParameterIndex (parameterIndex);
 
 		public override string ToString () => Method.ToString ();

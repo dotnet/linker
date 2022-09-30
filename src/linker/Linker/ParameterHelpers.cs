@@ -21,7 +21,8 @@ namespace Mono.Linker
 				or Code.Ldarg_1
 				or Code.Ldarg_2
 				or Code.Ldarg_3
-				=> GetLdargParamIndex (),
+				=> !thisMethod.HasImplicitThis () ? GetLdargParamIndex ()
+	 				: GetLdargParamIndex () - 1, // 'this' is -1, and all others will be offset by 1
 
 				Code.Starg
 				or Code.Ldarg

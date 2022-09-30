@@ -28,7 +28,7 @@ namespace ILLink.Shared.TrimAnalysis
 				// System.Reflection.MethodBase.GetMethodFromHandle (RuntimeMethodHandle handle)
 				// System.Reflection.MethodBase.GetMethodFromHandle (RuntimeMethodHandle handle, RuntimeTypeHandle declaringType)
 				"GetMethodFromHandle" when calledMethod.IsDeclaredOnType ("System.Reflection.MethodBase")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.RuntimeMethodHandle")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.RuntimeMethodHandle")
 					&& (calledMethod.HasNonThisParametersCount (1) || calledMethod.HasNonThisParametersCount (2))
 					=> IntrinsicId.MethodBase_GetMethodFromHandle,
 
@@ -40,86 +40,86 @@ namespace ILLink.Shared.TrimAnalysis
 
 				// static System.Reflection.RuntimeReflectionExtensions.GetRuntimeEvent (this Type type, string name)
 				"GetRuntimeEvent" when calledMethod.IsDeclaredOnType ("System.Reflection.RuntimeReflectionExtensions")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.Type")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.Type")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.String")
 					=> IntrinsicId.RuntimeReflectionExtensions_GetRuntimeEvent,
 
 				// static System.Reflection.RuntimeReflectionExtensions.GetRuntimeField (this Type type, string name)
 				"GetRuntimeField" when calledMethod.IsDeclaredOnType ("System.Reflection.RuntimeReflectionExtensions")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.Type")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.,String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.Type")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.,String")
 					=> IntrinsicId.RuntimeReflectionExtensions_GetRuntimeField,
 
 				// static System.Reflection.RuntimeReflectionExtensions.GetRuntimeMethod (this Type type, string name, Type[] parameters)
 				"GetRuntimeMethod" when calledMethod.IsDeclaredOnType ("System.Reflection.RuntimeReflectionExtensions")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.Type")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.Type")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.String")
 					=> IntrinsicId.RuntimeReflectionExtensions_GetRuntimeMethod,
 
 				// static System.Reflection.RuntimeReflectionExtensions.GetRuntimeProperty (this Type type, string name)
 				"GetRuntimeProperty" when calledMethod.IsDeclaredOnType ("System.Reflection.RuntimeReflectionExtensions")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.Type")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.Type")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.String")
 					=> IntrinsicId.RuntimeReflectionExtensions_GetRuntimeProperty,
 
 				// static System.Linq.Expressions.Expression.Call (Type, String, Type[], Expression[])
 				"Call" when calledMethod.IsDeclaredOnType ("System.Linq.Expressions.Expression")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.Type")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.Type")
 					&& calledMethod.HasNonThisParametersCount (4)
 					=> IntrinsicId.Expression_Call,
 
 				// static System.Linq.Expressions.Expression.Field (Expression, Type, String)
 				"Field" when calledMethod.IsDeclaredOnType ("System.Linq.Expressions.Expression")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.Type")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.Type")
 					&& calledMethod.HasNonThisParametersCount (3)
 					=> IntrinsicId.Expression_Field,
 
 				// static System.Linq.Expressions.Expression.Property (Expression, Type, String)
 				// static System.Linq.Expressions.Expression.Property (Expression, MethodInfo)
 				"Property" when calledMethod.IsDeclaredOnType ("System.Linq.Expressions.Expression")
-					&& ((calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.Type") && calledMethod.HasNonThisParametersCount (3))
-					|| (calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.Reflection.MethodInfo") && calledMethod.HasNonThisParametersCount (2)))
+					&& ((calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.Type") && calledMethod.HasNonThisParametersCount (3))
+					|| (calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.Reflection.MethodInfo") && calledMethod.HasNonThisParametersCount (2)))
 					=> IntrinsicId.Expression_Property,
 
 				// static System.Linq.Expressions.Expression.New (Type)
 				"New" when calledMethod.IsDeclaredOnType ("System.Linq.Expressions.Expression")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.Type")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.Type")
 					&& calledMethod.HasNonThisParametersCount (1)
 					=> IntrinsicId.Expression_New,
 
 				// static Array System.Enum.GetValues (Type)
 				"GetValues" when calledMethod.IsDeclaredOnType ("System.Enum")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.Type")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.Type")
 					&& calledMethod.HasNonThisParametersCount (1)
 					=> IntrinsicId.Enum_GetValues,
 
 				// static int System.Runtime.InteropServices.Marshal.SizeOf (Type)
 				"SizeOf" when calledMethod.IsDeclaredOnType ("System.Runtime.InteropServices.Marshal")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.Type")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.Type")
 					&& calledMethod.HasNonThisParametersCount (1)
 					=> IntrinsicId.Marshal_SizeOf,
 
 				// static int System.Runtime.InteropServices.Marshal.OffsetOf (Type, string)
 				"OffsetOf" when calledMethod.IsDeclaredOnType ("System.Runtime.InteropServices.Marshal")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.Type")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.Type")
 					&& calledMethod.HasNonThisParametersCount (2)
 					=> IntrinsicId.Marshal_OffsetOf,
 
 				// static object System.Runtime.InteropServices.Marshal.PtrToStructure (IntPtr, Type)
 				"PtrToStructure" when calledMethod.IsDeclaredOnType ("System.Runtime.InteropServices.Marshal")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.Type")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.Type")
 					&& calledMethod.HasNonThisParametersCount (2)
 					=> IntrinsicId.Marshal_PtrToStructure,
 
 				// static void System.Runtime.InteropServices.Marshal.DestroyStructure (IntPtr, Type)
 				"DestroyStructure" when calledMethod.IsDeclaredOnType ("System.Runtime.InteropServices.Marshal")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.Type")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.Type")
 					&& calledMethod.HasNonThisParametersCount (2)
 					=> IntrinsicId.Marshal_DestroyStructure,
 
 				// static Delegate System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer (IntPtr, Type)
 				"GetDelegateForFunctionPointer" when calledMethod.IsDeclaredOnType ("System.Runtime.InteropServices.Marshal")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.Type")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.Type")
 					&& calledMethod.HasNonThisParametersCount (2)
 					=> IntrinsicId.Marshal_GetDelegateForFunctionPointer,
 
@@ -130,7 +130,7 @@ namespace ILLink.Shared.TrimAnalysis
 				// static System.Type.GetType (string, Func<AssemblyName, Assembly>, Func<Assembly, String, Boolean, Type>, Boolean)
 				// static System.Type.GetType (string, Func<AssemblyName, Assembly>, Func<Assembly, String, Boolean, Type>, Boolean, Boolean)
 				"GetType" when calledMethod.IsDeclaredOnType ("System.Type")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.String")
 					=> IntrinsicId.Type_GetType,
 
 				// System.Type.GetConstructor (Type[])
@@ -143,7 +143,7 @@ namespace ILLink.Shared.TrimAnalysis
 
 				// System.Type.GetConstructors (BindingFlags)
 				"GetConstructors" when calledMethod.IsDeclaredOnType ("System.Type")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.Reflection.BindingFlags")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.Reflection.BindingFlags")
 					&& calledMethod.HasNonThisParametersCount (1)
 					&& !calledMethod.IsStatic ()
 					=> IntrinsicId.Type_GetConstructors,
@@ -160,13 +160,13 @@ namespace ILLink.Shared.TrimAnalysis
 				// System.Type.GetMethod (string, int, BindingFlags, Binder?, Type[], ParameterModifier[]?)
 				// System.Type.GetMethod (string, int, BindingFlags, Binder?, CallingConventions, Type[], ParameterModifier[]?)
 				"GetMethod" when calledMethod.IsDeclaredOnType ("System.Type")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.String")
 					&& !calledMethod.IsStatic ()
 					=> IntrinsicId.Type_GetMethod,
 
 				// System.Type.GetMethods (BindingFlags)
 				"GetMethods" when calledMethod.IsDeclaredOnType ("System.Type")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.Reflection.BindingFlags")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.Reflection.BindingFlags")
 					&& calledMethod.HasNonThisParametersCount (1)
 					&& !calledMethod.IsStatic ()
 					=> IntrinsicId.Type_GetMethods,
@@ -174,13 +174,13 @@ namespace ILLink.Shared.TrimAnalysis
 				// System.Type.GetField (string)
 				// System.Type.GetField (string, BindingFlags)
 				"GetField" when calledMethod.IsDeclaredOnType ("System.Type")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.String")
 					&& !calledMethod.IsStatic ()
 					=> IntrinsicId.Type_GetField,
 
 				// System.Type.GetFields (BindingFlags)
 				"GetFields" when calledMethod.IsDeclaredOnType ("System.Type")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.Reflection.BindingFlags")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.Reflection.BindingFlags")
 					&& calledMethod.HasNonThisParametersCount (1)
 					&& !calledMethod.IsStatic ()
 					=> IntrinsicId.Type_GetFields,
@@ -188,13 +188,13 @@ namespace ILLink.Shared.TrimAnalysis
 				// System.Type.GetEvent (string)
 				// System.Type.GetEvent (string, BindingFlags)
 				"GetEvent" when calledMethod.IsDeclaredOnType ("System.Type")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.String")
 					&& !calledMethod.IsStatic ()
 					=> IntrinsicId.Type_GetEvent,
 
 				// System.Type.GetEvents (BindingFlags)
 				"GetEvents" when calledMethod.IsDeclaredOnType ("System.Type")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.Reflection.BindingFlags")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.Reflection.BindingFlags")
 					&& calledMethod.HasNonThisParametersCount (1)
 					&& !calledMethod.IsStatic ()
 					=> IntrinsicId.Type_GetEvents,
@@ -202,13 +202,13 @@ namespace ILLink.Shared.TrimAnalysis
 				// System.Type.GetNestedType (string)
 				// System.Type.GetNestedType (string, BindingFlags)
 				"GetNestedType" when calledMethod.IsDeclaredOnType ("System.Type")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.String")
 					&& !calledMethod.IsStatic ()
 					=> IntrinsicId.Type_GetNestedType,
 
 				// System.Type.GetNestedTypes (BindingFlags)
 				"GetNestedTypes" when calledMethod.IsDeclaredOnType ("System.Type")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.Reflection.BindingFlags")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.Reflection.BindingFlags")
 					&& calledMethod.HasNonThisParametersCount (1)
 					&& !calledMethod.IsStatic ()
 					=> IntrinsicId.Type_GetNestedTypes,
@@ -217,16 +217,16 @@ namespace ILLink.Shared.TrimAnalysis
 				// System.Type.GetMember (String, BindingFlags)
 				// System.Type.GetMember (String, MemberTypes, BindingFlags)
 				"GetMember" when calledMethod.IsDeclaredOnType ("System.Type")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.String")
 					&& !calledMethod.IsStatic ()
 					&& (calledMethod.HasNonThisParametersCount (1) ||
-					(calledMethod.HasNonThisParametersCount (2) && calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.Reflection.BindingFlags")) ||
-					(calledMethod.HasNonThisParametersCount (3) && calledMethod.HasParameterOfType ((NonThisParameterIndex) 2, "System.Reflection.BindingFlags")))
+					(calledMethod.HasNonThisParametersCount (2) && calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.Reflection.BindingFlags")) ||
+					(calledMethod.HasNonThisParametersCount (3) && calledMethod.HasParameterOfType ((ParameterIndex) 2, "System.Reflection.BindingFlags")))
 					=> IntrinsicId.Type_GetMember,
 
 				// System.Type.GetMembers (BindingFlags)
 				"GetMembers" when calledMethod.IsDeclaredOnType ("System.Type")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.Reflection.BindingFlags")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.Reflection.BindingFlags")
 					&& calledMethod.HasNonThisParametersCount (1)
 					&& !calledMethod.IsStatic ()
 					=> IntrinsicId.Type_GetMembers,
@@ -234,10 +234,10 @@ namespace ILLink.Shared.TrimAnalysis
 				// System.Type.GetInterface (string)
 				// System.Type.GetInterface (string, bool)
 				"GetInterface" when calledMethod.IsDeclaredOnType ("System.Type")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.String")
 					&& !calledMethod.IsStatic ()
 					&& (calledMethod.HasNonThisParametersCount (1) ||
-					(calledMethod.HasNonThisParametersCount (2) && calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.Boolean")))
+					(calledMethod.HasNonThisParametersCount (2) && calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.Boolean")))
 					=> IntrinsicId.Type_GetInterface,
 
 				// System.Type.AssemblyQualifiedName
@@ -266,13 +266,13 @@ namespace ILLink.Shared.TrimAnalysis
 				// System.Type.GetProperty (string, Type, Type[], ParameterModifier[])
 				// System.Type.GetProperty (string, BindingFlags, Binder, Type, Type[], ParameterModifier[])
 				"GetProperty" when calledMethod.IsDeclaredOnType ("System.Type")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.String")
 					&& !calledMethod.IsStatic ()
 					=> IntrinsicId.Type_GetProperty,
 
 				// System.Type.GetProperties (BindingFlags)
 				"GetProperties" when calledMethod.IsDeclaredOnType ("System.Type")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.Reflection.BindingFlags")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.Reflection.BindingFlags")
 					&& calledMethod.HasNonThisParametersCount (1)
 					&& !calledMethod.IsStatic ()
 					=> IntrinsicId.Type_GetProperties,
@@ -282,7 +282,7 @@ namespace ILLink.Shared.TrimAnalysis
 					=> IntrinsicId.Object_GetType,
 
 				".ctor" when calledMethod.IsDeclaredOnType ("System.Reflection.TypeDelegator")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.Type")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.Type")
 					=> IntrinsicId.TypeDelegator_Ctor,
 
 				"Empty" when calledMethod.IsDeclaredOnType ("System.Array")
@@ -296,7 +296,7 @@ namespace ILLink.Shared.TrimAnalysis
 				// static System.Activator.CreateInstance (System.Type type, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder? binder, object?[]? args, System.Globalization.CultureInfo? culture, object?[]? activationAttributes) { throw null; }
 				"CreateInstance" when calledMethod.IsDeclaredOnType ("System.Activator")
 					&& !calledMethod.HasGenericParameters ()
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.Type")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.Type")
 					=> IntrinsicId.Activator_CreateInstance_Type,
 
 				// static System.Activator.CreateInstance (string assemblyName, string typeName)
@@ -304,8 +304,8 @@ namespace ILLink.Shared.TrimAnalysis
 				// static System.Activator.CreateInstance (string assemblyName, string typeName, object?[]? activationAttributes)
 				"CreateInstance" when calledMethod.IsDeclaredOnType ("System.Activator")
 					&& !calledMethod.HasGenericParameters ()
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.String")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.String")
 					=> IntrinsicId.Activator_CreateInstance_AssemblyName_TypeName,
 
 				// static System.Activator.CreateInstanceFrom (string assemblyFile, string typeName)
@@ -313,52 +313,52 @@ namespace ILLink.Shared.TrimAnalysis
 				// static System.Activator.CreateInstanceFrom (string assemblyFile, string typeName, object? []? activationAttributes)
 				"CreateInstanceFrom" when calledMethod.IsDeclaredOnType ("System.Activator")
 					&& !calledMethod.HasGenericParameters ()
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.String")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.String")
 					=> IntrinsicId.Activator_CreateInstanceFrom,
 
 				// System.AppDomain.CreateInstance (string assemblyName, string typeName)
 				// System.AppDomain.CreateInstance (string assemblyName, string typeName, bool ignoreCase, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder? binder, object? []? args, System.Globalization.CultureInfo? culture, object? []? activationAttributes)
 				// System.AppDomain.CreateInstance (string assemblyName, string typeName, object? []? activationAttributes)
 				"CreateInstance" when calledMethod.IsDeclaredOnType ("System.AppDomain")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.String")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.String")
 					=> IntrinsicId.AppDomain_CreateInstance,
 
 				// System.AppDomain.CreateInstanceAndUnwrap (string assemblyName, string typeName)
 				// System.AppDomain.CreateInstanceAndUnwrap (string assemblyName, string typeName, bool ignoreCase, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder? binder, object? []? args, System.Globalization.CultureInfo? culture, object? []? activationAttributes)
 				// System.AppDomain.CreateInstanceAndUnwrap (string assemblyName, string typeName, object? []? activationAttributes)
 				"CreateInstanceAndUnwrap" when calledMethod.IsDeclaredOnType ("System.AppDomain")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.String")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.String")
 					=> IntrinsicId.AppDomain_CreateInstanceAndUnwrap,
 
 				// System.AppDomain.CreateInstanceFrom (string assemblyFile, string typeName)
 				// System.AppDomain.CreateInstanceFrom (string assemblyFile, string typeName, bool ignoreCase, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder? binder, object? []? args, System.Globalization.CultureInfo? culture, object? []? activationAttributes)
 				// System.AppDomain.CreateInstanceFrom (string assemblyFile, string typeName, object? []? activationAttributes)
 				"CreateInstanceFrom" when calledMethod.IsDeclaredOnType ("System.AppDomain")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.String")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.String")
 					=> IntrinsicId.AppDomain_CreateInstanceFrom,
 
 				// System.AppDomain.CreateInstanceFromAndUnwrap (string assemblyFile, string typeName)
 				// System.AppDomain.CreateInstanceFromAndUnwrap (string assemblyFile, string typeName, bool ignoreCase, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder? binder, object? []? args, System.Globalization.CultureInfo? culture, object? []? activationAttributes)
 				// System.AppDomain.CreateInstanceFromAndUnwrap (string assemblyFile, string typeName, object? []? activationAttributes)
 				"CreateInstanceFromAndUnwrap" when calledMethod.IsDeclaredOnType ("System.AppDomain")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.String")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 1, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 1, "System.String")
 					=> IntrinsicId.AppDomain_CreateInstanceFromAndUnwrap,
 
 				// System.Reflection.Assembly.CreateInstance (string typeName)
 				// System.Reflection.Assembly.CreateInstance (string typeName, bool ignoreCase)
 				// System.Reflection.Assembly.CreateInstance (string typeName, bool ignoreCase, BindingFlags bindingAttr, Binder? binder, object []? args, CultureInfo? culture, object []? activationAttributes)
 				"CreateInstance" when calledMethod.IsDeclaredOnType ("System.Reflection.Assembly")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.String")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.String")
 					=> IntrinsicId.Assembly_CreateInstance,
 
 				// System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor (RuntimeTypeHandle type)
 				"RunClassConstructor" when calledMethod.IsDeclaredOnType ("System.Runtime.CompilerServices.RuntimeHelpers")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.RuntimeTypeHandle")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.RuntimeTypeHandle")
 					=> IntrinsicId.RuntimeHelpers_RunClassConstructor,
 
 				// System.Reflection.MethodInfo.MakeGenericMethod (Type[] typeArguments)
@@ -368,7 +368,7 @@ namespace ILLink.Shared.TrimAnalysis
 					=> IntrinsicId.MethodInfo_MakeGenericMethod,
 
 				"GetUnderlyingType" when calledMethod.IsDeclaredOnType ("System.Nullable")
-					&& calledMethod.HasParameterOfType ((NonThisParameterIndex) 0, "System.Type")
+					&& calledMethod.HasParameterOfType ((ParameterIndex) 0, "System.Type")
 					&& calledMethod.IsStatic ()
 					=> IntrinsicId.Nullable_GetUnderlyingType,
 

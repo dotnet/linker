@@ -1087,7 +1087,7 @@ namespace Mono.Linker.Steps
 
 				int i = 0;
 				for (; i < signature.Length; ++i) {
-					if (m.GetParameterType ((NonThisParameterIndex) i).FullName != signature[i].Trim ().ToCecilName ()) {
+					if (m.GetParameterType ((ParameterIndex) i).FullName != signature[i].Trim ().ToCecilName ()) {
 						i = -1;
 						break;
 					}
@@ -2476,8 +2476,8 @@ namespace Mono.Linker.Steps
 			if (method.GetNonThisParameterCount () != 2)
 				return false;
 
-			return method.GetParameterType ((NonThisParameterIndex) 0).Name == "SerializationInfo" &&
-				method.GetParameterType ((NonThisParameterIndex) 1).Name == "StreamingContext";
+			return method.GetParameterType ((ParameterIndex) 0).Name == "SerializationInfo" &&
+				method.GetParameterType ((ParameterIndex) 1).Name == "StreamingContext";
 		}
 
 		protected internal bool MarkMethodsIf (Collection<MethodDefinition> methods, Func<MethodDefinition, bool> predicate, in DependencyInfo reason, in MessageOrigin origin)
@@ -2517,7 +2517,7 @@ namespace Mono.Linker.Steps
 				return;
 
 			MarkMethodIf (type.Methods, m =>
-				m.Name == "GetInstance" && m.IsStatic && m.GetNonThisParameterCount () == 1 && m.GetParameterType ((NonThisParameterIndex) 0).MetadataType == MetadataType.String,
+				m.Name == "GetInstance" && m.IsStatic && m.GetNonThisParameterCount () == 1 && m.GetParameterType ((ParameterIndex) 0).MetadataType == MetadataType.String,
 				reason,
 				ScopeStack.CurrentScope.Origin);
 		}

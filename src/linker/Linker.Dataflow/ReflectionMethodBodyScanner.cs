@@ -145,7 +145,7 @@ namespace Mono.Linker.Dataflow
 
 			TrimAnalysisPatterns.Add (new TrimAnalysisMethodCallPattern (
 				operation,
-				calledMethod,
+				calledMethodDefinition,
 				instanceValue,
 				arguments,
 				_origin
@@ -154,7 +154,7 @@ namespace Mono.Linker.Dataflow
 			var diagnosticContext = new DiagnosticContext (_origin, diagnosticsEnabled: false, _context);
 			return HandleCall (
 				operation,
-				calledMethod,
+				calledMethodDefinition,
 				instanceValue,
 				arguments,
 				diagnosticContext,
@@ -200,11 +200,11 @@ namespace Mono.Linker.Dataflow
 			case var callType when (callType == IntrinsicId.Type_GetConstructors || callType == IntrinsicId.Type_GetMethods || callType == IntrinsicId.Type_GetFields ||
 				callType == IntrinsicId.Type_GetProperties || callType == IntrinsicId.Type_GetEvents || callType == IntrinsicId.Type_GetNestedTypes || callType == IntrinsicId.Type_GetMembers)
 				&& calledMethod.DeclaringType.IsTypeOf (WellKnownType.System_Type)
-				&& calledMethod.GetParameterType ((NonThisParameterIndex) 0).IsTypeOf ("System.Reflection.BindingFlags")
+				&& calledMethod.GetParameterType ((ParameterIndex) 0).IsTypeOf ("System.Reflection.BindingFlags")
 				&& calledMethod.HasThis:
 			case var fieldPropertyOrEvent when (fieldPropertyOrEvent == IntrinsicId.Type_GetField || fieldPropertyOrEvent == IntrinsicId.Type_GetProperty || fieldPropertyOrEvent == IntrinsicId.Type_GetEvent)
 				&& calledMethod.DeclaringType.IsTypeOf (WellKnownType.System_Type)
-				&& calledMethod.GetParameterType ((NonThisParameterIndex) 0).IsTypeOf (WellKnownType.System_String)
+				&& calledMethod.GetParameterType ((ParameterIndex) 0).IsTypeOf (WellKnownType.System_String)
 				&& calledMethod.HasThis:
 			case var getRuntimeMember when getRuntimeMember == IntrinsicId.RuntimeReflectionExtensions_GetRuntimeEvent
 				|| getRuntimeMember == IntrinsicId.RuntimeReflectionExtensions_GetRuntimeField

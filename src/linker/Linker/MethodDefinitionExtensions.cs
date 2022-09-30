@@ -1,13 +1,15 @@
 ﻿// Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using ILLink.Shared;
+using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
 
 namespace Mono.Linker
 {
-	public static class MethodDefinitionExtensions
+	internal static class MethodDefinitionExtensions
 	{
 		public static bool IsDefaultConstructor (this MethodDefinition method)
 		{
@@ -98,6 +100,26 @@ namespace Mono.Linker
 				di.Scope.Constants.Clear ();
 				di.Scope = null;
 			}
+		}
+
+		public static ParameterProxy GetParameter (this MethodDefinition method, ParameterIndex index)
+		{
+			if (method.HasImplicitThis ())
+				return new (new (method), ParameterIndex.This);
+			return new (new (method), index);
+		}
+
+		[SuppressMessage ("ApiDesign", "RS0030:Do not used banned APIs", Justification = "This provides the wrapper around the Parameters property")]
+		public static List<ParameterProxy> GetParameters (this MethodDefinition method)
+		{
+			List<ParameterProxy> parameters = new ();
+			if (method.HasImplicitThis ())
+				parameters.Add (new (new (method), ParameterIndex.This));
+			int paramsCount = method.Parameters.Count;
+			for (ParameterIndex i = 0; i < paramsCount; i++) {
+				parameters.Add (new (new (method), i));
+			}
+			return parameters;
 		}
 
 		public static ICustomAttributeProvider GetParameterCustomAttributeProvider (this MethodDefinition method, ILParameterIndex index)

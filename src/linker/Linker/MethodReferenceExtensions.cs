@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using ILLink.Shared;
 using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
@@ -9,7 +10,7 @@ using Mono.Cecil;
 namespace Mono.Linker
 {
 #pragma warning disable RS0030 // MethodReference.Parameters wrappers are defined here
-	public static class MethodReferenceExtensions
+	internal static class MethodReferenceExtensions
 	{
 		public static string GetDisplayName (this MethodReference method)
 		{
@@ -90,7 +91,7 @@ namespace Mono.Linker
 			return method.Parameters[parameterIndex].ParameterType;
 		}
 
-		public static TypeReference GetParameterType (this MethodReference method, NonThisParameterIndex parameterIndex)
+		public static TypeReference GetParameterType (this MethodReference method, ParameterIndex parameterIndex)
 			=> method.Parameters[(int) parameterIndex].ParameterType;
 
 		public static TypeReference GetParameterType (this MethodReference method, ILParameterIndex parameterIndex)
@@ -103,27 +104,14 @@ namespace Mono.Linker
 				null
 				: method.Parameters[(int) method.GetNonThisParameterIndex (index)];
 
-		/// <summary>
-		/// Returns the ParameterDefinition that corresponds to the ILParameterIndex <paramref name="index"/>.
-		/// Throws if <paramref name="index"/> corresponds to the `this` parameter.
-		/// Guard with <see cref="IsImplicitThisParameter(MethodReference, ILParameterIndex)"/> to avoid throwing.
-		/// </summary>
-		/// <exception cref="InvalidOperationException">Throws if the ILParameterIndex corresponds to the `this` parameter.</exception>
-		public static ParameterDefinition GetParameter (this MethodReference method, ILParameterIndex index)
-		{
-			if (method.IsImplicitThisParameter (index))
-				throw new InvalidOperationException ("Tried to get ParameterDefinition of `this` parameter");
-			return method.Parameters[(int) method.GetNonThisParameterIndex (index)];
-		}
-
-		public static NonThisParameterIndex GetNonThisParameterIndex (this MethodReference method, ILParameterIndex ilParameterIndex)
+		public static ParameterIndex GetNonThisParameterIndex (this MethodReference method, ILParameterIndex ilParameterIndex)
 		{
 			if (method.IsImplicitThisParameter (ilParameterIndex))
 				throw new InvalidOperationException ("Cannot get non-this parameter index for `this` parameter.");
-			return (NonThisParameterIndex) (method.HasImplicitThis () ? ilParameterIndex - 1 : ilParameterIndex);
+			return (ParameterIndex) (method.HasImplicitThis () ? ilParameterIndex - 1 : ilParameterIndex);
 		}
 
-		public static ILParameterIndex GetILParameterIndex (this MethodReference method, NonThisParameterIndex index)
+		public static ILParameterIndex GetILParameterIndex (this MethodReference method, ParameterIndex index)
 			=> (ILParameterIndex) (method.HasImplicitThis () ? index + 1 : index);
 
 		public static bool IsImplicitThisParameter (this MethodReference method, ILParameterIndex parameterIndex)
@@ -132,7 +120,7 @@ namespace Mono.Linker
 		/// <summary>
 		/// Returns the number of parameters in IL (including the implicit `this`)
 		/// </summary>
-		public static int GetILParameterCount (this MethodReference method)
+		public static int GetILArgumentCount (this MethodReference method)
 			=> method.HasImplicitThis () ? method.Parameters.Count + 1 : method.Parameters.Count;
 
 		public static int GetNonThisParameterCount (this MethodReference method)
@@ -145,7 +133,7 @@ namespace Mono.Linker
 
 		public static bool HasParameterOfType (this MethodReference method, ILParameterIndex parameterIndex, string fullTypeName)
 		{
-			if ((int) parameterIndex >= method.GetILParameterCount ())
+			if ((int) parameterIndex >= method.GetILArgumentCount ())
 				return false;
 			return method.GetParameterType (parameterIndex).IsTypeOf (fullTypeName);
 		}
@@ -155,15 +143,16 @@ namespace Mono.Linker
 			return method.HasThis && !method.ExplicitThis;
 		}
 
-		/// <summary>
-		/// Returns the ReferenceKind of a parameter (in, out, ref, none) of a method. Uses the IL based index number (i.e. `this` is 0 if there is a `this`, then 1 is the first parameter)
-		/// </summary>
-		public static ReferenceKind ParameterReferenceKind (this MethodReference method, ILParameterIndex index)
+		public static IEnumerable<ReferenceKind> GetParameterReferenceKinds (this MethodReference method)
 		{
-			if (method.IsImplicitThisParameter (index)) {
-				return method.DeclaringType.IsValueType ? ReferenceKind.Ref : ReferenceKind.None;
-			}
-			var param = method.GetParameter (index);
+			if (method.HasImplicitThis ())
+				yield return method.DeclaringType.IsValueType ? ReferenceKind.Ref : ReferenceKind.None;
+			foreach (var parameter in method.Parameters)
+				yield return GetReferenceKind (parameter);
+		}
+
+		public static ReferenceKind GetReferenceKind (ParameterDefinition param)
+		{
 			if (!param.ParameterType.IsByReference)
 				return ReferenceKind.None;
 			if (param.IsIn)
@@ -172,5 +161,26 @@ namespace Mono.Linker
 				return ReferenceKind.Out;
 			return ReferenceKind.Ref;
 		}
+
+		public static ReferenceKind GetParameterReferenceKind (this MethodReference method, ParameterIndex index)
+		{
+			if (index is ParameterIndex.This) {
+				return method.DeclaringType.IsValueType ? ReferenceKind.Ref : ReferenceKind.None;
+			}
+			var param = method.Parameters[index];
+			if (!param.ParameterType.IsByReference)
+				return ReferenceKind.None;
+			if (param.IsIn)
+				return ReferenceKind.In;
+			if (param.IsOut)
+				return ReferenceKind.Out;
+			return ReferenceKind.Ref;
+		}
+		public static IEnumerable<ParameterIndex> GetParameterIndices (this MethodReference method)
+		{
+			for (ParameterIndex i = method.HasImplicitThis () ? ParameterIndex.This : 0; i < method.Parameters.Count; i++)
+				yield return i;
+		}
 	}
+#pragma warning restore RS0030 // MethodReference.Parameters wrappers are defined here
 }
