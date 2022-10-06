@@ -678,6 +678,7 @@ namespace ILLink.Shared.TrimAnalysis
 		internal partial MethodParameterValue GetMethodParameterValue (ParameterProxy param)
 			=> GetMethodParameterValue (param, GetParameterAnnotation (param));
 
+#pragma warning disable CA1822 // Mark members as static - Should be an instance method for consistency
 		// overrideIsThis is needed for backwards compatibility with MakeGenericType/Method https://github.com/dotnet/linker/issues/2428
 		internal MethodParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes, bool overrideIsThis = false)
 		{
@@ -685,6 +686,7 @@ namespace ILLink.Shared.TrimAnalysis
 				throw new InvalidOperationException ($"Cannot get 'this' parameter of method {method.GetDisplayName ()} with no 'this' parameter.");
 			return new MethodParameterValue (method.Method.DeclaringType, new ParameterProxy (method, ParameterIndex.This), dynamicallyAccessedMemberTypes, overrideIsThis);
 		}
+#pragma warning restore CA1822 // Mark members as static
 
 		internal partial MethodParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 			=> GetMethodThisParameterValue (method, dynamicallyAccessedMemberTypes, false);
