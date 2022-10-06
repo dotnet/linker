@@ -2519,8 +2519,12 @@ namespace Mono.Linker.Steps
 			if (!type.HasMethods)
 				return;
 
-			MarkMethodIf (type.Methods, m =>
-				m.Name == "GetInstance" && m.IsStatic && m.TryGetParameter ((ParameterIndex) 0)?.ParameterType.MetadataType == MetadataType.String,
+			MarkMethodIf (type.Methods,
+				m =>
+					m.Name == "GetInstance"
+					&& m.IsStatic
+					&& m.GetMetadataParametersCount () == 1
+					&& m.GetParameter ((ParameterIndex) 0).ParameterType.MetadataType == MetadataType.String,
 				reason,
 				ScopeStack.CurrentScope.Origin);
 		}

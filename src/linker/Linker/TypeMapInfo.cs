@@ -30,6 +30,7 @@
 //
 
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Mono.Cecil;
 
 namespace Mono.Linker
@@ -317,6 +318,7 @@ namespace Mono.Linker
 			return null;
 		}
 
+		[SuppressMessage ("ApiDesign", "RS0030:Do not used banned APIs", Justification = "It's best to leave working code alone.")]
 		bool MethodMatch (MethodReference candidate, MethodReference method)
 		{
 			if (candidate.HasParameters != method.HasParameters)
@@ -338,10 +340,8 @@ namespace Mono.Linker
 			if (!candidate.HasParameters)
 				return true;
 
-#pragma warning disable RS0030 // MethodReference.Parameters is banned. For dealing with text representations, it makes sense to use here.
 			var cp = candidate.Parameters;
 			var mp = method.Parameters;
-#pragma warning restore RS0030
 			if (cp.Count != mp.Count)
 				return false;
 

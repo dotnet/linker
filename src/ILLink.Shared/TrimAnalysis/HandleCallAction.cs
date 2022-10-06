@@ -546,7 +546,7 @@ namespace ILLink.Shared.TrimAnalysis
 						_ => throw new ArgumentException ($"Reflection call '{calledMethod.GetDisplayName ()}' inside '{GetContainingSymbolDisplayName ()}' is of unexpected member type."),
 					};
 
-					var targetValue = _annotations.GetParameterValue (new (calledMethod, (ParameterIndex) 1), requiredMemberTypes);
+					var targetValue = _annotations.GetMethodParameterValue (new (calledMethod, (ParameterIndex) 1), requiredMemberTypes);
 
 					foreach (var value in argumentValues[0]) {
 						if (value is SystemTypeValue systemTypeValue) {
@@ -595,7 +595,7 @@ namespace ILLink.Shared.TrimAnalysis
 			// static New (Type)
 			//
 			case IntrinsicId.Expression_New: {
-					var targetValue = _annotations.GetParameterValue (new (calledMethod, (ParameterIndex) 0), DynamicallyAccessedMemberTypes.PublicParameterlessConstructor);
+					var targetValue = _annotations.GetMethodParameterValue (new (calledMethod, (ParameterIndex) 0), DynamicallyAccessedMemberTypes.PublicParameterlessConstructor);
 					foreach (var value in argumentValues[0]) {
 						if (value is SystemTypeValue systemTypeValue) {
 							MarkConstructorsOnType (systemTypeValue.RepresentedType, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, parameterCount: null);
@@ -631,7 +631,7 @@ namespace ILLink.Shared.TrimAnalysis
 						// In all other cases we may not even know which type this is about, so there's nothing we can do
 						// report it as a warning.
 						_diagnosticContext.AddDiagnostic (DiagnosticId.PropertyAccessorParameterInLinqExpressionsCannotBeStaticallyDetermined,
-							_annotations.GetParameterValue (new (calledMethod, (ParameterIndex) 1), DynamicallyAccessedMemberTypes.None).GetDiagnosticArgumentsForAnnotationMismatch ().ToArray ());
+							_annotations.GetMethodParameterValue (new (calledMethod, (ParameterIndex) 1), DynamicallyAccessedMemberTypes.None).GetDiagnosticArgumentsForAnnotationMismatch ().ToArray ());
 					}
 				}
 				break;
@@ -652,7 +652,7 @@ namespace ILLink.Shared.TrimAnalysis
 						break;
 					}
 
-					var targetValue = _annotations.GetParameterValue (new (calledMethod, (ParameterIndex) 1), memberTypes);
+					var targetValue = _annotations.GetMethodParameterValue (new (calledMethod, (ParameterIndex) 1), memberTypes);
 					foreach (var value in argumentValues[1]) {
 						if (value is SystemTypeValue systemTypeValue) {
 							foreach (var stringParam in argumentValues[2]) {
@@ -684,7 +684,7 @@ namespace ILLink.Shared.TrimAnalysis
 			case IntrinsicId.Expression_Call: {
 					BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
 
-					var targetValue = _annotations.GetParameterValue (
+					var targetValue = _annotations.GetMethodParameterValue (
 						new ParameterProxy (calledMethod, (ParameterIndex) 0),
 						GetDynamicallyAccessedMemberTypesFromBindingFlagsForMethods (bindingFlags));
 
@@ -1069,7 +1069,7 @@ namespace ILLink.Shared.TrimAnalysis
 								requiredMemberTypes |= DynamicallyAccessedMemberTypes.PublicParameterlessConstructor;
 							}
 
-							var targetValue = _annotations.GetParameterValue (new (calledMethod, (ParameterIndex) 0), requiredMemberTypes);
+							var targetValue = _annotations.GetMethodParameterValue (new (calledMethod, (ParameterIndex) 0), requiredMemberTypes);
 
 							_requireDynamicallyAccessedMembersAction.Invoke (value, targetValue);
 						}
@@ -1147,7 +1147,7 @@ namespace ILLink.Shared.TrimAnalysis
 							_requireDynamicallyAccessedMembersAction.Invoke (instanceValue, _annotations.GetMethodThisParameterValue (calledMethod));
 							continue;
 						}
-						_requireDynamicallyAccessedMembersAction.Invoke (argumentValues[parameter.MetadataIndex], _annotations.GetParameterValue (parameter));
+						_requireDynamicallyAccessedMembersAction.Invoke (argumentValues[parameter.MetadataIndex], _annotations.GetMethodParameterValue (parameter));
 					}
 				}
 				break;

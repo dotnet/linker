@@ -3,12 +3,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
 
 namespace Mono.Linker
 {
-#pragma warning disable RS0030 // MethodReference.Parameters wrappers are defined here
+	[SuppressMessage ("ApiDesign", "RS0030:Do not used banned APIs", Justification = "This class provides wrapper methods around the banned Parameters property")]
 	internal static class MethodReferenceExtensions
 	{
 		public static string GetDisplayName (this MethodReference method)
@@ -113,7 +114,8 @@ namespace Mono.Linker
 		}
 
 		/// <summary>
-		/// Used for better performance when needing to get the ReferenceKind of all parameters and nothing else.
+		/// Returns an IEnumerable of the ReferenceKind of each parameter, with the first being for the implicit 'this' parameter if it exists
+		/// Used for better performance when it's only necessary to get the ReferenceKind of all parameters and nothing else.
 		/// </summary>
 		public static IEnumerable<ReferenceKind> GetParameterReferenceKinds (this MethodReference method)
 		{
@@ -133,5 +135,4 @@ namespace Mono.Linker
 			}
 		}
 	}
-#pragma warning restore RS0030 // MethodReference.Parameters wrappers are defined here
 }

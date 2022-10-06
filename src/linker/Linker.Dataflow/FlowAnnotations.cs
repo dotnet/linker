@@ -672,11 +672,11 @@ namespace ILLink.Shared.TrimAnalysis
 		internal partial GenericParameterValue GetGenericParameterValue (GenericParameterProxy genericParameter)
 			=> new GenericParameterValue (genericParameter.GenericParameter, GetGenericParameterAnnotation (genericParameter.GenericParameter));
 
-		internal partial MethodParameterValue GetParameterValue (ParameterProxy param, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+		internal partial MethodParameterValue GetMethodParameterValue (ParameterProxy param, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 			=> new (param.ParameterType.ResolveToTypeDefinition (_context), param, dynamicallyAccessedMemberTypes);
 
-		internal partial MethodParameterValue GetParameterValue (ParameterProxy param)
-			=> GetParameterValue (param, GetParameterAnnotation (param));
+		internal partial MethodParameterValue GetMethodParameterValue (ParameterProxy param)
+			=> GetMethodParameterValue (param, GetParameterAnnotation (param));
 
 		// overrideIsThis is needed for backwards compatibility with MakeGenericType/Method https://github.com/dotnet/linker/issues/2428
 		internal MethodParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes, bool overrideIsThis = false)
@@ -695,7 +695,7 @@ namespace ILLink.Shared.TrimAnalysis
 				throw new InvalidOperationException ($"Cannot get 'this' parameter of method {method.GetDisplayName ()} with no 'this' parameter.");
 			ParameterProxy param = new (method, ParameterIndex.This);
 			var damt = GetParameterAnnotation (param);
-			return GetParameterValue (new ParameterProxy (method, ParameterIndex.This), damt);
+			return GetMethodParameterValue (new ParameterProxy (method, ParameterIndex.This), damt);
 		}
 
 		// Linker-specific dataflow value creation. Eventually more of these should be shared.

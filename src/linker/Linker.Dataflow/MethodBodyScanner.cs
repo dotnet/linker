@@ -1062,7 +1062,7 @@ namespace Mono.Linker.Dataflow
 				foreach (var parameter in calledMethodDefinition.GetParameters ()) {
 					if (parameter.ReferenceKind is not (ReferenceKind.Ref or ReferenceKind.Out))
 						continue;
-					var newByRefValue = _context.Annotations.FlowAnnotations.GetParameterValue (parameter);
+					var newByRefValue = _context.Annotations.FlowAnnotations.GetMethodParameterValue (parameter);
 					StoreInReference (methodArguments[(int) parameter.Index], newByRefValue, callingMethodBody.Method, operation, locals, curBasicBlock, ref ipState);
 				}
 			} else {

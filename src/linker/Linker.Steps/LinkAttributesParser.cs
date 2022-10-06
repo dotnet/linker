@@ -145,7 +145,7 @@ namespace Mono.Linker.Steps
 
 			var ctorN = new MethodDefinition (".ctor", ctorAttributes, voidType);
 			var paramN = new ParameterDefinition (objectArrayType);
-#pragma warning disable RS0030 // MethodReference.Parmeters is banned. It's necessary to build the method definition here though.
+#pragma warning disable RS0030 // MethodReference.Parmeters is banned. It's necessary to build the method definition here, though.
 			ctorN.Parameters.Add (paramN);
 #pragma warning restore RS0030
 			td.Methods.Add (ctorN);
@@ -534,7 +534,7 @@ namespace Mono.Linker.Steps
 			return null;
 		}
 
-#pragma warning disable RS0030 // For display strings we should use source code based parameters
+#pragma warning disable RS0030 // MethdReference.Parameters is banned. It's easiest to leave existing code as is.
 		static string GetMethodSignature (MethodDefinition method, bool includeReturnType = false)
 		{
 			StringBuilder sb = new StringBuilder ();

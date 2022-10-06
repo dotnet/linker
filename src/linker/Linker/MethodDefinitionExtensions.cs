@@ -9,6 +9,7 @@ using Mono.Cecil;
 
 namespace Mono.Linker
 {
+	[SuppressMessage ("ApiDesign", "RS0030:Do not used banned APIs", Justification = "This class provides wrapper methods around the banned Parameters property")]
 	internal static class MethodDefinitionExtensions
 	{
 		public static bool IsDefaultConstructor (this MethodDefinition method)
@@ -132,7 +133,6 @@ namespace Mono.Linker
 		/// <summary>
 		/// Returns a list of the parameters pushed onto the stack before the method call (including the implicit 'this' parameter)
 		/// </summary>
-		[SuppressMessage ("ApiDesign", "RS0030:Do not used banned APIs", Justification = "This provides the wrapper around the Parameters property")]
 		public static List<ParameterProxy> GetParameters (this MethodDefinition method)
 		{
 			List<ParameterProxy> parameters = new ();
@@ -151,7 +151,6 @@ namespace Mono.Linker
 		/// <summary>
 		/// Returns a list of ParameterProxy representing the parameters listed in the "Parameters" metadata section (i.e. not including the implicit 'this' parameter)
 		/// </summary>
-		[SuppressMessage ("ApiDesign", "RS0030:Do not used banned APIs", Justification = "This provides the wrapper around the Parameters property")]
 		public static List<ParameterProxy> GetMetadataParameters (this MethodDefinition method)
 		{
 			List<ParameterProxy> parameters = new ();

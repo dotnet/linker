@@ -96,7 +96,7 @@ namespace ILLink.Shared.TrimAnalysis
 		{
 			if (!method.HasImplicitThis ())
 				throw new InvalidOperationException ($"Cannot get 'this' parameter of method {method.GetDisplayName ()} with no 'this' parameter.");
-			return GetParameterValue (new ParameterProxy (method, ParameterIndex.This), dynamicallyAccessedMemberTypes);
+			return GetMethodParameterValue (new ParameterProxy (method, ParameterIndex.This), dynamicallyAccessedMemberTypes);
 		}
 
 		// overrideIsThis is needed for backwards compatibility with MakeGenericType/Method https://github.com/dotnet/linker/issues/2428
@@ -113,16 +113,16 @@ namespace ILLink.Shared.TrimAnalysis
 				throw new InvalidOperationException ($"Cannot get 'this' parameter of method {method.GetDisplayName ()} with no 'this' parameter.");
 			ParameterProxy param = new (method, ParameterIndex.This);
 			var damt = GetMethodParameterAnnotation (param);
-			return GetParameterValue (new ParameterProxy (method, ParameterIndex.This), damt);
+			return GetMethodParameterValue (new ParameterProxy (method, ParameterIndex.This), damt);
 		}
 
 		internal MethodParameterValue GetMethodParameterValue (MethodProxy method, ParameterIndex parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 			=> new MethodParameterValue (new (method, parameterIndex), dynamicallyAccessedMemberTypes);
 
-		internal partial MethodParameterValue GetParameterValue (ParameterProxy param)
+		internal partial MethodParameterValue GetMethodParameterValue (ParameterProxy param)
 			=> new MethodParameterValue (param, GetMethodParameterAnnotation (param));
 
-		internal partial MethodParameterValue GetParameterValue (ParameterProxy param, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+		internal partial MethodParameterValue GetMethodParameterValue (ParameterProxy param, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 			=> new MethodParameterValue (param, dynamicallyAccessedMemberTypes);
 #pragma warning restore CA1822
 	}

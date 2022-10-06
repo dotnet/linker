@@ -31,7 +31,7 @@ namespace Mono.Linker
 				or Code.Ldarga_S
 				=> GetParamSequence (),
 
-				_ => throw new ArgumentException ($"Method {nameof (GetParameterIndex)} expected an ldarg or starg instruction, got {operation.OpCode.Name}")
+				_ => throw new ArgumentException ($"{nameof (GetParameterIndex)} expected an ldarg or starg instruction, got {operation.OpCode.Name}")
 			};
 
 			ParameterIndex GetLdargParamIndex ()

@@ -27,7 +27,7 @@ namespace Mono.Linker.Dataflow
 		public void ProcessAttributeDataflow (MethodDefinition method, IList<CustomAttributeArgument> arguments)
 		{
 			foreach (var parameter in method.GetMetadataParameters ()) {
-				var parameterValue = _context.Annotations.FlowAnnotations.GetParameterValue (parameter);
+				var parameterValue = _context.Annotations.FlowAnnotations.GetMethodParameterValue (parameter);
 				if (parameterValue.DynamicallyAccessedMemberTypes != DynamicallyAccessedMemberTypes.None) {
 					MultiValue value = GetValueForCustomAttributeArgument (arguments[parameter.MetadataIndex]);
 					var diagnosticContext = new DiagnosticContext (_origin, diagnosticsEnabled: true, _context);
