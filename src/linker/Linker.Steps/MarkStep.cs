@@ -611,7 +611,7 @@ namespace Mono.Linker.Steps
 						if (bases is null)
 							continue;
 						foreach (var @base in bases) {
-							if (@base.DeclaringType.IsInterface && IgnoreScope (@base.DeclaringType.Scope))
+							if (@base.DeclaringType is not null && @base.DeclaringType.IsInterface && IgnoreScope (@base.DeclaringType.Scope))
 								_interfaceOverrides.Add ((new OverrideInformation (@base, method, Context), ScopeStack.CurrentScope));
 						}
 					}
@@ -947,19 +947,19 @@ namespace Mono.Linker.Steps
 			if (dynamicDependency.MemberSignature is string memberSignature) {
 				members = DocumentationSignatureParser.GetMembersByDocumentationSignature (type, memberSignature, Context, acceptName: true);
 				if (!members.Any ()) {
-					Context.LogWarning (ScopeStack.CurrentScope.Origin, DiagnosticId.NoMembersResolvedForMemberSignatureOrType, memberSignature);
+					Context.LogWarning (ScopeStack.CurrentScope.Origin, DiagnosticId.NoMembersResolvedForMemberSignatureOrType, memberSignature, type.GetDisplayName ());
 					return;
 				}
 			} else {
 				var memberTypes = dynamicDependency.MemberTypes;
 				members = type.GetDynamicallyAccessedMembers (Context, memberTypes);
 				if (!members.Any ()) {
-					Context.LogWarning (ScopeStack.CurrentScope.Origin, DiagnosticId.NoMembersResolvedForMemberSignatureOrType, memberTypes.ToString ());
+					Context.LogWarning (ScopeStack.CurrentScope.Origin, DiagnosticId.NoMembersResolvedForMemberSignatureOrType, memberTypes.ToString (), type.GetDisplayName ());
 					return;
 				}
 			}
 
-			MarkMembersVisibleToReflection (members, new DependencyInfo (DependencyKind.DynamicDependency, dynamicDependency.OriginalAttribute));
+			MarkMembersVisibleToReflection (members, new DependencyInfo (DependencyKind.DynamicDependency, context));
 		}
 
 		void MarkMembersVisibleToReflection (IEnumerable<IMetadataTokenProvider> members, in DependencyInfo reason)
@@ -2405,6 +2405,9 @@ namespace Mono.Linker.Steps
 		{
 			var @base = overrideInformation.Base;
 			var method = overrideInformation.Override;
+			if (@base is null || method is null || @base.DeclaringType is null)
+				return false;
+
 			if (Annotations.IsMarked (method))
 				return false;
 
