@@ -610,7 +610,7 @@ namespace ILLink.Shared.TrimAnalysis
 			//
 			// static Property (Expression, MethodInfo)
 			//
-			case IntrinsicId.Expression_Property: {
+			case IntrinsicId.Expression_Property when calledMethod.HasParameterOfType (1, "System.Reflection.MethodInfo"): {
 					if (argumentValues[1].IsEmpty ()) {
 						returnValue = MultiValueLattice.Top;
 						break;
