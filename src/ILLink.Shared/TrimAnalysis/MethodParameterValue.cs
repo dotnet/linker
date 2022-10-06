@@ -14,6 +14,7 @@ namespace ILLink.Shared.TrimAnalysis
 		public override IEnumerable<string> GetDiagnosticArgumentsForAnnotationMismatch ()
 			=> Parameter.GetDiagnosticArgumentsForAnnotationMismatch ();
 
+		// _overrideIsThis is needed for backwards compatibility with MakeGenericType/Method https://github.com/dotnet/linker/issues/2428
 		private readonly bool _overrideIsThis;
 	}
 }

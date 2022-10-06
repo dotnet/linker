@@ -1,27 +1,15 @@
 // Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System;
+using System.Diagnostics.CodeAnalysis;
 using Mono.Cecil;
 using Mono.Linker;
 
 namespace ILLink.Shared.TypeSystemProxy
 {
-#pragma warning disable RS0030 // MethodReference.Parameters is banned. This provides the wrappers for Parameters
+	[SuppressMessage ("ApiDesign", "RS0030:Do not used banned APIs", Justification = "This class provides wrapper methods around the banned Parameters property")]
 	internal partial struct ParameterProxy
 	{
-		public ParameterProxy (MethodProxy method, ParameterIndex index)
-		{
-			if ((int) index < 0 || (int) index >= method.GetParametersCount ())
-				throw new InvalidOperationException ($"Parameter of index {(int) index} does not exist on method {method.GetDisplayName ()} with {method.GetParametersCount ()}");
-			Method = method;
-			Index = index;
-		}
-
-		public MethodProxy Method { get; set; }
-
-		public ParameterIndex Index { get; set; }
-
 		public ReferenceKind ReferenceKind {
 			get {
 				if (IsImplicitThis)
@@ -42,17 +30,6 @@ namespace ILLink.Shared.TypeSystemProxy
 				if (IsImplicitThis)
 					return Method.Method.DeclaringType;
 				return Method.Method.Parameters[MetadataIndex].ParameterType;
-			}
-		}
-
-		public int MetadataIndex {
-			get {
-				if (Method.HasImplicitThis ()) {
-					if (IsImplicitThis)
-						throw new InvalidOperationException ("Cannot get metadata index of the implicit 'this' parameter");
-					return (int) Index - 1;
-				}
-				return (int) Index;
 			}
 		}
 

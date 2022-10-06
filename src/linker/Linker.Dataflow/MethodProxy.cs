@@ -60,6 +60,7 @@ namespace ILLink.Shared.TypeSystemProxy
 		}
 
 		internal partial bool IsStatic () => Method.IsStatic;
+
 		internal partial bool HasImplicitThis () => Method.HasImplicitThis ();
 
 		internal partial bool ReturnsVoid () => Method.ReturnsVoid ();

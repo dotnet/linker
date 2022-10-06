@@ -9,14 +9,6 @@ namespace ILLink.Shared.TypeSystemProxy
 {
 	partial struct ParameterProxy
 	{
-		public ParameterProxy (MethodProxy method, ParameterIndex index)
-		{
-			if ((int) index < 0 || (int) index >= method.GetParametersCount ())
-				throw new InvalidOperationException ($"Parameter of index {(int) index} does not exist on method {method.GetDisplayName ()} with {method.GetParametersCount ()} parameters");
-			Method = method;
-			Index = index;
-		}
-
 		public ParameterProxy (IParameterSymbol parameter)
 		{
 			Method = new ((IMethodSymbol) parameter.ContainingSymbol);
@@ -33,10 +25,6 @@ namespace ILLink.Shared.TypeSystemProxy
 				_ => throw new NotImplementedException ($"Unexpected RefKind found on parameter {GetDisplayName ()}")
 			};
 
-		public MethodProxy Method { get; }
-
-		public ParameterIndex Index { get; }
-
 		/// <summary>
 		/// Returns the IParameterSymbol representing the parameter. Returns null for the implicit this paramter.
 		/// </summary>
@@ -46,17 +34,6 @@ namespace ILLink.Shared.TypeSystemProxy
 		/// Returns the IParameterSymbol.Location[0] for the parameter. Returns null for the implicit this paramter.
 		/// </summary>
 		public Location? Location => ParameterSymbol?.Locations[0];
-
-		public int MetadataIndex {
-			get {
-				if (Method.HasImplicitThis ()) {
-					if (IsImplicitThis)
-						throw new InvalidOperationException ("Cannot get metadata index of the implicit 'this' parameter");
-					return (int) Index - 1;
-				}
-				return (int) Index;
-			}
-		}
 
 		public TypeProxy ParameterType
 			=> IsImplicitThis ?

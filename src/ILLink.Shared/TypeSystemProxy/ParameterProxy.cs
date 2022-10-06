@@ -1,26 +1,48 @@
 // Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Collections.Generic;
 
 namespace ILLink.Shared.TypeSystemProxy
 {
 	internal partial struct ParameterProxy
 	{
-		// C# doesn't have partial constructors or partial properties, but the following should be implemented in every project
+		public ParameterProxy (MethodProxy method, ParameterIndex index)
+		{
+			if ((int) index < 0 || (int) index >= method.GetParametersCount ())
+				throw new InvalidOperationException ($"Parameter of index {(int) index} does not exist on method {method.GetDisplayName ()} with {method.GetParametersCount ()}");
+			Method = method;
+			Index = index;
+		}
 
-		// public ParameterProxy (MethodProxy method, ParameterIndex index)
+		public MethodProxy Method { get; }
 
-		// public partial MethodProxy Method { get; }
+		public ParameterIndex Index { get; }
 
-		// public partial ParameterIndex Index { get; }
+		/// <summary>
+		/// The index of the entry in the '.parameters' metadata section corresponding to thie parameter.
+		/// Maps to the index of the parameter in Cecil's MethodReference.Parameters or Roslyn's IMethodSymbol.Parameters
+		/// Throws if the parameter is the implicit 'this' parameter.
+		/// </summary>
+		public int MetadataIndex {
+			get {
+				if (Method.HasImplicitThis ()) {
+					if (IsImplicitThis)
+						throw new InvalidOperationException ("Cannot get metadata index of the implicit 'this' parameter");
+					return (int) Index - 1;
+				}
+				return (int) Index;
+			}
+		}
+
+		// C# doesn't have partial properties, but the following should be implemented in every project
 
 		// public partial ReferenceKind RefKind { get; }
 
 		public partial string GetDisplayName ();
 
 		public bool IsImplicitThis => Method.HasImplicitThis () && Index == ParameterIndex.This;
-
 
 		public partial bool IsTypeOf (string typeName);
 

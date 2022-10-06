@@ -25,7 +25,6 @@ namespace ILLink.Shared.TrimAnalysis
 			_overrideIsThis = overrideIsThis;
 		}
 
-
 		public ParameterProxy Parameter { get; }
 
 		public override DynamicallyAccessedMemberTypes DynamicallyAccessedMemberTypes { get; }

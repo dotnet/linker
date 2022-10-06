@@ -28,7 +28,7 @@ namespace ILLink.Shared.TypeSystemProxy
 	/// </example>
 	public struct ParameterIndex
 	{
-		public int Index;
+		public readonly int Index;
 
 		public ParameterIndex (int x)
 			=> Index = x;
