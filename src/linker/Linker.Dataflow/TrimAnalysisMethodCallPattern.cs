@@ -65,7 +65,7 @@ namespace Mono.Linker.Dataflow
 		{
 			bool diagnosticsEnabled = !context.Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (Origin.Provider);
 			var diagnosticContext = new DiagnosticContext (Origin, diagnosticsEnabled, context);
-			ReflectionMethodBodyScanner.HandleCall (Operation, CalledMethod, Instance, Arguments,
+			ReflectionHandler.HandleCall (Operation, CalledMethod, Instance, Arguments,
 				diagnosticContext,
 				reflectionMarker,
 				context,

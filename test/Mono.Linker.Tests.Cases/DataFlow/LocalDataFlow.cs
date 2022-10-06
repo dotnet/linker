@@ -229,66 +229,42 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			} finally {
 				str = GetWithPublicFields ();
 			}
-			str.RequiresPublicFields (); // should not warn
-			str.RequiresPublicMethods (); // should warn
+			str.RequiresPublicFields ();
+			str.RequiresPublicMethods ();
 		}
 
-		// Analyzer gets this right (no warning), but trimmer merges all branches going forward.
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicFields) + "(String)",
-			ProducedBy = ProducedBy.Trimmer)]
 		public static void TestBranchGoto ()
 		{
 			string str = GetWithPublicMethods ();
 			if (String.Empty.Length == 0)
 				goto End;
 			str = GetWithPublicFields ();
-			str.RequiresPublicFields (); // produces a warning
+			str.RequiresPublicFields ();
 		End:
 			return;
 		}
 
-		// Analyzer gets this right (no warning), but trimmer merges all branches going forward.
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicFields),
-			ProducedBy = ProducedBy.Trimmer)]
 		public static void TestBranchIf ()
 		{
 			string str = GetWithPublicMethods ();
 			if (String.Empty.Length == 0) {
-				str = GetWithPublicFields (); // dataflow will merge this with the value from the previous basic block
-				str.RequiresPublicFields (); // produces a warning (technically it should not)
+				str = GetWithPublicFields ();
+				str.RequiresPublicFields ();
 			}
 		}
 
-		// Analyzer gets this right (no warning), but trimmer merges all branches going forward.
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicFields),
-			ProducedBy = ProducedBy.Trimmer)]
 		public static void TestBranchIfElse ()
 		{
 			string str;
 			if (String.Empty.Length == 0) {
-				// because this branch *happens* to come first in IL, we will only see one value
 				str = GetWithPublicMethods ();
-				str.RequiresPublicMethods (); // this works
+				str.RequiresPublicMethods ();
 			} else {
-				// because this branch *happens* to come second in IL, we will see the merged value for str
 				str = GetWithPublicFields ();
-				str.RequiresPublicFields (); // produces a warning
+				str.RequiresPublicFields ();
 			}
 		}
 
-		// Analyzer gets this right (no warning), but trimmer merges all branches going forward.
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresNonPublicMethods) + "(String)",
-			ProducedBy = ProducedBy.Trimmer)]
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicMethods) + "(String)",
-			ProducedBy = ProducedBy.Trimmer)]
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicMethods) + "(String)",
-			ProducedBy = ProducedBy.Trimmer)]
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicConstructors) + "(String)",
-			ProducedBy = ProducedBy.Trimmer)]
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicConstructors) + "(String)",
-			ProducedBy = ProducedBy.Trimmer)]
-		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicConstructors) + "(String)",
-			ProducedBy = ProducedBy.Trimmer)]
 		public static void TestBranchSwitch ()
 		{
 			string str = null;
@@ -364,8 +340,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		// Analyzer gets this right, but linker doesn't consider backwards branches.
 		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicMethods) + "(String)",
-			nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()",
-			ProducedBy = ProducedBy.Analyzer)]
+			nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()")]
 		public static void TestBackwardsEdgeLoop ()
 		{
 			string str = GetWithPublicMethods ();
@@ -379,16 +354,14 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			prev.RequiresPublicMethods (); // this produces no warning, even though "prev" will have the value from GetWithPublicFields!
 		}
 
-		// Analyzer gets this right, but linker doesn't consider backwards branches.
 		[ExpectedWarning ("IL2072", nameof (DataFlowStringExtensions) + "." + nameof (DataFlowStringExtensions.RequiresPublicMethods) + "(String)",
-			nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()",
-			ProducedBy = ProducedBy.Analyzer)]
+			nameof (LocalDataFlow) + "." + nameof (GetWithPublicFields) + "()")]
 		public static void TestBackwardsEdgeGoto ()
 		{
 			string str = null;
 			goto ForwardTarget;
 		BackwardTarget:
-			str.RequiresPublicMethods (); // should warn for the value that comes from GetWithPublicFields, but it doesn't.
+			str.RequiresPublicMethods ();
 			return;
 
 		ForwardTarget:

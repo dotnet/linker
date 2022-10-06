@@ -47,6 +47,7 @@ namespace Mono.Linker.Dataflow
 			}
 
 			MethodCallPatterns[pattern.Origin] = pattern.Merge (Lattice, existingPattern);
+
 		}
 
 		public void MarkAndProduceDiagnostics (ReflectionMarker reflectionMarker, MarkStep markStep)

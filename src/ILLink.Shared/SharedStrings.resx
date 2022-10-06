@@ -1197,4 +1197,10 @@
   <data name="RedundantSuppressionTitle" xml:space="preserve">
     <value>Unused 'UnconditionalSuppressMessageAttribute' found. Consider removing the unused warning suppression.</value>
   </data>
+  <data name="InvalidILMessage" xml:space="preserve">
+    <value>Invalid IL found in method.</value>
+  </data>
+  <data name="InvalidILTitle" xml:space="preserve">
+    <value>Invalid IL found in method.</value>
+  </data>
 </root>
