@@ -180,16 +180,16 @@ namespace Mono.Linker.Steps
 				if (!method.IsInstanceConstructor ())
 					continue;
 
-				if (args.Length != method.GetNonThisParameterCount ())
+				if (args.Length != method.GetMetadataParametersCount ())
 					continue;
 
 				bool match = true;
-				for (int ii = 0; match && ii < args.Length; ++ii) {
+				foreach (var p in method.GetMetadataParameters ()) {
 					//
 					// No candidates betterness, only exact matches are supported
 					//
-					var parameterType = _context.TryResolve (method.GetParameterType ((ParameterIndex) ii));
-					if (parameterType == null || parameterType != _context.TryResolve (args[ii].Type))
+					var parameterType = _context.TryResolve (p.ParameterType);
+					if (parameterType == null || parameterType != _context.TryResolve (args[p.MetadataIndex].Type))
 						match = false;
 				}
 

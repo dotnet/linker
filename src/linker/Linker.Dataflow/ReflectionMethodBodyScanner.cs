@@ -93,11 +93,11 @@ namespace Mono.Linker.Dataflow
 			Debug.Fail ("Invalid IL or a bug in the scanner");
 		}
 
-		protected override ValueWithDynamicallyAccessedMembers GetMethodParameterValue (MethodDefinition method, ILParameterIndex parameterIndex)
-			=> GetMethodParameterValue (method, parameterIndex, _context.Annotations.FlowAnnotations.GetParameterAnnotation (method, parameterIndex));
+		protected override ValueWithDynamicallyAccessedMembers GetMethodParameterValue (ParameterProxy parameter)
+			=> GetMethodParameterValue (parameter, _context.Annotations.FlowAnnotations.GetParameterAnnotation (parameter));
 
-		MethodParameterValue GetMethodParameterValue (MethodDefinition method, ILParameterIndex parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-			=> _annotations.GetMethodParameterValue (method, parameterIndex, dynamicallyAccessedMemberTypes);
+		MethodParameterValue GetMethodParameterValue (ParameterProxy parameter, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+			=> _annotations.GetParameterValue (parameter, dynamicallyAccessedMemberTypes);
 
 		protected override MultiValue GetFieldValue (FieldDefinition field) => _annotations.GetFieldValue (field);
 
@@ -145,7 +145,7 @@ namespace Mono.Linker.Dataflow
 
 			TrimAnalysisPatterns.Add (new TrimAnalysisMethodCallPattern (
 				operation,
-				calledMethodDefinition,
+				calledMethod,
 				instanceValue,
 				arguments,
 				_origin
@@ -154,7 +154,7 @@ namespace Mono.Linker.Dataflow
 			var diagnosticContext = new DiagnosticContext (_origin, diagnosticsEnabled: false, _context);
 			return HandleCall (
 				operation,
-				calledMethodDefinition,
+				calledMethod,
 				instanceValue,
 				arguments,
 				diagnosticContext,
@@ -200,11 +200,11 @@ namespace Mono.Linker.Dataflow
 			case var callType when (callType == IntrinsicId.Type_GetConstructors || callType == IntrinsicId.Type_GetMethods || callType == IntrinsicId.Type_GetFields ||
 				callType == IntrinsicId.Type_GetProperties || callType == IntrinsicId.Type_GetEvents || callType == IntrinsicId.Type_GetNestedTypes || callType == IntrinsicId.Type_GetMembers)
 				&& calledMethod.DeclaringType.IsTypeOf (WellKnownType.System_Type)
-				&& calledMethod.GetParameterType ((ParameterIndex) 0).IsTypeOf ("System.Reflection.BindingFlags")
+				&& calledMethodDefinition.HasParameterOfType ((ParameterIndex) 1, "System.Reflection.BindingFlags")
 				&& calledMethod.HasThis:
 			case var fieldPropertyOrEvent when (fieldPropertyOrEvent == IntrinsicId.Type_GetField || fieldPropertyOrEvent == IntrinsicId.Type_GetProperty || fieldPropertyOrEvent == IntrinsicId.Type_GetEvent)
 				&& calledMethod.DeclaringType.IsTypeOf (WellKnownType.System_Type)
-				&& calledMethod.GetParameterType ((ParameterIndex) 0).IsTypeOf (WellKnownType.System_String)
+				&& calledMethodDefinition.TryGetParameter ((ParameterIndex) 1)?.ParameterType.IsTypeOf (WellKnownType.System_String) is true
 				&& calledMethod.HasThis:
 			case var getRuntimeMember when getRuntimeMember == IntrinsicId.RuntimeReflectionExtensions_GetRuntimeEvent
 				|| getRuntimeMember == IntrinsicId.RuntimeReflectionExtensions_GetRuntimeField
@@ -214,7 +214,7 @@ namespace Mono.Linker.Dataflow
 			case IntrinsicId.Type_GetMethod:
 			case IntrinsicId.Type_GetNestedType:
 			case IntrinsicId.Nullable_GetUnderlyingType:
-			case IntrinsicId.Expression_Property when calledMethod.HasParameterOfType ((ILParameterIndex) 1, "System.Reflection.MethodInfo"):
+			case IntrinsicId.Expression_Property when calledMethodDefinition.HasParameterOfType ((ParameterIndex) 1, "System.Reflection.MethodInfo"):
 			case var fieldOrPropertyIntrinsic when fieldOrPropertyIntrinsic == IntrinsicId.Expression_Field || fieldOrPropertyIntrinsic == IntrinsicId.Expression_Property:
 			case IntrinsicId.Type_get_BaseType:
 			case IntrinsicId.Type_GetConstructor:

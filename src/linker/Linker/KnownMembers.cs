@@ -1,6 +1,7 @@
 ﻿// Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
 
 namespace Mono.Linker
@@ -18,7 +19,7 @@ namespace Mono.Linker
 			if (!method.IsConstructor || method.IsStatic || !method.HasParameters)
 				return false;
 
-			if (method.GetNonThisParameterCount () != 1 || method.GetParameterType (method.GetILParameterIndex (0)).MetadataType != MetadataType.String)
+			if (method.GetMetadataParametersCount () != 1 || method.GetParameter ((ParameterIndex) 1).ParameterType.MetadataType != MetadataType.String)
 				return false;
 
 			return true;

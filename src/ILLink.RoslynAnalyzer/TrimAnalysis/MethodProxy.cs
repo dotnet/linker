@@ -20,17 +20,15 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		internal partial bool IsDeclaredOnType (string fullTypeName) => IsTypeOf (Method.ContainingType, fullTypeName);
 
-		internal partial bool HasNonThisParameters () => Method.Parameters.Length > 0;
+		internal partial bool HasMetadataParameters () => Method.Parameters.Length > 0;
 
-		internal partial int GetNonThisParametersCount () => Method.Parameters.Length;
+		internal partial int GetMetadataParametersCount () => Method.GetMetadataParametersCount ();
 
-		internal partial int GetILParametersCount () => Method.Parameters.Length + (Method.IsStatic ? 0 : 1);
-
-		internal partial string GetParameterDisplayName (ILParameterIndex parameterIndex) => Method.GetParameter (parameterIndex)!.GetDisplayName ();
+		internal partial int GetParametersCount () => Method.GetParametersCount ();
 
 		internal partial List<ParameterProxy> GetParameters () => Method.GetParameters ();
 
-		internal partial ParameterProxy GetParameter (ParameterIndex index) => Method.GetParameter (index);
+		internal partial ParameterProxy? GetParameter (ParameterIndex index) => Method.TryGetParameter (index);
 
 		internal partial bool HasGenericParameters () => Method.IsGenericMethod;
 
@@ -50,7 +48,8 @@ namespace ILLink.Shared.TypeSystemProxy
 		}
 
 		internal partial bool IsStatic () => Method.IsStatic;
-		internal partial bool HasImplicitThis () => Method.IsStatic;
+
+		internal partial bool HasImplicitThis () => Method.HasImplicitThis ();
 
 		internal partial bool ReturnsVoid () => Method.ReturnType.SpecialType == SpecialType.System_Void;
 
@@ -61,24 +60,6 @@ namespace ILLink.Shared.TypeSystemProxy
 
 			return namedType.HasName (fullTypeName);
 		}
-
-		public ReferenceKind GetParameterReferenceKind (ILParameterIndex index)
-		{
-			if (Method.IsThisParameterIndex (index))
-				return Method.ContainingType.IsValueType ? ReferenceKind.Ref : ReferenceKind.None;
-			return Method.GetParameter (index)!.RefKind switch {
-				RefKind.In => ReferenceKind.In,
-				RefKind.Out => ReferenceKind.Out,
-				RefKind.Ref => ReferenceKind.Ref,
-				_ => ReferenceKind.None
-			};
-		}
-
-		internal partial ILParameterIndex GetILParameterIndex (ParameterIndex parameterIndex)
-			=> Method.GetILParameterIndex (parameterIndex);
-
-		internal partial ParameterIndex GetNonThisParameterIndex (ILParameterIndex parameterIndex)
-			=> Method.GetNonThisParameterIndex (parameterIndex);
 
 		public override string ToString () => Method.ToString ();
 	}

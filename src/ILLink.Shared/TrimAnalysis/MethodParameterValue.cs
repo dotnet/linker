@@ -5,7 +5,15 @@
 #nullable enable
 
 
+using System.Collections.Generic;
+
 namespace ILLink.Shared.TrimAnalysis
 {
-	sealed partial record MethodParameterValue : ValueWithDynamicallyAccessedMembers;
+	sealed partial record MethodParameterValue : ValueWithDynamicallyAccessedMembers
+	{
+		public override IEnumerable<string> GetDiagnosticArgumentsForAnnotationMismatch ()
+			=> Parameter.GetDiagnosticArgumentsForAnnotationMismatch ();
+
+		private readonly bool _overrideIsThis;
+	}
 }

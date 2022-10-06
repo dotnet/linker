@@ -4,20 +4,4 @@
 namespace ILLink.Shared
 {
 	/// <summary>
-	/// Used to indicate the index of the parameter in source code (i.e. the index is not offset by 1 if there is a `this` parameter)
-	/// index should be `this` and when the 0 index should be the first non-this parameter in the type system.
-	/// Using an int for both of these scenarios can easily cause array bound exceptions, so extensions using one of these enums should be used whenever possible.
-	/// There are no named enum values, the underlying integer value represents the index value.
-	/// See IMethodSymbolExtensions and MethodReferenceExtensions for helper methods to avoid indexing the Parameters properly directly with ints
-	/// </summary>
-	/// <example>
-	/// In a call to a non-static function Foo(int a, int b, int c)
-	/// -1 refers to 'this'
-	/// 0 refers to a,
-	/// 1 refers to b,
-	/// 2 refers to c.
-	/// </example>
-	public enum ParameterIndex
-	{
-	}
 }

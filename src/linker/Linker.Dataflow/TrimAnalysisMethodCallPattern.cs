@@ -15,19 +15,18 @@ namespace Mono.Linker.Dataflow
 	public readonly record struct TrimAnalysisMethodCallPattern
 	{
 		public readonly Instruction Operation;
-		public readonly MethodDefinition CalledMethod;
+		public readonly MethodReference CalledMethod;
 		public readonly MultiValue Instance;
 		public readonly ImmutableArray<MultiValue> Arguments;
 		public readonly MessageOrigin Origin;
 
 		public TrimAnalysisMethodCallPattern (
 			Instruction operation,
-			MethodDefinition calledMethod,
+			MethodReference calledMethod,
 			MultiValue instance,
 			ImmutableArray<MultiValue> arguments,
 			MessageOrigin origin)
 		{
-			Debug.Assert (origin.Provider is MethodDefinition);
 			Operation = operation;
 			CalledMethod = calledMethod;
 			Instance = instance.Clone ();

@@ -2,7 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using ILLink.Shared;
+using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -10,7 +10,7 @@ namespace Mono.Linker
 {
 	public static class ParameterHelpers
 	{
-		public static ILParameterIndex GetILParameterIndex (MethodDefinition thisMethod, Instruction operation)
+		public static ParameterIndex GetParameterIndex (MethodDefinition thisMethod, Instruction operation)
 		{
 			// Thank you Cecil, Operand being a ParameterDefinition instead of an integer,
 			// (except for Ldarg_0 - Ldarg_3, where it's null) makes all of this really convenient...
@@ -21,8 +21,7 @@ namespace Mono.Linker
 				or Code.Ldarg_1
 				or Code.Ldarg_2
 				or Code.Ldarg_3
-				=> !thisMethod.HasImplicitThis () ? GetLdargParamIndex ()
-	 				: GetLdargParamIndex () - 1, // 'this' is -1, and all others will be offset by 1
+				=> GetLdargParamIndex (),
 
 				Code.Starg
 				or Code.Ldarg
@@ -32,17 +31,17 @@ namespace Mono.Linker
 				or Code.Ldarga_S
 				=> GetParamSequence (),
 
-				_ => throw new ArgumentException ($"Method {nameof (GetILParameterIndex)} expected an ldarg or starg instruction, got {operation.OpCode.Name}")
+				_ => throw new ArgumentException ($"Method {nameof (GetParameterIndex)} expected an ldarg or starg instruction, got {operation.OpCode.Name}")
 			};
 
-			ILParameterIndex GetLdargParamIndex ()
+			ParameterIndex GetLdargParamIndex ()
 			{
-				return (ILParameterIndex) (code - Code.Ldarg_0);
+				return (ParameterIndex) (code - Code.Ldarg_0);
 			}
-			ILParameterIndex GetParamSequence ()
+			ParameterIndex GetParamSequence ()
 			{
 				ParameterDefinition param = (ParameterDefinition) operation.Operand;
-				return (ILParameterIndex) param.Sequence;
+				return (ParameterIndex) param.Sequence;
 			}
 		}
 	}

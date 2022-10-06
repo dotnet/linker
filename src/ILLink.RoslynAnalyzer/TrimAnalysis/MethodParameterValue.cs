@@ -1,10 +1,9 @@
 // Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using ILLink.RoslynAnalyzer;
 using ILLink.Shared.DataFlow;
+using ILLink.Shared.TypeSystemProxy;
 using Microsoft.CodeAnalysis;
 
 namespace ILLink.Shared.TrimAnalysis
@@ -12,30 +11,34 @@ namespace ILLink.Shared.TrimAnalysis
 	partial record MethodParameterValue
 	{
 		public MethodParameterValue (IParameterSymbol parameterSymbol)
-			: this ((IMethodSymbol) parameterSymbol.ContainingSymbol, parameterSymbol.GetILParameterIndex (), FlowAnnotations.GetMethodParameterAnnotation ((IMethodSymbol) parameterSymbol.ContainingSymbol, parameterSymbol.GetILParameterIndex ()))
-		{ }
-
+			: this (new ParameterProxy (parameterSymbol)) { }
 		public MethodParameterValue (IMethodSymbol methodSymbol, ParameterIndex parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-			=> (MethodSymbol, ILIndex, DynamicallyAccessedMemberTypes) = (methodSymbol, parameterIndex, dynamicallyAccessedMemberTypes);
+			: this (new (new (methodSymbol), parameterIndex), dynamicallyAccessedMemberTypes) { }
 
-		public readonly IMethodSymbol MethodSymbol;
+		public MethodParameterValue (ParameterProxy parameter)
+			: this (parameter, FlowAnnotations.GetMethodParameterAnnotation (parameter)) { }
 
-		public readonly ParameterIndex ILIndex;
+		public MethodParameterValue (ParameterProxy parameter, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes, bool overrideIsThis = false)
+		{
+			Parameter = parameter;
+			DynamicallyAccessedMemberTypes = dynamicallyAccessedMemberTypes;
+			_overrideIsThis = overrideIsThis;
+		}
 
-		private int SourceIndex => MethodSymbol.IsStatic ? (int) ILIndex : (int) ILIndex - 1;
+
+		public ParameterProxy Parameter { get; }
 
 		public override DynamicallyAccessedMemberTypes DynamicallyAccessedMemberTypes { get; }
 
-		public override IEnumerable<string> GetDiagnosticArgumentsForAnnotationMismatch ()
-			=> IsThisParameter () ?
-				new string[] { MethodSymbol.GetDisplayName () }
-				: new string[] { MethodSymbol.Parameters[SourceIndex].GetDisplayName (), MethodSymbol.GetDisplayName () };
+		public IMethodSymbol MethodSymbol => Parameter.Method.Method;
+
+		public ParameterIndex Index => Parameter.Index;
 
 		public override SingleValue DeepCopy () => this; // This value is immutable
 
 		public override string ToString ()
 			=> this.ValueToString (MethodSymbol, DynamicallyAccessedMemberTypes);
 
-		public bool IsThisParameter () => MethodSymbol.IsThisParameterIndex (ILIndex);
+		public bool IsThisParameter () => _overrideIsThis || Parameter.IsImplicitThis;
 	}
 }

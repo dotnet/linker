@@ -314,17 +314,17 @@ namespace Mono.Linker.Steps
 				return Array.Empty<Instruction> ();
 
 			Instruction[]? result = null;
-			for (int i = method.GetNonThisParameterCount (), pos = 0; i != 0; --i, ++pos) {
+			for (int i = method.GetMetadataParametersCount (), pos = 0; i != 0; --i, ++pos) {
 				Instruction instr = instructions[index - i];
 				if (!IsConstantValue (instr))
 					return null;
 
-				result ??= new Instruction[method.GetNonThisParameterCount ()];
+				result ??= new Instruction[method.GetMetadataParametersCount ()];
 
 				result[pos] = instr;
 			}
 
-			if (result != null && HasJumpIntoTargetRange (instructions, index - method.GetNonThisParameterCount () + 1, index))
+			if (result != null && HasJumpIntoTargetRange (instructions, index - method.GetMetadataParametersCount () + 1, index))
 				return null;
 
 			return result;
@@ -478,7 +478,7 @@ namespace Mono.Linker.Steps
 							if (!IsCalledWithoutSideEffects (md, instrs, i))
 								continue;
 
-							for (int p = 1; p <= md.GetNonThisParameterCount (); ++p) {
+							for (int p = 1; p <= md.GetMetadataParametersCount (); ++p) {
 								processor.Replace (i - p, Instruction.Create (OpCodes.Nop));
 							}
 						}
@@ -516,7 +516,7 @@ namespace Mono.Linker.Steps
 
 			static bool IsCalledWithoutSideEffects (MethodDefinition method, Collection<Instruction> instructions, int index)
 			{
-				for (int i = 1; i <= method.GetNonThisParameterCount (); ++i) {
+				for (int i = 1; i <= method.GetMetadataParametersCount (); ++i) {
 					if (!IsSideEffectFreeLoad (instructions[index - i]))
 						return false;
 				}
@@ -1816,7 +1816,7 @@ namespace Mono.Linker.Steps
 
 			Instruction[]? GetArgumentsOnStack (MethodDefinition method)
 			{
-				int length = method.GetNonThisParameterCount ();
+				int length = method.GetMetadataParametersCount ();
 				Debug.Assert (length != 0);
 				if (stack_instr?.Count < length)
 					return null;

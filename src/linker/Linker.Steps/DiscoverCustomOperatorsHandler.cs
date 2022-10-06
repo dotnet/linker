@@ -3,7 +3,6 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
-using ILLink.Shared;
 using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
 
@@ -165,7 +164,7 @@ namespace Mono.Linker.Steps
 			case "True":
 			case "False":
 				// Parameter type of a unary operator must be the declaring type
-				if (method.GetNonThisParameterCount () != 1 || NonNullableType (method.GetParameterType ((ParameterIndex) 0)) != self)
+				if (method.GetMetadataParametersCount () != 1 || NonNullableType (method.TryGetParameter ((ParameterIndex) 0)?.ParameterType!) != self)
 					return false;
 				// ++ and -- must return the declaring type
 				if (operatorName is "Increment" or "Decrement" && NonNullableType (method.ReturnType) != self)
@@ -188,10 +187,10 @@ namespace Mono.Linker.Steps
 			case "GreaterThan":
 			case "LessThanOrEqual":
 			case "GreaterThanOrEqual":
-				if (method.GetNonThisParameterCount () != 2)
+				if (method.GetMetadataParametersCount () != 2)
 					return false;
-				var nnLeft = NonNullableType (method.GetParameterType ((ParameterIndex) 0));
-				var nnRight = NonNullableType (method.GetParameterType ((ParameterIndex) 1));
+				var nnLeft = NonNullableType (method.TryGetParameter ((ParameterIndex) 0)?.ParameterType!);
+				var nnRight = NonNullableType (method.TryGetParameter ((ParameterIndex) 1)?.ParameterType!);
 				if (nnLeft == null || nnRight == null)
 					return false;
 				// << and >> must take the declaring type and int
@@ -208,9 +207,9 @@ namespace Mono.Linker.Steps
 			// Conversion operators
 			case "Implicit":
 			case "Explicit":
-				if (method.GetNonThisParameterCount () != 1)
+				if (method.GetMetadataParametersCount () != 1)
 					return false;
-				var nnSource = NonNullableType (method.GetParameterType ((ParameterIndex) 0));
+				var nnSource = NonNullableType (method.TryGetParameter ((ParameterIndex) 0)?.ParameterType!);
 				var nnTarget = NonNullableType (method.ReturnType);
 				// Exactly one of source/target must be the declaring type
 				if (nnSource == self == (nnTarget == self))

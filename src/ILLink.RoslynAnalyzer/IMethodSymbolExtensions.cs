@@ -3,8 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using ILLink.Shared;
 using ILLink.Shared.TypeSystemProxy;
 using Microsoft.CodeAnalysis;
 
@@ -12,86 +10,76 @@ namespace ILLink.RoslynAnalyzer
 {
 	internal static class IMethodSymbolExtensions
 	{
-		/// <summary>
-		/// Returns whether or not the ILParameterIndex represents the `this` Parameter
-		/// </summary>
-		public static bool IsThisParameterIndex (this IMethodSymbol method, ILParameterIndex index)
-			=> method.IsStatic ? false : index == 0;
-
-		/// <summary>
-		/// Returns the IParameterSymbol that corresponds to the ILParameterIndex <paramref name="index"/>.
-		/// Throws if <paramref name="index"/> corresponds to the `this` parameter.
-		/// Guard with <see cref="IsThisParameterIndex(IMethodSymbol, ILParameterIndex)"/> to avoid throwing.
-		/// </summary>
-		/// <exception cref="InvalidOperationException">Throws if the ILParameterIndex corresponds to the `this` parameter.</exception>
-		public static IParameterSymbol? GetParameter (this IMethodSymbol method, ILParameterIndex index)
+		public static bool HasImplicitThis (this IMethodSymbol method)
 		{
-			if (method.IsThisParameterIndex (index))
-				return null;
-			int paramIndex = (int) method.GetNonThisParameterIndex (index);
-			if (paramIndex >= method.Parameters.Length)
-				return null;
-			return method.Parameters[paramIndex];
+			return !method.IsStatic;
 		}
 
+		/// <summary>
+		/// Returns a list of the parameters pushed onto the stack before the method call (including the implicit 'this' parameter)
+		/// </summary>
 		public static List<ParameterProxy> GetParameters (this IMethodSymbol method)
 		{
 			List<ParameterProxy> parameters = new ();
-			if (method.IsStatic)
-				parameters.Add (new (new MethodProxy (method), ParameterIndex.This));
-			int paramsNum = method.Parameters.Length;
-			for (ParameterIndex i = 0; i < paramsNum; i++)
-				parameters.Add (new (new MethodProxy (method), i));
+			int paramsNum = method.GetParametersCount ();
+			for (int i = 0; i < paramsNum; i++)
+				parameters.Add (new (new MethodProxy (method), (ParameterIndex) i));
 			return parameters;
 		}
 
+		/// <summary>
+		/// Returns a list of the parameters in the method's 'parameters' metadata section (i.e. excluding the implicit 'this' parameter)
+		/// </summary>
+		public static List<ParameterProxy> GetMetadataParameters (this IMethodSymbol method)
+		{
+			List<ParameterProxy> parameters = new ();
+			int i = 0;
+			if (method.HasImplicitThis ()) {
+				i++;
+			}
+			int paramsCount = method.Parameters.Length + i;
+			for (; i < paramsCount; i++)
+				parameters.Add (new (new MethodProxy (method), (ParameterIndex) i));
+			return parameters;
+		}
+
+		/// <summary>
+		/// Gets the parameter at the <see cref="ParameterIndex"/> provided. Note ParameterIndex treat the implicit 'this' as index 0.
+		/// Throws if the index is out of bounds.
+		/// </summary>
 		public static ParameterProxy GetParameter (this IMethodSymbol method, ParameterIndex index)
 		{
+			if (method.TryGetParameter (index) is not ParameterProxy param)
+				throw new InvalidOperationException ($"Cannot get parameter at index {(int) index} of method {method.GetDisplayName ()} with {(int) method.GetParametersCount ()} parameters.");
+			return param;
+		}
+
+		/// <summary>
+		/// Gets the parameter at the <see cref="ParameterIndex"/> provided. Note ParameterIndex treat the implicit 'this' as index 0.
+		/// Returns null if the index is out of bounds.
+		/// </summary>
+		public static ParameterProxy? TryGetParameter (this IMethodSymbol method, ParameterIndex index)
+		{
+			if (method.GetParametersCount () <= (int) index || (int) index < 0)
+				return null;
 			return new ParameterProxy (new (method), index);
 		}
 
 		/// <summary>
-		/// Returns the number of parameters in IL (including implicit `this`)
+		/// Gets the number of entries in the 'Parameters' section of a method's metadata (i.e. excludes the implicit 'this' from the count)
 		/// </summary>
-		public static int GetILParameterCount (this IMethodSymbol method)
+		public static int GetMetadataParametersCount (this IMethodSymbol method)
 		{
-			if (method.IsStatic)
-				return method.Parameters.Length;
-			else
-				return method.Parameters.Length + 1;
+			return method.Parameters.Length;
 		}
-
-		public static int GetNonThisParameterCount (this IMethodSymbol method)
-			=> method.Parameters.Length;
 
 		/// <summary>
-		/// Returns the type of the parameter at the index provided, or null if the index is out of range.
+		/// Gets the number of parameters pushed onto the stack when the method is called (including the implicit 'this' paramter)
 		/// </summary>
-		public static ITypeSymbol? GetParameterType (this IMethodSymbol method, ILParameterIndex index)
+		public static int GetParametersCount (this IMethodSymbol method)
 		{
-			if (method.IsThisParameterIndex (index))
-				return method.ContainingType;
-			return method.GetParameter (index)?.Type;
+			//return method.Arity + (method.HasImplicitThis () ? 1 : 0);
+			return method.Parameters.Length + (method.HasImplicitThis () ? 1 : 0);
 		}
-
-		public static Location GetParameterLocation (this IMethodSymbol method, ILParameterIndex index)
-		{
-			if (method.IsThisParameterIndex (index))
-				return method.Locations[0];
-			return method.GetParameter (index)!.Locations[0];
-		}
-
-		public static DynamicallyAccessedMemberTypes GetParameterDynamicallyAccessedMemberTypes (this IMethodSymbol method, ILParameterIndex index)
-		{
-			if (method.IsThisParameterIndex (index))
-				return method.GetDynamicallyAccessedMemberTypes ();
-			return method.GetParameter (index)!.GetDynamicallyAccessedMemberTypes ();
-		}
-
-		public static ParameterIndex GetNonThisParameterIndex (this IMethodSymbol method, ILParameterIndex index)
-			=> (ParameterIndex) (method.IsStatic ? index : index - 1);
-
-		public static ILParameterIndex GetILParameterIndex (this IMethodSymbol method, ParameterIndex index)
-			=> (ILParameterIndex) (method.IsStatic ? index : index + 1);
 	}
 }

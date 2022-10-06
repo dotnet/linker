@@ -715,24 +715,24 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		protected abstract SingleValue GetMethodParameterValue (MethodDefinition method, ILParameterIndex parameterIndex);
+		protected abstract SingleValue GetMethodParameterValue (ParameterProxy parameter);
 
 		private void ScanLdarg (Instruction operation, Stack<StackSlot> currentStack, MethodDefinition thisMethod)
 		{
 			Code code = operation.OpCode.Code;
 
-			ILParameterIndex paramNum = ParameterHelpers.GetILParameterIndex (thisMethod, operation);
+			ParameterIndex paramNum = ParameterHelpers.GetParameterIndex (thisMethod, operation);
 			ParameterProxy param = thisMethod.GetParameter (paramNum);
 			TypeReference paramType = param.ParameterType;
 
 			bool isByRef = code == Code.Ldarga || code == Code.Ldarga_S;
 			isByRef |= paramType.IsByRefOrPointer ();
-			isByRef |= thisMethod.IsImplicitThisParameter (paramNum) && paramType.IsValueType;
+			isByRef |= param.IsImplicitThis == true && paramType.IsValueType;
 
 			StackSlot slot = new StackSlot (
 				isByRef
-				? new ParameterReferenceValue (thisMethod, paramNum)
-				: GetMethodParameterValue (thisMethod, paramNum));
+				? new ParameterReferenceValue (param)
+				: GetMethodParameterValue (param));
 			currentStack.Push (slot);
 		}
 
@@ -743,8 +743,9 @@ namespace Mono.Linker.Dataflow
 			MethodBody methodBody)
 		{
 			var valueToStore = PopUnknown (currentStack, 1, methodBody, operation.Offset);
-			ILParameterIndex paramNum = ParameterHelpers.GetILParameterIndex (thisMethod, operation);
-			var targetValue = GetMethodParameterValue (thisMethod, paramNum);
+			ParameterIndex paramNum = ParameterHelpers.GetParameterIndex (thisMethod, operation);
+			ParameterProxy param = new (thisMethod, paramNum);
+			var targetValue = GetMethodParameterValue (param);
 			if (targetValue is MethodParameterValue targetParameterValue)
 				HandleStoreParameter (thisMethod, targetParameterValue, operation, valueToStore.Value);
 
@@ -865,7 +866,7 @@ namespace Mono.Linker.Dataflow
 					HandleStoreField (method, fieldValue, operation, source);
 					break;
 				case ParameterReferenceValue parameterReference
-				when GetMethodParameterValue (parameterReference.MethodDefinition, parameterReference.ParameterIndex) is MethodParameterValue parameterValue:
+				when GetMethodParameterValue (parameterReference.Parameter) is MethodParameterValue parameterValue:
 					HandleStoreParameter (method, parameterValue, operation, source);
 					break;
 				case MethodReturnValue methodReturnValue:
@@ -991,7 +992,7 @@ namespace Mono.Linker.Dataflow
 			int countToPop = 0;
 			if (!isNewObj && methodCalled.HasThis && !methodCalled.ExplicitThis)
 				countToPop++;
-			countToPop += methodCalled.GetNonThisParameterCount ();
+			countToPop += methodCalled.GetMetadataParametersCount ();
 
 			ValueNodeList methodParams = new ValueNodeList (countToPop);
 			for (int iParam = 0; iParam < countToPop; ++iParam) {
@@ -1022,7 +1023,7 @@ namespace Mono.Linker.Dataflow
 				case ParameterReferenceValue parameterReferenceValue:
 					dereferencedValue = MultiValue.Meet (
 						dereferencedValue,
-						GetMethodParameterValue (parameterReferenceValue.MethodDefinition, parameterReferenceValue.ParameterIndex));
+						GetMethodParameterValue (parameterReferenceValue.Parameter));
 					break;
 				case LocalVariableReferenceValue localVariableReferenceValue:
 					if (locals.TryGetValue (localVariableReferenceValue.LocalDefinition, out var valueBasicBlockPair))
@@ -1062,7 +1063,7 @@ namespace Mono.Linker.Dataflow
 					if (parameter.ReferenceKind is not (ReferenceKind.Ref or ReferenceKind.Out))
 						continue;
 					var newByRefValue = _context.Annotations.FlowAnnotations.GetParameterValue (parameter);
-					StoreInReference (methodArguments[parameter.Sequence], newByRefValue, callingMethodBody.Method, operation, locals, curBasicBlock, ref ipState);
+					StoreInReference (methodArguments[(int) parameter.Index], newByRefValue, callingMethodBody.Method, operation, locals, curBasicBlock, ref ipState);
 				}
 			} else {
 				// We couldn't resolve the method, so we put unknown values into the ref and out arguments

@@ -23,23 +23,24 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		internal partial bool IsDeclaredOnType (string fullTypeName) => Method.IsDeclaredOnType (fullTypeName);
 
-		internal partial bool HasNonThisParameters () => Method.HasParameters;
+		internal partial bool HasMetadataParameters () => Method.HasParameters;
 
-		internal partial int GetNonThisParametersCount () => Method.GetNonThisParameterCount ();
+		/// <summary>
+		/// Gets the number of entries in the 'Parameters' section of a method's metadata (i.e. excludes the implicit 'this' from the count)
+		/// </summary>
+		internal partial int GetMetadataParametersCount () => Method.GetMetadataParametersCount ();
 
-		internal partial int GetILParametersCount () => Method.GetILArgumentCount ();
+		/// <summary>
+		/// Returns a list of the parameters in the method's 'parameters' metadata section (i.e. excluding the implicit 'this' parameter)
+		/// </summary>
+		internal partial int GetParametersCount () => Method.GetParametersCount ();
 
 		/// <summary>
 		/// Use only when iterating over all parameters. When wanting to index, use GetParameters(ParameterIndex)
 		/// </summary>
 		internal partial List<ParameterProxy> GetParameters () => Method.GetParameters ();
-		internal partial ParameterProxy GetParameter (ParameterIndex index) => Method.GetParameter (index);
 
-		internal partial ILParameterIndex GetILParameterIndex (ParameterIndex parameterIndex)
-			=> Method.GetILParameterIndex (parameterIndex);
-
-		internal partial ParameterIndex GetNonThisParameterIndex (ILParameterIndex parameterIndex)
-			=> Method.GetNonThisParameterIndex (parameterIndex);
+		internal partial ParameterProxy? GetParameter (ParameterIndex index) => Method.TryGetParameter (index);
 
 		internal partial bool HasGenericParameters () => Method.HasGenericParameters;
 
@@ -64,8 +65,6 @@ namespace ILLink.Shared.TypeSystemProxy
 		internal partial bool ReturnsVoid () => Method.ReturnsVoid ();
 
 		public override string ToString () => Method.ToString ();
-
-		public ReferenceKind GetParameterReferenceKind (ParameterIndex index) => Method.ParameterReferenceKind (index);
 
 		public bool Equals (MethodProxy other) => Method.Equals (other.Method);
 

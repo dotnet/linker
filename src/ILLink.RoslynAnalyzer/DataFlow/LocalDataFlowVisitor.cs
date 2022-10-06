@@ -182,9 +182,41 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 					HandleAssignment (value, targetValue, operation);
 					return value;
 				}
-
 			// The remaining cases don't have a dataflow value that represents LValues, so we need
 			// to handle the LHS specially.
+
+			// Properties are sometimes indexers and need an extra parameter for handleCallAction
+			case var indexerRef when indexerRef is IImplicitIndexerReferenceOperation
+				|| indexerRef is IPropertyReferenceOperation prop && prop.Property.IsIndexer: {
+					// An implicit reference to an indexer where the argument is a System.Index
+					var idexerRef = indexerRef as IImplicitIndexerReferenceOperation;
+					var propertyRef = indexerRef as IPropertyReferenceOperation;
+					var instance = idexerRef?.Instance
+						?? propertyRef?.Instance;
+					var argument = propertyRef?.Arguments[0]
+						?? idexerRef?.Argument;
+					TValue instanceValue = Visit (instance, state);
+					TValue indexArgumentValue = Visit (argument, state);
+					TValue value = Visit (operation.Value, state);
+
+					var property = (IPropertySymbol) (idexerRef?.IndexerSymbol
+						?? propertyRef?.Property)!;
+
+					var argumentsBuilder = ImmutableArray.CreateBuilder<TValue> ();
+					argumentsBuilder.Add (indexArgumentValue);
+					argumentsBuilder.Add (value);
+
+					IMethodSymbol? setMethod = property.GetSetMethod ();
+					if (setMethod == null) {
+						// It might actually be a call to a ref-returning get method,
+						// like Span<T>.this[int].get. We don't handle ref returns yet.
+						break;
+					}
+
+					HandleMethodCall (setMethod, instanceValue, argumentsBuilder.ToImmutableArray (), operation);
+					return value;
+				}
+
 			case IPropertyReferenceOperation propertyRef: {
 					// Avoid visiting the property reference because for captured properties, we can't
 					// correctly detect whether it is used for reading or writing inside of VisitPropertyReference.
@@ -202,28 +234,6 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 					HandleMethodCall (setMethod, instanceValue, ImmutableArray.Create (value), operation);
 					// The return value of a property set expression is the value,
 					// even though a property setter has no return value.
-					return value;
-				}
-			case IImplicitIndexerReferenceOperation indexerRef: {
-					// An implicit reference to an indexer where the argument is a System.Index
-					TValue instanceValue = Visit (indexerRef.Instance, state);
-					TValue indexArgumentValue = Visit (indexerRef.Argument, state);
-					TValue value = Visit (operation.Value, state);
-
-					var property = (IPropertySymbol) indexerRef.IndexerSymbol;
-
-					var argumentsBuilder = ImmutableArray.CreateBuilder<TValue> ();
-					argumentsBuilder.Add (indexArgumentValue);
-					argumentsBuilder.Add (value);
-
-					IMethodSymbol? setMethod = property.GetSetMethod ();
-					if (setMethod == null) {
-						// It might actually be a call to a ref-returning get method,
-						// like Span<T>.this[int].get. We don't handle ref returns yet.
-						break;
-					}
-
-					HandleMethodCall (setMethod, instanceValue, argumentsBuilder.ToImmutableArray (), operation);
 					return value;
 				}
 
@@ -340,7 +350,15 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			// The setter case is handled in assignment operation since here we don't have access to the value to pass to the setter
 			TValue instanceValue = Visit (operation.Instance, state);
 			IMethodSymbol? getMethod = operation.Property.GetGetMethod ();
-			return HandleMethodCall (getMethod!, instanceValue, ImmutableArray<TValue>.Empty, operation);
+			ImmutableArray<TValue> arguments;
+			if (operation.Property.IsIndexer) {
+				TValue indexArgumentValue = Visit (operation.Arguments[0], state);
+				arguments = ImmutableArray.Create (indexArgumentValue);
+			} else {
+				arguments = ImmutableArray<TValue>.Empty;
+			}
+
+			return HandleMethodCall (getMethod!, instanceValue, arguments, operation);
 		}
 
 		public override TValue VisitImplicitIndexerReference (IImplicitIndexerReferenceOperation operation, LocalDataFlowState<TValue, TValueLattice> state)
