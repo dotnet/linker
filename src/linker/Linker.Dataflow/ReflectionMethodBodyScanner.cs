@@ -205,25 +205,26 @@ namespace Mono.Linker.Dataflow
 			case IntrinsicId.Type_GetInterface:
 			case IntrinsicId.Type_get_AssemblyQualifiedName:
 			case IntrinsicId.RuntimeHelpers_RunClassConstructor:
-			case var callType when (callType == IntrinsicId.Type_GetConstructors || callType == IntrinsicId.Type_GetMethods || callType == IntrinsicId.Type_GetFields ||
-				callType == IntrinsicId.Type_GetProperties || callType == IntrinsicId.Type_GetEvents || callType == IntrinsicId.Type_GetNestedTypes || callType == IntrinsicId.Type_GetMembers)
-				&& calledMethod.DeclaringType.IsTypeOf (WellKnownType.System_Type)
-				&& calledMethod.Parameters[0].ParameterType.FullName == "System.Reflection.BindingFlags"
-				&& calledMethod.HasThis:
-			case var fieldPropertyOrEvent when (fieldPropertyOrEvent == IntrinsicId.Type_GetField || fieldPropertyOrEvent == IntrinsicId.Type_GetProperty || fieldPropertyOrEvent == IntrinsicId.Type_GetEvent)
-				&& calledMethod.DeclaringType.IsTypeOf (WellKnownType.System_Type)
-				&& calledMethod.Parameters[0].ParameterType.IsTypeOf (WellKnownType.System_String)
-				&& calledMethod.HasThis:
-			case var getRuntimeMember when getRuntimeMember == IntrinsicId.RuntimeReflectionExtensions_GetRuntimeEvent
-				|| getRuntimeMember == IntrinsicId.RuntimeReflectionExtensions_GetRuntimeField
-				|| getRuntimeMember == IntrinsicId.RuntimeReflectionExtensions_GetRuntimeMethod
-				|| getRuntimeMember == IntrinsicId.RuntimeReflectionExtensions_GetRuntimeProperty:
+			case IntrinsicId.Type_GetConstructors:
+			case IntrinsicId.Type_GetMethods:
+			case IntrinsicId.Type_GetFields:
+			case IntrinsicId.Type_GetProperties:
+			case IntrinsicId.Type_GetEvents:
+			case IntrinsicId.Type_GetNestedTypes:
+			case IntrinsicId.Type_GetMembers:
+			case IntrinsicId.Type_GetField:
+			case IntrinsicId.Type_GetProperty:
+			case IntrinsicId.Type_GetEvent:
+			case IntrinsicId.RuntimeReflectionExtensions_GetRuntimeEvent:
+			case IntrinsicId.RuntimeReflectionExtensions_GetRuntimeField:
+			case IntrinsicId.RuntimeReflectionExtensions_GetRuntimeMethod:
+			case IntrinsicId.RuntimeReflectionExtensions_GetRuntimeProperty:
 			case IntrinsicId.Type_GetMember:
 			case IntrinsicId.Type_GetMethod:
 			case IntrinsicId.Type_GetNestedType:
 			case IntrinsicId.Nullable_GetUnderlyingType:
-			case IntrinsicId.Expression_Property when calledMethod.HasParameterOfType (1, "System.Reflection.MethodInfo"):
-			case var fieldOrPropertyIntrinsic when fieldOrPropertyIntrinsic == IntrinsicId.Expression_Field || fieldOrPropertyIntrinsic == IntrinsicId.Expression_Property:
+			case IntrinsicId.Expression_Property:
+			case IntrinsicId.Expression_Field:
 			case IntrinsicId.Type_get_BaseType:
 			case IntrinsicId.Type_GetConstructor:
 			case IntrinsicId.MethodBase_GetMethodFromHandle:
@@ -236,10 +237,10 @@ namespace Mono.Linker.Dataflow
 			case IntrinsicId.Activator_CreateInstance_Type:
 			case IntrinsicId.Activator_CreateInstance_AssemblyName_TypeName:
 			case IntrinsicId.Activator_CreateInstanceFrom:
-			case var appDomainCreateInstance when appDomainCreateInstance == IntrinsicId.AppDomain_CreateInstance
-					|| appDomainCreateInstance == IntrinsicId.AppDomain_CreateInstanceAndUnwrap
-					|| appDomainCreateInstance == IntrinsicId.AppDomain_CreateInstanceFrom
-					|| appDomainCreateInstance == IntrinsicId.AppDomain_CreateInstanceFromAndUnwrap:
+			case IntrinsicId.AppDomain_CreateInstance:
+			case IntrinsicId.AppDomain_CreateInstanceAndUnwrap:
+			case IntrinsicId.AppDomain_CreateInstanceFrom:
+			case IntrinsicId.AppDomain_CreateInstanceFromAndUnwrap:
 			case IntrinsicId.Assembly_CreateInstance: {
 					return handleCallAction.Invoke (calledMethodDefinition, instanceValue, argumentValues, out methodReturnValue, out _);
 				}
