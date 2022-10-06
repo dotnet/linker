@@ -27,7 +27,7 @@ namespace ILLink.Shared.TrimAnalysis
 		readonly FlowAnnotations _annotations;
 		readonly RequireDynamicallyAccessedMembersAction _requireDynamicallyAccessedMembersAction;
 
-		public bool Invoke (MethodProxy calledMethod, MultiValue instanceValue, IReadOnlyList<MultiValue> argumentValues, out MultiValue methodReturnValue, out IntrinsicId intrinsicId)
+		public bool Invoke (MethodProxy calledMethod, MultiValue instanceValue, IReadOnlyList<MultiValue> argumentValues, out MultiValue methodReturnValue, out IntrinsicId intrinsicId, IntrinsicId? knownIntrinsicId = null)
 		{
 			MultiValue? returnValue = null;
 
@@ -35,7 +35,7 @@ namespace ILLink.Shared.TrimAnalysis
 			var annotatedMethodReturnValue = _annotations.GetMethodReturnValue (calledMethod);
 			Debug.Assert (requiresDataFlowAnalysis || annotatedMethodReturnValue.DynamicallyAccessedMemberTypes == DynamicallyAccessedMemberTypes.None);
 
-			intrinsicId = Intrinsics.GetIntrinsicIdForMethod (calledMethod);
+			intrinsicId = knownIntrinsicId ?? Intrinsics.GetIntrinsicIdForMethod (calledMethod);
 			switch (intrinsicId) {
 			case IntrinsicId.IntrospectionExtensions_GetTypeInfo:
 				Debug.Assert (instanceValue.IsEmpty ());

@@ -196,7 +196,8 @@ namespace Mono.Linker.Dataflow
 			MultiValue? maybeMethodReturnValue = null;
 
 			var handleCallAction = new HandleCallAction (context, reflectionMarker, diagnosticContext, callingMethodDefinition);
-			switch (Intrinsics.GetIntrinsicIdForMethod (calledMethodDefinition)) {
+			var intrinsicId = Intrinsics.GetIntrinsicIdForMethod (calledMethodDefinition);
+			switch (intrinsicId) {
 			case IntrinsicId.IntrospectionExtensions_GetTypeInfo:
 			case IntrinsicId.TypeInfo_AsType:
 			case IntrinsicId.Type_get_UnderlyingSystemType:
@@ -242,7 +243,7 @@ namespace Mono.Linker.Dataflow
 			case IntrinsicId.AppDomain_CreateInstanceFrom:
 			case IntrinsicId.AppDomain_CreateInstanceFromAndUnwrap:
 			case IntrinsicId.Assembly_CreateInstance: {
-					return handleCallAction.Invoke (calledMethodDefinition, instanceValue, argumentValues, out methodReturnValue, out _);
+					return handleCallAction.Invoke (calledMethodDefinition, instanceValue, argumentValues, out methodReturnValue, out _, intrinsicId);
 				}
 
 			case IntrinsicId.None: {
@@ -251,7 +252,7 @@ namespace Mono.Linker.Dataflow
 					if (context.Annotations.DoesMethodRequireUnreferencedCode (calledMethodDefinition, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCode))
 						MarkStep.ReportRequiresUnreferencedCode (calledMethodDefinition.GetDisplayName (), requiresUnreferencedCode, diagnosticContext);
 
-					return handleCallAction.Invoke (calledMethodDefinition, instanceValue, argumentValues, out methodReturnValue, out _);
+					return handleCallAction.Invoke (calledMethodDefinition, instanceValue, argumentValues, out methodReturnValue, out _, intrinsicId);
 				}
 
 			case IntrinsicId.TypeDelegator_Ctor: {
