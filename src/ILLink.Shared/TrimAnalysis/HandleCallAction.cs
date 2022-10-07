@@ -27,7 +27,7 @@ namespace ILLink.Shared.TrimAnalysis
 		readonly FlowAnnotations _annotations;
 		readonly RequireDynamicallyAccessedMembersAction _requireDynamicallyAccessedMembersAction;
 
-		public bool Invoke (MethodProxy calledMethod, MultiValue instanceValue, IReadOnlyList<MultiValue> argumentValues, out MultiValue methodReturnValue, out IntrinsicId intrinsicId, IntrinsicId? knownIntrinsicId = null)
+		public bool Invoke (MethodProxy calledMethod, MultiValue instanceValue, IReadOnlyList<MultiValue> argumentValues, IntrinsicId intrinsicId, out MultiValue methodReturnValue)
 		{
 			MultiValue? returnValue = null;
 
@@ -35,7 +35,6 @@ namespace ILLink.Shared.TrimAnalysis
 			var annotatedMethodReturnValue = _annotations.GetMethodReturnValue (calledMethod);
 			Debug.Assert (requiresDataFlowAnalysis || annotatedMethodReturnValue.DynamicallyAccessedMemberTypes == DynamicallyAccessedMemberTypes.None);
 
-			intrinsicId = knownIntrinsicId ?? Intrinsics.GetIntrinsicIdForMethod (calledMethod);
 			switch (intrinsicId) {
 			case IntrinsicId.IntrospectionExtensions_GetTypeInfo:
 				Debug.Assert (instanceValue.IsEmpty ());
@@ -251,25 +250,25 @@ namespace ILLink.Shared.TrimAnalysis
 			// GetNestedTypes (BindingFlags)
 			// GetMembers (BindingFlags)
 			//
-			case IntrinsicId.Type_GetConstructors:
-			case IntrinsicId.Type_GetMethods:
-			case IntrinsicId.Type_GetFields:
-			case IntrinsicId.Type_GetProperties:
-			case IntrinsicId.Type_GetEvents:
-			case IntrinsicId.Type_GetNestedTypes:
-			case IntrinsicId.Type_GetMembers: {
+			case IntrinsicId.Type_GetConstructors__BindingFlags:
+			case IntrinsicId.Type_GetMethods__BindingFlags:
+			case IntrinsicId.Type_GetFields__BindingFlags:
+			case IntrinsicId.Type_GetProperties__BindingFlags:
+			case IntrinsicId.Type_GetEvents__BindingFlags:
+			case IntrinsicId.Type_GetNestedTypes__BindingFlags:
+			case IntrinsicId.Type_GetMembers__BindingFlags: {
 					BindingFlags? bindingFlags;
 					bindingFlags = GetBindingFlagsFromValue (argumentValues[0]);
 					DynamicallyAccessedMemberTypes memberTypes;
 					if (BindingFlagsAreUnsupported (bindingFlags)) {
 						memberTypes = intrinsicId switch {
-							IntrinsicId.Type_GetConstructors => DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors,
-							IntrinsicId.Type_GetMethods => DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods,
-							IntrinsicId.Type_GetEvents => DynamicallyAccessedMemberTypes.PublicEvents | DynamicallyAccessedMemberTypes.NonPublicEvents,
-							IntrinsicId.Type_GetFields => DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields,
-							IntrinsicId.Type_GetProperties => DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties,
-							IntrinsicId.Type_GetNestedTypes => DynamicallyAccessedMemberTypes.PublicNestedTypes | DynamicallyAccessedMemberTypes.NonPublicNestedTypes,
-							IntrinsicId.Type_GetMembers => DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors |
+							IntrinsicId.Type_GetConstructors__BindingFlags => DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors,
+							IntrinsicId.Type_GetMethods__BindingFlags => DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods,
+							IntrinsicId.Type_GetEvents__BindingFlags => DynamicallyAccessedMemberTypes.PublicEvents | DynamicallyAccessedMemberTypes.NonPublicEvents,
+							IntrinsicId.Type_GetFields__BindingFlags => DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields,
+							IntrinsicId.Type_GetProperties__BindingFlags => DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties,
+							IntrinsicId.Type_GetNestedTypes__BindingFlags => DynamicallyAccessedMemberTypes.PublicNestedTypes | DynamicallyAccessedMemberTypes.NonPublicNestedTypes,
+							IntrinsicId.Type_GetMembers__BindingFlags => DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors |
 								DynamicallyAccessedMemberTypes.PublicEvents | DynamicallyAccessedMemberTypes.NonPublicEvents |
 								DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields |
 								DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods |
@@ -279,13 +278,13 @@ namespace ILLink.Shared.TrimAnalysis
 						};
 					} else {
 						memberTypes = intrinsicId switch {
-							IntrinsicId.Type_GetConstructors => GetDynamicallyAccessedMemberTypesFromBindingFlagsForConstructors (bindingFlags),
-							IntrinsicId.Type_GetMethods => GetDynamicallyAccessedMemberTypesFromBindingFlagsForMethods (bindingFlags),
-							IntrinsicId.Type_GetEvents => GetDynamicallyAccessedMemberTypesFromBindingFlagsForEvents (bindingFlags),
-							IntrinsicId.Type_GetFields => GetDynamicallyAccessedMemberTypesFromBindingFlagsForFields (bindingFlags),
-							IntrinsicId.Type_GetProperties => GetDynamicallyAccessedMemberTypesFromBindingFlagsForProperties (bindingFlags),
-							IntrinsicId.Type_GetNestedTypes => GetDynamicallyAccessedMemberTypesFromBindingFlagsForNestedTypes (bindingFlags),
-							IntrinsicId.Type_GetMembers => GetDynamicallyAccessedMemberTypesFromBindingFlagsForMembers (bindingFlags),
+							IntrinsicId.Type_GetConstructors__BindingFlags => GetDynamicallyAccessedMemberTypesFromBindingFlagsForConstructors (bindingFlags),
+							IntrinsicId.Type_GetMethods__BindingFlags => GetDynamicallyAccessedMemberTypesFromBindingFlagsForMethods (bindingFlags),
+							IntrinsicId.Type_GetEvents__BindingFlags => GetDynamicallyAccessedMemberTypesFromBindingFlagsForEvents (bindingFlags),
+							IntrinsicId.Type_GetFields__BindingFlags => GetDynamicallyAccessedMemberTypesFromBindingFlagsForFields (bindingFlags),
+							IntrinsicId.Type_GetProperties__BindingFlags => GetDynamicallyAccessedMemberTypesFromBindingFlagsForProperties (bindingFlags),
+							IntrinsicId.Type_GetNestedTypes__BindingFlags => GetDynamicallyAccessedMemberTypesFromBindingFlagsForNestedTypes (bindingFlags),
+							IntrinsicId.Type_GetMembers__BindingFlags => GetDynamicallyAccessedMemberTypesFromBindingFlagsForMembers (bindingFlags),
 							_ => throw new ArgumentException ($"Reflection call '{calledMethod.GetDisplayName ()}' inside '{GetContainingSymbolDisplayName ()}' is of unexpected member type."),
 						};
 					}
@@ -1015,7 +1014,7 @@ namespace ILLink.Shared.TrimAnalysis
 			// static CreateInstance (System.Type type, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder? binder, object?[]? args, System.Globalization.CultureInfo? culture)
 			// static CreateInstance (System.Type type, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder? binder, object?[]? args, System.Globalization.CultureInfo? culture, object?[]? activationAttributes) { throw null; }
 			//
-			case IntrinsicId.Activator_CreateInstance_Type: {
+			case IntrinsicId.Activator_CreateInstance__Type: {
 					int? ctorParameterCount = null;
 					BindingFlags bindingFlags = BindingFlags.Instance;
 					if (calledMethod.GetParametersCount () > 1) {
@@ -1085,7 +1084,7 @@ namespace ILLink.Shared.TrimAnalysis
 			// static CreateInstance (string assemblyName, string typeName, bool ignoreCase, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder? binder, object?[]? args, System.Globalization.CultureInfo? culture, object?[]? activationAttributes)
 			// static CreateInstance (string assemblyName, string typeName, object?[]? activationAttributes)
 			//
-			case IntrinsicId.Activator_CreateInstance_AssemblyName_TypeName:
+			case IntrinsicId.Activator_CreateInstance__AssemblyName_TypeName:
 				ProcessCreateInstanceByName (calledMethod, argumentValues);
 				break;
 

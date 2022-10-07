@@ -206,13 +206,13 @@ namespace Mono.Linker.Dataflow
 			case IntrinsicId.Type_GetInterface:
 			case IntrinsicId.Type_get_AssemblyQualifiedName:
 			case IntrinsicId.RuntimeHelpers_RunClassConstructor:
-			case IntrinsicId.Type_GetConstructors:
-			case IntrinsicId.Type_GetMethods:
-			case IntrinsicId.Type_GetFields:
-			case IntrinsicId.Type_GetProperties:
-			case IntrinsicId.Type_GetEvents:
-			case IntrinsicId.Type_GetNestedTypes:
-			case IntrinsicId.Type_GetMembers:
+			case IntrinsicId.Type_GetConstructors__BindingFlags:
+			case IntrinsicId.Type_GetMethods__BindingFlags:
+			case IntrinsicId.Type_GetFields__BindingFlags:
+			case IntrinsicId.Type_GetProperties__BindingFlags:
+			case IntrinsicId.Type_GetEvents__BindingFlags:
+			case IntrinsicId.Type_GetNestedTypes__BindingFlags:
+			case IntrinsicId.Type_GetMembers__BindingFlags:
 			case IntrinsicId.Type_GetField:
 			case IntrinsicId.Type_GetProperty:
 			case IntrinsicId.Type_GetEvent:
@@ -235,15 +235,15 @@ namespace Mono.Linker.Dataflow
 			case IntrinsicId.Expression_Call:
 			case IntrinsicId.Expression_New:
 			case IntrinsicId.Type_GetType:
-			case IntrinsicId.Activator_CreateInstance_Type:
-			case IntrinsicId.Activator_CreateInstance_AssemblyName_TypeName:
+			case IntrinsicId.Activator_CreateInstance__Type:
+			case IntrinsicId.Activator_CreateInstance__AssemblyName_TypeName:
 			case IntrinsicId.Activator_CreateInstanceFrom:
 			case IntrinsicId.AppDomain_CreateInstance:
 			case IntrinsicId.AppDomain_CreateInstanceAndUnwrap:
 			case IntrinsicId.AppDomain_CreateInstanceFrom:
 			case IntrinsicId.AppDomain_CreateInstanceFromAndUnwrap:
 			case IntrinsicId.Assembly_CreateInstance: {
-					return handleCallAction.Invoke (calledMethodDefinition, instanceValue, argumentValues, out methodReturnValue, out _, intrinsicId);
+					return handleCallAction.Invoke (calledMethodDefinition, instanceValue, argumentValues, intrinsicId, out methodReturnValue);
 				}
 
 			case IntrinsicId.None: {
@@ -252,7 +252,7 @@ namespace Mono.Linker.Dataflow
 					if (context.Annotations.DoesMethodRequireUnreferencedCode (calledMethodDefinition, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCode))
 						MarkStep.ReportRequiresUnreferencedCode (calledMethodDefinition.GetDisplayName (), requiresUnreferencedCode, diagnosticContext);
 
-					return handleCallAction.Invoke (calledMethodDefinition, instanceValue, argumentValues, out methodReturnValue, out _, intrinsicId);
+					return handleCallAction.Invoke (calledMethodDefinition, instanceValue, argumentValues, intrinsicId, out methodReturnValue);
 				}
 
 			case IntrinsicId.TypeDelegator_Ctor: {
