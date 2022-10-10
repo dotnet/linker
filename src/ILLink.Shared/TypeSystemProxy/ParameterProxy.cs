@@ -42,7 +42,7 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		public partial string GetDisplayName ();
 
-		public bool IsImplicitThis => Method.HasImplicitThis () && Index == ParameterIndex.This;
+		public bool IsImplicitThis => Method.HasImplicitThis () && Index == (ParameterIndex) 0;
 
 		public partial bool IsTypeOf (string typeName);
 

@@ -684,7 +684,7 @@ namespace ILLink.Shared.TrimAnalysis
 		{
 			if (!method.HasImplicitThis () && !overrideIsThis)
 				throw new InvalidOperationException ($"Cannot get 'this' parameter of method {method.GetDisplayName ()} with no 'this' parameter.");
-			return new MethodParameterValue (method.Method.DeclaringType, new ParameterProxy (method, ParameterIndex.This), dynamicallyAccessedMemberTypes, overrideIsThis);
+			return new MethodParameterValue (method.Method.DeclaringType, new ParameterProxy (method, (ParameterIndex) 0), dynamicallyAccessedMemberTypes, overrideIsThis);
 		}
 #pragma warning restore CA1822 // Mark members as static
 
@@ -695,9 +695,9 @@ namespace ILLink.Shared.TrimAnalysis
 		{
 			if (!method.HasImplicitThis ())
 				throw new InvalidOperationException ($"Cannot get 'this' parameter of method {method.GetDisplayName ()} with no 'this' parameter.");
-			ParameterProxy param = new (method, ParameterIndex.This);
+			ParameterProxy param = new (method, (ParameterIndex) 0);
 			var damt = GetParameterAnnotation (param);
-			return GetMethodParameterValue (new ParameterProxy (method, ParameterIndex.This), damt);
+			return GetMethodParameterValue (new ParameterProxy (method, (ParameterIndex) 0), damt);
 		}
 
 		// Linker-specific dataflow value creation. Eventually more of these should be shared.

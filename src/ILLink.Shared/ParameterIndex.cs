@@ -60,7 +60,5 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		public static ParameterIndex operator - (ParameterIndex left, int right)
 			=> new ParameterIndex (left.Index - right);
-
-		public static readonly ParameterIndex This = new ParameterIndex (0);
 	}
 }
