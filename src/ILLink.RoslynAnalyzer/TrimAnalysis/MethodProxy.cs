@@ -1,7 +1,6 @@
 // Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using ILLink.RoslynAnalyzer;
 using Microsoft.CodeAnalysis;
@@ -26,7 +25,7 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		internal partial int GetParametersCount () => Method.GetParametersCount ();
 
-		internal partial List<ParameterProxy> GetParameters () => Method.GetParameters ();
+		internal partial ParameterCollection GetParameters () => Method.GetParameters ();
 
 		internal partial ParameterProxy? GetParameter (ParameterIndex index) => Method.TryGetParameter (index);
 

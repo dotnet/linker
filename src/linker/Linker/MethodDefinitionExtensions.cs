@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
@@ -131,37 +130,21 @@ namespace Mono.Linker
 		}
 
 		/// <summary>
-		/// Returns a list of the parameters pushed onto the stack before the method call (including the implicit 'this' parameter)
+		/// Returns a foreach-enumerable collection of the parameters pushed onto the stack before the method call (including the implicit 'this' parameter)
 		/// </summary>
-		public static List<ParameterProxy> GetParameters (this MethodDefinition method)
+		public static ParameterCollection GetParameters (this MethodDefinition method)
 		{
-			List<ParameterProxy> parameters = new ();
-			int i = 0;
-			if (method.HasImplicitThis ()) {
-				parameters.Add (new (new (method), ParameterIndex.This));
-				i++;
-			}
-			int paramsCount = method.Parameters.Count + i;
-			for (; i < paramsCount; i++) {
-				parameters.Add (new (new (method), (ParameterIndex) i));
-			}
-			return parameters;
+			int implicitThisOffset = method.HasImplicitThis () ? 1 : 0;
+			return new ParameterCollection (0, method.Parameters.Count + implicitThisOffset, method);
 		}
 
 		/// <summary>
 		/// Returns a list of ParameterProxy representing the parameters listed in the "Parameters" metadata section (i.e. not including the implicit 'this' parameter)
 		/// </summary>
-		public static List<ParameterProxy> GetMetadataParameters (this MethodDefinition method)
+		public static ParameterCollection GetMetadataParameters (this MethodDefinition method)
 		{
-			List<ParameterProxy> parameters = new ();
-			int i = 0;
-			if (method.HasImplicitThis ())
-				i++;
-			int paramsCount = method.Parameters.Count + i;
-			for (; i < paramsCount; i++) {
-				parameters.Add (new (new (method), (ParameterIndex) i));
-			}
-			return parameters;
+			int implicitThisOffset = method.HasImplicitThis () ? 1 : 0;
+			return new ParameterCollection (implicitThisOffset, method.Parameters.Count + implicitThisOffset, method);
 		}
 	}
 }

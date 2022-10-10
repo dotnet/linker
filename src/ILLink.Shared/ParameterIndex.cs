@@ -37,6 +37,8 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		public static bool operator != (ParameterIndex left, ParameterIndex right) => left.Index != right.Index;
 
+		public static ParameterIndex operator ++ (ParameterIndex val) => new ParameterIndex (val.Index + 1);
+
 		public override bool Equals ([NotNullWhen (true)] object? obj)
 			=> obj is ParameterIndex other && this == other;
 

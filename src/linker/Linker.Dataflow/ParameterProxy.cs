@@ -48,5 +48,4 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		public bool IsTypeOf (WellKnownType type) => ParameterType.IsTypeOf (type);
 	}
-#pragma warning restore RS0030 // Do not used banned APIs
 }

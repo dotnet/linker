@@ -1,7 +1,6 @@
 // Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System.Collections.Generic;
 using System.Collections.Immutable;
 
 // This is needed due to NativeAOT which doesn't enable nullable globally yet
@@ -34,8 +33,7 @@ namespace ILLink.Shared.TypeSystemProxy
 		/// <summary>
 		/// Returns a List of <see cref="ParameterProxy"/> representing the parameters the method takes, including the implicit 'this' parameters.
 		/// </summary>
-		/// <returns></returns>
-		internal partial List<ParameterProxy> GetParameters ();
+		internal partial ParameterCollection GetParameters ();
 
 		/// <summary>
 		/// Returns the ParameterProxy corresponding to the parameter at <paramref name="index"/>.

@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
 using ILLink.Shared.TypeSystemProxy;
 using Microsoft.CodeAnalysis;
 
@@ -18,29 +17,18 @@ namespace ILLink.RoslynAnalyzer
 		/// <summary>
 		/// Returns a list of the parameters pushed onto the stack before the method call (including the implicit 'this' parameter)
 		/// </summary>
-		public static List<ParameterProxy> GetParameters (this IMethodSymbol method)
+		public static ParameterCollection GetParameters (this IMethodSymbol method)
 		{
-			List<ParameterProxy> parameters = new ();
-			int paramsNum = method.GetParametersCount ();
-			for (int i = 0; i < paramsNum; i++)
-				parameters.Add (new (new MethodProxy (method), (ParameterIndex) i));
-			return parameters;
+			return new ParameterCollection (0, method.GetParametersCount (), new (method));
 		}
 
 		/// <summary>
 		/// Returns a list of the parameters in the method's 'parameters' metadata section (i.e. excluding the implicit 'this' parameter)
 		/// </summary>
-		public static List<ParameterProxy> GetMetadataParameters (this IMethodSymbol method)
+		public static ParameterCollection GetMetadataParameters (this IMethodSymbol method)
 		{
-			List<ParameterProxy> parameters = new ();
-			int i = 0;
-			if (method.HasImplicitThis ()) {
-				i++;
-			}
-			int paramsCount = method.Parameters.Length + i;
-			for (; i < paramsCount; i++)
-				parameters.Add (new (new MethodProxy (method), (ParameterIndex) i));
-			return parameters;
+			int implicitThisOffset = method.HasImplicitThis () ? 1 : 0;
+			return new ParameterCollection (implicitThisOffset, method.GetParametersCount (), new (method));
 		}
 
 		/// <summary>
@@ -78,7 +66,6 @@ namespace ILLink.RoslynAnalyzer
 		/// </summary>
 		public static int GetParametersCount (this IMethodSymbol method)
 		{
-			//return method.Arity + (method.HasImplicitThis () ? 1 : 0);
 			return method.Parameters.Length + (method.HasImplicitThis () ? 1 : 0);
 		}
 	}

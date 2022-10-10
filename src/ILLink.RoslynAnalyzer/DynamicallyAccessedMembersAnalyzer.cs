@@ -228,11 +228,11 @@ namespace ILLink.RoslynAnalyzer
 
 			foreach (var overrideParam in overrideMethod.GetMetadataParameters ()) {
 				var baseParam = baseMethod.GetParameter (overrideParam.Index);
-				var overriddenParameterAnnotation = FlowAnnotations.GetMethodParameterAnnotation (baseParam);
-				var methodParameterAnnotation = FlowAnnotations.GetMethodParameterAnnotation (overrideParam);
-				if (methodParameterAnnotation != overriddenParameterAnnotation) {
+				var baseParameterAnnotation = FlowAnnotations.GetMethodParameterAnnotation (baseParam);
+				var overrideParameterAnnotation = FlowAnnotations.GetMethodParameterAnnotation (overrideParam);
+				if (overrideParameterAnnotation != baseParameterAnnotation) {
 					(IMethodSymbol attributableMethod, DynamicallyAccessedMemberTypes missingAttribute) = GetTargetAndRequirements (overrideMethod,
-						baseMethod, methodParameterAnnotation, overriddenParameterAnnotation);
+						baseMethod, overrideParameterAnnotation, baseParameterAnnotation);
 
 					Location attributableSymbolLocation = attributableMethod.GetParameter (overrideParam.Index).Location!;
 

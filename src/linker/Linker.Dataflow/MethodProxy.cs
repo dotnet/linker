@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using Mono.Cecil;
 using Mono.Linker;
@@ -31,14 +30,15 @@ namespace ILLink.Shared.TypeSystemProxy
 		internal partial int GetMetadataParametersCount () => Method.GetMetadataParametersCount ();
 
 		/// <summary>
-		/// Returns a list of the parameters in the method's 'parameters' metadata section (i.e. excluding the implicit 'this' parameter)
+		/// Returns the number of parameters that are passed to the method in IL (including the implicit 'this' parameter).
+		/// In pseudocode: <code>method.HasImplicitThis() ? 1 + MetadataParametersCount : MetadataParametersCount;</code>
 		/// </summary>
 		internal partial int GetParametersCount () => Method.GetParametersCount ();
 
 		/// <summary>
 		/// Use only when iterating over all parameters. When wanting to index, use GetParameters(ParameterIndex)
 		/// </summary>
-		internal partial List<ParameterProxy> GetParameters () => Method.GetParameters ();
+		internal partial ParameterCollection GetParameters () => Method.GetParameters ();
 
 		internal partial ParameterProxy? GetParameter (ParameterIndex index) => Method.TryGetParameter (index);
 

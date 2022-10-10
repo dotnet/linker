@@ -16,7 +16,10 @@ namespace ILLink.Shared.TypeSystemProxy
 		}
 
 		public ReferenceKind ReferenceKind =>
-			IsImplicitThis ? ((ITypeSymbol) Method.Method.ContainingSymbol).IsValueType ? ReferenceKind.Ref : ReferenceKind.None
+			IsImplicitThis
+			? ((ITypeSymbol) Method.Method.ContainingSymbol).IsValueType
+				? ReferenceKind.Ref
+				: ReferenceKind.None
 			: Method.Method.Parameters[MetadataIndex].RefKind switch {
 				RefKind.Ref => ReferenceKind.Ref,
 				RefKind.In => ReferenceKind.In,
@@ -36,8 +39,8 @@ namespace ILLink.Shared.TypeSystemProxy
 		public Location? Location => ParameterSymbol?.Locations[0];
 
 		public TypeProxy ParameterType
-			=> IsImplicitThis ?
-				new TypeProxy (Method.Method.ContainingType)
+			=> IsImplicitThis
+				? new TypeProxy (Method.Method.ContainingType)
 				: new TypeProxy (Method.Method.Parameters[MetadataIndex].Type);
 
 		public partial string GetDisplayName ()
