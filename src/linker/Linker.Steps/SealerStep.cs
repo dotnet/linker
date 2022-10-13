@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Mono.Cecil;
 using Mono.Collections.Generic;
 
@@ -106,7 +107,7 @@ namespace Mono.Linker.Steps
 				if (!type.IsSealed)
 					continue;
 
-				var bases = Annotations.GetBaseMethods (method);
+				var bases = Annotations.GetBaseMethods (method)?.Select (static x => x.Base).ToList ();
 				// Devirtualize if a method is not override to existing marked methods
 				if (!IsAnyMarked (bases))
 					method.IsVirtual = method.IsFinal = method.IsNewSlot = false;

@@ -607,12 +607,12 @@ namespace Mono.Linker.Steps
 					}
 					// OverrideInformation for interfaces in PreservedScope aren't added yet
 					foreach (var method in type.Methods) {
-						var bases = Annotations.GetBaseMethods (method);
-						if (bases is null)
+						var baseOverrideInformations = Annotations.GetBaseMethods (method);
+						if (baseOverrideInformations is null)
 							continue;
-						foreach (var @base in bases) {
-							if (@base.DeclaringType is not null && @base.DeclaringType.IsInterface && IgnoreScope (@base.DeclaringType.Scope))
-								_interfaceOverrides.Add ((new OverrideInformation (@base, method, Context), ScopeStack.CurrentScope));
+						foreach (var ov in baseOverrideInformations) {
+							if (ov.Base.DeclaringType is not null && ov.Base.DeclaringType.IsInterface && IgnoreScope (ov.Base.DeclaringType.Scope))
+								_interfaceOverrides.Add ((ov, ScopeStack.CurrentScope));
 						}
 					}
 				}
@@ -707,12 +707,6 @@ namespace Mono.Linker.Steps
 		{
 			Annotations.EnqueueVirtualMethod (method);
 
-			var overrides = Annotations.GetOverrides (method);
-			if (overrides != null) {
-				foreach (OverrideInformation @override in overrides)
-					ProcessOverride (@override);
-			}
-
 			var defaultImplementations = Annotations.GetDefaultInterfaceImplementations (method);
 			if (defaultImplementations != null) {
 				foreach (var defaultImplementationInfo in defaultImplementations) {
@@ -721,43 +715,75 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void ProcessOverride (OverrideInformation overrideInformation)
+		/// <summary>
+		/// Returns true if the Override in <paramref name="overrideInformation"/> should be marked because it is needed by the base method.
+		/// Does not take into account if the base method is in a preserved scope.
+		/// </summary>
+		/// <param name="isDirectBase">True if the Override is the immediate override method in the type hierarchy.
+		/// False if Override is further removed (e.g. Override is a method on a derived type of a derived type of Base.DeclaringType)</param>
+		// TODO: Take into account a base method in preserved scope
+		bool ShouldMarkOverrideForBase (OverrideInformation overrideInformation, bool isDirectBase)
 		{
-			var method = overrideInformation.Override;
-			var @base = overrideInformation.Base;
-			if (!Annotations.IsMarked (method.DeclaringType))
-				return;
+			var isInstantiated = Annotations.IsInstantiated (overrideInformation.Override.DeclaringType);
 
-			if (Annotations.IsProcessed (method))
-				return;
+			bool markForOverride = !Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, overrideInformation.Override);
 
-			if (Annotations.IsMarked (method))
-				return;
+			// Methods on instantiated types that override a ov.Override from a base type (not an interface) should be marked 
+			// Interface ov.Overrides should only be marked if the interfaceImplementation is marked, which is handled below
+			markForOverride |= !overrideInformation.Base.DeclaringType.IsInterface && isInstantiated;
 
-			var isInstantiated = Annotations.IsInstantiated (method.DeclaringType);
-
-			// Handle interface methods once we know more about whether the type is instantiated or relevant to variant casting
 			if (overrideInformation.IsOverrideOfInterfaceMember) {
 				_interfaceOverrides.Add ((overrideInformation, ScopeStack.CurrentScope));
-				return;
+				markForOverride |= IsInterfaceImplementationMethodNeededByTypeDueToInterface (overrideInformation);
+			} else {
+				// Direct overrides of marked abstract ov.Overrides must be marked or we get invalid IL.
+				// Overrides further in the hierarchy will override the direct override (which will be implemented by the above rule), so we don't need to worry about invalid IL.
+				markForOverride |= overrideInformation.Base.IsAbstract && isDirectBase;
 			}
 
-			// Interface static veitual methods will be abstract and will also by pass this check to get marked
-			if (!isInstantiated && !@base.IsAbstract && Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method))
-				return;
+			return markForOverride;
+		}
 
-			// Only track instantiations if override removal is enabled and the type is instantiated.
-			// If it's disabled, all overrides are kept, so there's no instantiation site to blame.
-			if (Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method) && isInstantiated) {
-				MarkMethod (method, new DependencyInfo (DependencyKind.OverrideOnInstantiatedType, method.DeclaringType), ScopeStack.CurrentScope.Origin);
+		/// <summary>
+		/// Marks the Override of <paramref name="overrideInformation"/> with the correct reason. Should be called when <see cref="ShouldMarkOverrideForBase(OverrideInformation, bool)"/> returns true.
+		/// </summary>
+		// TODO: Take into account a base method in preserved scope
+		void MarkOverrideForBaseMethod (OverrideInformation overrideInformation)
+		{
+			if (Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, overrideInformation.Override) && Annotations.IsInstantiated (overrideInformation.Override.DeclaringType)) {
+				MarkMethod (overrideInformation.Override, new DependencyInfo (DependencyKind.OverrideOnInstantiatedType, overrideInformation.Override.DeclaringType), ScopeStack.CurrentScope.Origin);
 			} else {
 				// If the optimization is disabled or it's an abstract type, we just mark it as a normal override.
-				Debug.Assert (!Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method) || @base.IsAbstract);
-				MarkMethod (method, new DependencyInfo (DependencyKind.Override, @base), ScopeStack.CurrentScope.Origin);
+				Debug.Assert (!Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, overrideInformation.Override) || overrideInformation.Base.IsAbstract);
+				MarkMethod (overrideInformation.Override, new DependencyInfo (DependencyKind.Override, overrideInformation.Base), ScopeStack.CurrentScope.Origin);
+			}
+		}
+
+		void MarkMethodIfNeededByBaseMethod (MethodDefinition method)
+		{
+			if (!Annotations.IsMarked (method.DeclaringType) || Annotations.GetBaseMethods (method) is not List<OverrideInformation> bases)
+				return;
+
+			foreach (var (ov, isDirectBase) in GetMarkedBaseMethods (bases)) {
+				if (ShouldMarkOverrideForBase (ov, isDirectBase))
+					MarkOverrideForBaseMethod (ov);
 			}
 
-			if (method.IsVirtual)
-				ProcessVirtualMethod (method);
+			IEnumerable<(OverrideInformation Override, bool IsDirectBase)> GetMarkedBaseMethods (IEnumerable<OverrideInformation> overrides)
+			{
+				foreach (var ov in overrides) {
+					// Immediate base methods
+					if (Annotations.IsMarked (ov.Base) || IgnoreScope (ov.Base.DeclaringType.Scope))
+						yield return (ov, true);
+
+					// Bases of bases
+					else if (Annotations.GetBaseMethods (ov.Base) is IEnumerable<OverrideInformation> baseBases) {
+						foreach (var baseOv in GetMarkedBaseMethods (baseBases)) {
+							yield return (baseOv.Override, false);
+						}
+					}
+				}
+			}
 		}
 
 		/// <summary>
@@ -1841,7 +1867,7 @@ namespace Mono.Linker.Steps
 			// If a type is visible to reflection, we need to stop doing optimization that could cause observable difference
 			// in reflection APIs. This includes APIs like MakeGenericType (where variant castability of the produced type
 			// could be incorrect) or IsAssignableFrom (where assignability of unconstructed types might change).
-			Annotations.MarkRelevantToVariantCasting (definition);
+			MarkAsRelevantToVariantCasting (definition);
 
 			Annotations.MarkReflectionUsed (definition);
 
@@ -1904,7 +1930,7 @@ namespace Mono.Linker.Steps
 			if (reference == null)
 				return null;
 
-			using var localScope = origin.HasValue ? ScopeStack.PushScope (origin.Value) : null;
+			using var localScoe = origin.HasValue ? ScopeStack.PushScope (origin.Value) : null;
 
 			(reference, reason) = GetOriginalType (reference, reason);
 
@@ -2003,6 +2029,16 @@ namespace Mono.Linker.Steps
 			if (type.IsInterface) {
 				// There's no benefit to deferring processing of an interface type until we know a type implementing that interface is marked
 				MarkRequirementsForInstantiatedTypes (type);
+				// Mark interface implementation on each implementor that requires interfaces.
+				if (Annotations.GetInterfaceImplementors (type) is List<(TypeDefinition Implementor, InterfaceImplementation InterfaceImplementation)> implementors) {
+					foreach (var implementor in implementors) {
+						// Knowing that the interface type is marked, we need to mark the interface implementation if
+						// to make sure that the implementing type is instantiated or relevant to variant casting
+						if (Annotations.IsMarked (type) || Annotations.IsRelevantToVariantCasting (type)) {
+							MarkInterfaceImplementation (implementor.InterfaceImplementation);
+						}
+					}
+				}
 			} else if (type.IsValueType) {
 				// Note : Technically interfaces could be removed from value types in some of the same cases as reference types, however, it's harder to know when
 				// a value type instance could exist.  You'd have to track initobj and maybe locals types.  Going to punt for now.
@@ -2027,6 +2063,10 @@ namespace Mono.Linker.Steps
 				_typesWithInterfaces.Add ((type, ScopeStack.CurrentScope));
 
 			if (type.HasMethods) {
+				// TODO: MarkMethodIfNeededByBaseMethod should include logic for IsMethodNeededBytTypeDueToPreservedScope
+				foreach (var method in type.Methods) {
+					MarkMethodIfNeededByBaseMethod (method);
+				}
 				// For methods that must be preserved, blame the declaring type.
 				MarkMethodsIf (type.Methods, IsMethodNeededByTypeDueToPreservedScope, new DependencyInfo (DependencyKind.VirtualNeededDueToPreservedScope, type), ScopeStack.CurrentScope.Origin);
 				if (ShouldMarkTypeStaticConstructor (type) && reason.Kind != DependencyKind.TriggersCctorForCalledMethod) {
@@ -2334,6 +2374,29 @@ namespace Mono.Linker.Steps
 				if (ShouldMarkInterfaceImplementation (type, iface))
 					MarkInterfaceImplementation (iface, new MessageOrigin (type));
 			}
+
+			bool ShouldMarkInterfaceImplementation (TypeDefinition type, InterfaceImplementation iface)
+			{
+				if (Annotations.IsMarked (iface))
+					return false;
+
+				if (!Context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces, type))
+					return true;
+
+				if (Context.Resolve (iface.InterfaceType) is not TypeDefinition resolvedInterfaceType)
+					return false;
+
+				if (Annotations.IsMarked (resolvedInterfaceType) || IgnoreScope (iface.InterfaceType.Scope))
+					return true;
+
+				// It's hard to know if a com or windows runtime interface will be needed from managed code alone,
+				// so as a precaution we will mark these interfaces once the type is instantiated
+				if (resolvedInterfaceType.IsImport || resolvedInterfaceType.IsWindowsRuntime)
+					return true;
+
+
+				return IsFullyPreserved (type);
+			}
 		}
 
 		void MarkGenericParameterProvider (IGenericParameterProvider provider)
@@ -2378,19 +2441,19 @@ namespace Mono.Linker.Steps
 			if (base_list == null)
 				return false;
 
-			foreach (MethodDefinition @base in base_list) {
+			foreach (OverrideInformation ov in base_list) {
 				// Skip interface methods, they will be captured later by IsInterfaceImplementationMethodNeededByTypeDueToInterface
-				if (@base.DeclaringType.IsInterface)
+				if (ov.Base.DeclaringType.IsInterface)
 					continue;
 
-				if (!IgnoreScope (@base.DeclaringType.Scope) && !IsMethodNeededByTypeDueToPreservedScope (@base))
+				if (!IgnoreScope (ov.Base.DeclaringType.Scope) && !IsMethodNeededByTypeDueToPreservedScope (ov.Base))
 					continue;
 
 				// If the type is marked, we need to keep overrides of abstract members defined in assemblies
 				// that are copied to keep the IL valid.
 				// However, if the base method is a non-abstract virtual (has an implementation on the base type), then we don't need to keep the override
 				// until the type could be instantiated
-				if (!@base.IsAbstract)
+				if (!ov.Base.IsAbstract)
 					continue;
 
 				return true;
@@ -2461,11 +2524,11 @@ namespace Mono.Linker.Steps
 			if (base_list == null)
 				return false;
 
-			foreach (MethodDefinition @base in base_list) {
-				if (IgnoreScope (@base.DeclaringType.Scope))
+			foreach (OverrideInformation ov in base_list) {
+				if (IgnoreScope (ov.Base.DeclaringType.Scope))
 					return true;
 
-				if (IsMethodNeededByTypeDueToPreservedScope (@base))
+				if (IsMethodNeededByTypeDueToPreservedScope (ov.Base))
 					return true;
 			}
 
@@ -2691,7 +2754,7 @@ namespace Mono.Linker.Steps
 				if (argumentTypeDef == null)
 					continue;
 
-				Annotations.MarkRelevantToVariantCasting (argumentTypeDef);
+				MarkAsRelevantToVariantCasting (argumentTypeDef);
 
 				if (parameter.HasDefaultConstructorConstraint)
 					MarkDefaultConstructor (argumentTypeDef, new DependencyInfo (DependencyKind.DefaultCtorForNewConstrainedGenericArgument, instance));
@@ -2900,7 +2963,7 @@ namespace Mono.Linker.Steps
 				MarkType (reference.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, reference));
 
 				if (reference.Name == ".ctor" && Context.TryResolve (arrayType) is TypeDefinition typeDefinition) {
-					Annotations.MarkRelevantToVariantCasting (typeDefinition);
+					MarkAsRelevantToVariantCasting (typeDefinition);
 				}
 				return null;
 			}
@@ -3180,6 +3243,15 @@ namespace Mono.Linker.Steps
 
 			MarkBaseMethods (method);
 
+			// TODO: Technically we only need to check the virtual/override pair where `method` is the base method.
+			// This does extra work checking all other base methods of each `@override` method
+			if (Annotations.GetOverrides (method) is IEnumerable<OverrideInformation> overrides) {
+				foreach (var @override in overrides) {
+					if (ShouldMarkOverrideForBase (@override, true))
+						MarkOverrideForBaseMethod (@override);
+				}
+			}
+
 			MarkType (method.ReturnType, new DependencyInfo (DependencyKind.ReturnType, method));
 			MarkCustomAttributes (method.MethodReturnType, new DependencyInfo (DependencyKind.ReturnTypeAttribute, method));
 			MarkMarshalSpec (method.MethodReturnType, new DependencyInfo (DependencyKind.ReturnTypeMarshalSpec, method));
@@ -3224,6 +3296,26 @@ namespace Mono.Linker.Steps
 				MarkFields (type, includeStatic: type.IsEnum, reason: new DependencyInfo (DependencyKind.MemberOfType, type));
 		}
 
+		void MarkAsRelevantToVariantCasting (TypeDefinition type)
+		{
+			if (Annotations.IsRelevantToVariantCasting (type))
+				return;
+			Annotations.MarkRelevantToVariantCasting (type);
+			MarkInterfaceImplementations (type);
+			// Look at all methods on base types that may implement
+			MarkMethodsOnTypeIfNeededByBaseMethod (type);
+		}
+
+		void MarkMethodsOnTypeIfNeededByBaseMethod (TypeDefinition type)
+		{
+			do {
+				foreach (var method in type.Methods) {
+					MarkMethodIfNeededByBaseMethod (method);
+				}
+				type = Context.Resolve (type.BaseType)!;
+			} while (type is not null);
+		}
+
 		protected virtual void MarkRequirementsForInstantiatedTypes (TypeDefinition type)
 		{
 			if (Annotations.IsInstantiated (type))
@@ -3235,27 +3327,13 @@ namespace Mono.Linker.Steps
 
 			MarkInterfaceImplementations (type);
 
-			foreach (var method in GetRequiredMethodsForInstantiatedType (type))
-				MarkMethod (method, new DependencyInfo (DependencyKind.MethodForInstantiatedType, type), ScopeStack.CurrentScope.Origin);
+			MarkMethodsOnTypeIfNeededByBaseMethod (type);
 
 			MarkImplicitlyUsedFields (type);
 
 			DoAdditionalInstantiatedTypeProcessing (type);
-		}
 
-		/// <summary>
-		/// Collect methods that must be marked once a type is determined to be instantiated.
-		///
-		/// This method is virtual in order to give derived mark steps an opportunity to modify the collection of methods that are needed
-		/// </summary>
-		/// <param name="type"></param>
-		/// <returns></returns>
-		protected virtual IEnumerable<MethodDefinition> GetRequiredMethodsForInstantiatedType (TypeDefinition type)
-		{
-			foreach (var method in type.Methods) {
-				if (IsMethodNeededByInstantiatedTypeDueToPreservedScope (method))
-					yield return method;
-			}
+			// Need to traverse through all the base type's methods on a type that may implement an interface method
 		}
 
 		void MarkExplicitInterfaceImplementation (MethodDefinition method, MethodReference ov)
@@ -3351,18 +3429,18 @@ namespace Mono.Linker.Steps
 			if (base_methods == null)
 				return;
 
-			foreach (MethodDefinition base_method in base_methods) {
+			foreach (OverrideInformation ov in base_methods) {
 				// We should add all interface base methods to _virtual_methods for virtual override annotation validation
 				// Interfaces from preserved scope will be missed if we don't add them here
 				// This will produce warnings for all interface methods and virtual methods regardless of whether the interface, interface implementation, or interface method is kept or not.
-				if (base_method.DeclaringType.IsInterface && !method.DeclaringType.IsInterface) {
+				if (ov.Base.DeclaringType.IsInterface && !method.DeclaringType.IsInterface) {
 					// These are all virtual, no need to check IsVirtual before adding to list
-					_virtual_methods.Add ((base_method, ScopeStack.CurrentScope));
+					_virtual_methods.Add ((ov.Base, ScopeStack.CurrentScope));
 					continue;
 				}
 
-				MarkMethod (base_method, new DependencyInfo (DependencyKind.BaseMethod, method), ScopeStack.CurrentScope.Origin);
-				MarkBaseMethods (base_method);
+				MarkMethod (ov.Base, new DependencyInfo (DependencyKind.BaseMethod, method), ScopeStack.CurrentScope.Origin);
+				MarkBaseMethods (ov.Base);
 			}
 		}
 
@@ -3657,8 +3735,9 @@ namespace Mono.Linker.Steps
 				var operand = (TypeReference) instruction.Operand;
 				switch (instruction.OpCode.Code) {
 				case Code.Newarr:
-					if (Context.TryResolve (operand) is TypeDefinition typeDefinition)
-						Annotations.MarkRelevantToVariantCasting (typeDefinition);
+					if (Context.TryResolve (operand) is TypeDefinition typeDefinition) {
+						MarkAsRelevantToVariantCasting (typeDefinition);
+					}
 					break;
 				case Code.Isinst:
 					if (operand is TypeSpecification || operand is GenericParameter)
@@ -3688,33 +3767,12 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		protected virtual bool ShouldMarkInterfaceImplementation (TypeDefinition type, InterfaceImplementation iface)
-		{
-			if (Annotations.IsMarked (iface))
-				return false;
-
-			if (!Context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces, type))
-				return true;
-
-			if (Context.Resolve (iface.InterfaceType) is not TypeDefinition resolvedInterfaceType)
-				return false;
-
-			if (Annotations.IsMarked (resolvedInterfaceType))
-				return true;
-
-			// It's hard to know if a com or windows runtime interface will be needed from managed code alone,
-			// so as a precaution we will mark these interfaces once the type is instantiated
-			if (resolvedInterfaceType.IsImport || resolvedInterfaceType.IsWindowsRuntime)
-				return true;
-
-
-			return IsFullyPreserved (type);
-		}
 
 		protected internal virtual void MarkInterfaceImplementation (InterfaceImplementation iface, MessageOrigin? origin = null, DependencyInfo? reason = null)
 		{
 			if (Annotations.IsMarked (iface))
 				return;
+			Annotations.MarkProcessed (iface, reason ?? new DependencyInfo (DependencyKind.InterfaceImplementationOnType, ScopeStack.CurrentScope.Origin.Provider));
 
 			using var localScope = origin.HasValue ? ScopeStack.PushScope (origin.Value) : null;
 
@@ -3722,7 +3780,6 @@ namespace Mono.Linker.Steps
 			MarkCustomAttributes (iface, new DependencyInfo (DependencyKind.CustomAttribute, iface));
 			// Blame the interface type on the interfaceimpl itself.
 			MarkType (iface.InterfaceType, reason ?? new DependencyInfo (DependencyKind.InterfaceImplementationInterfaceType, iface));
-			Annotations.MarkProcessed (iface, reason ?? new DependencyInfo (DependencyKind.InterfaceImplementationOnType, ScopeStack.CurrentScope.Origin.Provider));
 		}
 
 		//

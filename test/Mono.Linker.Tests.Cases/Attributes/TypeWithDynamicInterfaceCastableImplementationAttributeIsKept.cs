@@ -54,6 +54,8 @@ namespace Mono.Linker.Tests.Cases.Attributes
 #if NETCOREAPP
 	[Kept]
 	[KeptMember (".ctor()")]
+	// Interface is not from a 'link' scope, so it is kept
+	[KeptInterface (typeof (IDynamicInterfaceCastable))]
 	class Foo : IDynamicInterfaceCastable
 	{
 		[Kept]
@@ -74,6 +76,8 @@ namespace Mono.Linker.Tests.Cases.Attributes
 
 	[Kept]
 	[KeptMember (".ctor()")]
+	// Interface is not from a 'link' scope, so it is kept
+	[KeptInterface (typeof (IDynamicInterfaceCastable))]
 	class DynamicCastableImplementedInOtherAssembly : IDynamicInterfaceCastable
 	{
 		[Kept]
