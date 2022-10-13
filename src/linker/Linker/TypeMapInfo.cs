@@ -29,6 +29,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 
@@ -39,9 +40,10 @@ namespace Mono.Linker
 	{
 		readonly HashSet<AssemblyDefinition> assemblies = new HashSet<AssemblyDefinition> ();
 		readonly LinkContext context;
-		protected readonly Dictionary<MethodDefinition, List<MethodDefinition>> base_methods = new Dictionary<MethodDefinition, List<MethodDefinition>> ();
+		protected readonly Dictionary<MethodDefinition, List<OverrideInformation>> base_methods = new Dictionary<MethodDefinition, List<OverrideInformation>> ();
 		protected readonly Dictionary<MethodDefinition, List<OverrideInformation>> override_methods = new Dictionary<MethodDefinition, List<OverrideInformation>> ();
 		protected readonly Dictionary<MethodDefinition, List<(TypeDefinition InstanceType, InterfaceImplementation ImplementationProvider)>> default_interface_implementations = new Dictionary<MethodDefinition, List<(TypeDefinition, InterfaceImplementation)>> ();
+		protected readonly Dictionary<TypeDefinition, List<(TypeDefinition, InterfaceImplementation)>> interface_implementors = new ();
 
 		public TypeMapInfo (LinkContext context)
 		{
@@ -64,10 +66,10 @@ namespace Mono.Linker
 			return overrides;
 		}
 
-		public List<MethodDefinition>? GetBaseMethods (MethodDefinition method)
+		public List<OverrideInformation>? GetBaseMethods (MethodDefinition method)
 		{
 			EnsureProcessed (method.Module.Assembly);
-			base_methods.TryGetValue (method, out List<MethodDefinition>? bases);
+			base_methods.TryGetValue (method, out List<OverrideInformation>? bases);
 			return bases;
 		}
 
@@ -77,14 +79,14 @@ namespace Mono.Linker
 			return ret;
 		}
 
-		public void AddBaseMethod (MethodDefinition method, MethodDefinition @base)
+		public void AddBaseMethod (MethodDefinition method, MethodDefinition @base, InterfaceImplementation? matchingInterfaceImplementation)
 		{
-			if (!base_methods.TryGetValue (method, out List<MethodDefinition>? methods)) {
-				methods = new List<MethodDefinition> ();
+			if (!base_methods.TryGetValue (method, out List<OverrideInformation>? methods)) {
+				methods = new List<OverrideInformation> ();
 				base_methods[method] = methods;
 			}
 
-			methods.Add (@base);
+			methods.Add (new OverrideInformation (@base, method, context, matchingInterfaceImplementation));
 		}
 
 		public void AddOverride (MethodDefinition @base, MethodDefinition @override, InterfaceImplementation? matchingInterfaceImplementation = null)
@@ -107,10 +109,20 @@ namespace Mono.Linker
 			implementations.Add ((implementingType, matchingInterfaceImplementation));
 		}
 
+		public List<(TypeDefinition Implementor, InterfaceImplementation InterfaceImplementation)>? GetInterfaceImplementors (TypeDefinition type)
+		{
+			if (!type.IsInterface)
+				throw new InvalidOperationException ("Cannot get interface implementors of a type that is not an interface");
+			if (interface_implementors.TryGetValue (type, out var interfaces))
+				return interfaces;
+			return null;
+		}
+
 		protected virtual void MapType (TypeDefinition type)
 		{
 			MapVirtualMethods (type);
 			MapInterfaceMethodsInTypeHierarchy (type);
+			MapInterfaces (type);
 
 			if (!type.HasNestedTypes)
 				return;
@@ -163,6 +175,18 @@ namespace Mono.Linker
 			}
 		}
 
+		void MapInterfaces (TypeDefinition type)
+		{
+			foreach (var iface in type.GetAllInterfaceImplementations (context, true)) {
+				if (context.Resolve (iface.InterfaceType) is not TypeDefinition ifaceType)
+					continue;
+				if (!interface_implementors.TryGetValue (ifaceType, out var implementors)) {
+					implementors = new ();
+				}
+				implementors.Add ((type, iface));
+			}
+		}
+
 		void MapVirtualMethods (TypeDefinition type)
 		{
 			if (!type.HasMethods)
@@ -204,7 +228,7 @@ namespace Mono.Linker
 
 		void AnnotateMethods (MethodDefinition @base, MethodDefinition @override, InterfaceImplementation? matchingInterfaceImplementation = null)
 		{
-			AddBaseMethod (@override, @base);
+			AddBaseMethod (@override, @base, matchingInterfaceImplementation);
 			AddOverride (@base, @override, matchingInterfaceImplementation);
 		}
 

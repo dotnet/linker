@@ -446,9 +446,14 @@ namespace Mono.Linker
 			return TypeMapInfo.GetDefaultInterfaceImplementations (method);
 		}
 
-		public List<MethodDefinition>? GetBaseMethods (MethodDefinition method)
+		public List<OverrideInformation>? GetBaseMethods (MethodDefinition method)
 		{
 			return TypeMapInfo.GetBaseMethods (method);
+		}
+
+		public List<(TypeDefinition Implementor, InterfaceImplementation InterfaceImplementation)>? GetInterfaceImplementors (TypeDefinition type)
+		{
+			return TypeMapInfo.GetInterfaceImplementors (type);
 		}
 
 		public List<MethodDefinition>? GetPreservedMethods (TypeDefinition type)

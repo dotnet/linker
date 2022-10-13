@@ -113,6 +113,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 			}
 		}
 
+		// Interfaces are kept despite being uninstantiated because it is relevant to variant casting
 		[Kept]
 		[KeptInterface (typeof (IEnumerator))]
 		[KeptInterface (typeof (IPublicInterface))]
