@@ -2511,35 +2511,6 @@ namespace Mono.Linker.Steps
 			return Annotations.IsInstantiated (method.DeclaringType);
 		}
 
-		/// <summary>
-		/// Returns true if any of the base methods of <paramref name="method" /> is defined in an assembly that is not trimmed (i.e. action!=trim).
-		/// This is meant to be used on methods from a type that is known to be instantiated.
-		/// </summary>
-		/// <remarks>
-		/// This is very similar to <see cref="IsMethodNeededByTypeDueToPreservedScope (MethodDefinition)"/>,
-		///	but will mark methods from an interface defined in a non-link assembly regardless of the optimization, and does not handle static interface methods.
-		/// </remarks>
-		bool IsMethodNeededByInstantiatedTypeDueToPreservedScope (MethodDefinition method)
-		{
-			// Any static interface methods are captured by <see cref="IsVirtualNeededByTypeDueToPreservedScope">, which should be called on all relevant methods so no need to check again here.
-			if (!method.IsVirtual)
-				return false;
-
-			var base_list = Annotations.GetBaseMethods (method);
-			if (base_list == null)
-				return false;
-
-			foreach (OverrideInformation ov in base_list) {
-				if (IgnoreScope (ov.Base.DeclaringType.Scope))
-					return true;
-
-				if (IsMethodNeededByTypeDueToPreservedScope (ov.Base))
-					return true;
-			}
-
-			return false;
-		}
-
 		static bool IsSpecialSerializationConstructor (MethodDefinition method)
 		{
 			if (!method.IsInstanceConstructor ())
@@ -3248,8 +3219,6 @@ namespace Mono.Linker.Steps
 
 			MarkBaseMethods (method);
 
-			// TODO: Technically we only need to check the virtual/override pair where `method` is the base method.
-			// This does extra work checking all other base methods of each `@override` method
 			if (Annotations.GetOverrides (method) is IEnumerable<OverrideInformation> overrides) {
 				foreach (var @override in overrides) {
 					if (ShouldMarkOverrideForBase (@override, true))
@@ -3313,12 +3282,9 @@ namespace Mono.Linker.Steps
 
 		void MarkMethodsOnTypeIfNeededByBaseMethod (TypeDefinition type)
 		{
-			do {
-				foreach (var method in type.Methods) {
-					MarkMethodIfNeededByBaseMethod (method);
-				}
-				type = Context.Resolve (type.BaseType)!;
-			} while (type is not null);
+			foreach (var method in type.Methods) {
+				MarkMethodIfNeededByBaseMethod (method);
+			}
 		}
 
 		protected virtual void MarkRequirementsForInstantiatedTypes (TypeDefinition type)
@@ -3338,8 +3304,6 @@ namespace Mono.Linker.Steps
 			MarkImplicitlyUsedFields (type);
 
 			DoAdditionalInstantiatedTypeProcessing (type);
-
-			// Need to traverse through all the base type's methods on a type that may implement an interface method
 		}
 
 		void MarkExplicitInterfaceImplementation (MethodDefinition method, MethodReference ov)
