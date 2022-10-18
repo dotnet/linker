@@ -36,6 +36,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection.Runtime.TypeParsing;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using ILLink.Shared;
 using ILLink.Shared.TrimAnalysis;
@@ -722,8 +723,14 @@ namespace Mono.Linker.Steps
 		/// <param name="isDirectBase">True if the Override is the immediate override method in the type hierarchy.
 		/// False if Override is further removed (e.g. Override is a method on a derived type of a derived type of Base.DeclaringType)</param>
 		// TODO: Take into account a base method in preserved scope
+		// TODO: Move interface method marking logic here
 		bool ShouldMarkOverrideForBase (OverrideInformation overrideInformation, bool isDirectBase)
 		{
+			if (overrideInformation.IsOverrideOfInterfaceMember) {
+				_interfaceOverrides.Add ((overrideInformation, ScopeStack.CurrentScope));
+				return false;
+			}
+
 			var isInstantiated = Annotations.IsInstantiated (overrideInformation.Override.DeclaringType);
 
 			bool markForOverride = !Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, overrideInformation.Override);
@@ -732,14 +739,9 @@ namespace Mono.Linker.Steps
 			// Interface ov.Overrides should only be marked if the interfaceImplementation is marked, which is handled below
 			markForOverride |= !overrideInformation.Base.DeclaringType.IsInterface && isInstantiated;
 
-			if (overrideInformation.IsOverrideOfInterfaceMember) {
-				_interfaceOverrides.Add ((overrideInformation, ScopeStack.CurrentScope));
-				markForOverride |= IsInterfaceImplementationMethodNeededByTypeDueToInterface (overrideInformation);
-			} else {
-				// Direct overrides of marked abstract ov.Overrides must be marked or we get invalid IL.
-				// Overrides further in the hierarchy will override the direct override (which will be implemented by the above rule), so we don't need to worry about invalid IL.
-				markForOverride |= overrideInformation.Base.IsAbstract && isDirectBase;
-			}
+			// Direct overrides of marked abstract ov.Overrides must be marked or we get invalid IL.
+			// Overrides further in the hierarchy will override the direct override (which will be implemented by the above rule), so we don't need to worry about invalid IL.
+			markForOverride |= overrideInformation.Base.IsAbstract && isDirectBase;
 
 			return markForOverride;
 		}
@@ -2386,12 +2388,15 @@ namespace Mono.Linker.Steps
 				if (Context.Resolve (iface.InterfaceType) is not TypeDefinition resolvedInterfaceType)
 					return false;
 
-				if (Annotations.IsMarked (resolvedInterfaceType) || IgnoreScope (iface.InterfaceType.Scope))
+				if (Annotations.IsMarked (resolvedInterfaceType))
 					return true;
 
 				// It's hard to know if a com or windows runtime interface will be needed from managed code alone,
 				// so as a precaution we will mark these interfaces once the type is instantiated
 				if (resolvedInterfaceType.IsImport || resolvedInterfaceType.IsWindowsRuntime)
+					return true;
+
+				if (resolvedInterfaceType.IsTypeOf<IDynamicInterfaceCastable> ())
 					return true;
 
 
@@ -3327,6 +3332,7 @@ namespace Mono.Linker.Steps
 
 			MarkInterfaceImplementations (type);
 
+			// Requires interface implementations to be marked first
 			MarkMethodsOnTypeIfNeededByBaseMethod (type);
 
 			MarkImplicitlyUsedFields (type);
