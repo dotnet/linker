@@ -1478,8 +1478,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				await MethodAsync ();
 
 				[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
-				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
-				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot, CompilerGeneratedCode = true)]
+				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot, CompilerGeneratedCode = true)]
 				IEnumerable<int> LocalFunction ()
 				{
 					yield return 0;
@@ -1513,8 +1513,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 					yield return 1;
 
 					[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
-					[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
-					[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+					[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
+					[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
 					void LocalFunction () => MethodWithRequires ();
 				}
 			}
@@ -1531,8 +1531,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 
 				[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
-				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
-				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
+				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
 				void LocalFunction () => MethodWithRequires ();
 			}
 
