@@ -1717,8 +1717,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "--IteratorLocalFunction--")]
-			[ExpectedWarning ("IL3002", "--IteratorLocalFunction--", ProducedBy = ProducedBy.Analyzer)]
-			[ExpectedWarning ("IL3050", "--IteratorLocalFunction--", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", "--IteratorLocalFunction--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
+			[ExpectedWarning ("IL3050", "--IteratorLocalFunction--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
 			static void TestLocalFunctionInIteratorLocalFunction ()
 			{
 				IteratorLocalFunction ();
@@ -1734,14 +1734,16 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 					yield return 1;
 
 					// Trimmer doesn't try to associate LocalFunction with IteratorLocalFunction
-					[ExpectedWarning ("IL2026", "--MethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+					[ExpectedWarning ("IL2026", "--MethodWithRequires--", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
+					[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.NativeAot)]
+					[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.NativeAot)]
 					void LocalFunction () => MethodWithRequires ();
 				}
 			}
 
 			[ExpectedWarning ("IL2026", "--IteratorLocalFunction--")]
-			[ExpectedWarning ("IL3002", "--IteratorLocalFunction--", ProducedBy = ProducedBy.Analyzer)]
-			[ExpectedWarning ("IL3050", "--IteratorLocalFunction--", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", "--IteratorLocalFunction--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
+			[ExpectedWarning ("IL3050", "--IteratorLocalFunction--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
 			static void TestLocalFunctionCalledFromIteratorLocalFunctionAndMethod ()
 			{
 				IteratorLocalFunction ();
@@ -1759,8 +1761,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 
 				[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
-				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
-				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
+				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
 				void LocalFunction () => MethodWithRequires ();
 			}
 
@@ -2095,8 +2097,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 
 				[ExpectedWarning ("IL2026", "ParentSuppression")]
-				[ExpectedWarning ("IL3002", "ParentSuppression", ProducedBy = ProducedBy.Analyzer)]
-				[ExpectedWarning ("IL3050", "ParentSuppression", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL3002", "ParentSuppression", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
+				[ExpectedWarning ("IL3050", "ParentSuppression", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
 				public static void Test ()
 				{
 					AsyncMethodCallingRequires (typeof (object));
@@ -2124,8 +2126,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 
 				[ExpectedWarning ("IL2026", "ParentSuppression")]
-				[ExpectedWarning ("IL3002", "ParentSuppression", ProducedBy = ProducedBy.Analyzer)]
-				[ExpectedWarning ("IL3050", "ParentSuppression", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL3002", "ParentSuppression", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
+				[ExpectedWarning ("IL3050", "ParentSuppression", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
 				public static void Test ()
 				{
 					AsyncMethodCallingRequires<object> ();
@@ -2164,8 +2166,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 
 				[ExpectedWarning ("IL2026", "ParentSuppression")]
-				[ExpectedWarning ("IL3002", "ParentSuppression", ProducedBy = ProducedBy.Analyzer)]
-				[ExpectedWarning ("IL3050", "ParentSuppression", ProducedBy = ProducedBy.Analyzer)]
+				[ExpectedWarning ("IL3002", "ParentSuppression", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
+				[ExpectedWarning ("IL3050", "ParentSuppression", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
 				public static void Test ()
 				{
 					AsyncEnumMethodCallingRequires<object> ();
