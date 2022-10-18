@@ -1941,12 +1941,14 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			// The linker correctly emits warnings about reflection access to local functions with Requires
 			// or which inherit Requires from the containing method. The analyzer doesn't bind to local functions
 			// so does not warn here.
-			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithRequires--", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithRequiresOnlyAccessedViaReflection--", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithClosureWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithRequires--", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
+			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithRequiresOnlyAccessedViaReflection--", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
+			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithClosureWithRequires--", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
+			// BUG: NativeAot doesn't associate Requires on method with the local functions it contains.
 			[ExpectedWarning ("IL2026", "--TestLocalFunctionInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithClosureInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
 			// Linker warns about reflection access to compiler-generated code
+			// TODO: implement this for NativeAot
 			[ExpectedWarning ("IL2118", nameof (LocalFunctionsReferencedViaReflection), nameof (TestLocalFunctionInMethodWithRequiresOnlyAccessedViaReflection),
 				ProducedBy = ProducedBy.Trimmer)]
 			static void TestAll ()
@@ -1959,12 +1961,14 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithClosureInMethodWithRequires--")]
 			[ExpectedWarning ("IL2026", "--TestLocalFunctionInMethodWithRequiresOnlyAccessedViaReflection--")]
 			// NonPublicMethods warns for local functions not emitted into display classes.
-			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithRequires--", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithRequiresOnlyAccessedViaReflection--", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithClosureWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithRequires--", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
+			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithRequiresOnlyAccessedViaReflection--", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
+			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithClosureWithRequires--", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
+			// BUG: NativeAot doesn't associate Requires on method with the local functions it contains.
 			[ExpectedWarning ("IL2026", "--TestLocalFunctionInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithClosureInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
 			// Linker warns about reflection access to compiler-generated code
+			// TODO: implement this for NativeAot
 			[ExpectedWarning ("IL2118", nameof (LocalFunctionsReferencedViaReflection), "<" + nameof (TestLocalFunctionInMethodWithRequiresOnlyAccessedViaReflection) + ">",
 				ProducedBy = ProducedBy.Trimmer)]
 			static void TestNonPublicMethods ()
@@ -1982,8 +1986,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		class LambdasReferencedViaReflection
 		{
 			[ExpectedWarning ("IL2026", "--TestLambdaWithRequires--")]
-			[ExpectedWarning ("IL3002", "--TestLambdaWithRequires--", ProducedBy = ProducedBy.Analyzer)]
-			[ExpectedWarning ("IL3050", "--TestLambdaWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", "--TestLambdaWithRequires--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
+			[ExpectedWarning ("IL3050", "--TestLambdaWithRequires--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
 			static void TestLambdaWithRequires ()
 			{
 				var lambda =
@@ -1996,8 +2000,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "Lambda")]
-			[ExpectedWarning ("IL3002", "Lambda", ProducedBy = ProducedBy.Analyzer)]
-			[ExpectedWarning ("IL3050", "Lambda", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", "Lambda", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
+			[ExpectedWarning ("IL3050", "Lambda", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
 			static void TestLambdaWithClosureWithRequires (int p = 0)
 			{
 				var lambda =
@@ -2041,8 +2045,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			// The linker correctly emits warnings about reflection access to lambdas with Requires
 			// or which inherit Requires from the containing method. The analyzer doesn't bind to lambdas
 			// so does not warn here.
-			[ExpectedWarning ("IL2026", "--TestLambdaWithRequires--", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "--TestLambdaWithClosureWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "--TestLambdaWithRequires--", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
+			[ExpectedWarning ("IL2026", "--TestLambdaWithClosureWithRequires--", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
+			// BUG: NativeAot doesn't associate Requires on method with the lambdas it contains.
 			[ExpectedWarning ("IL2026", "--TestLambdaInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2026", "--TestLambdaWithClosureInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
 			static void TestAll ()
@@ -2051,8 +2056,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			// Warnings for Reflection access to methods with Requires
-			[ExpectedWarning ("IL2026", "--TestLambdaInMethodWithRequires--")]
-			[ExpectedWarning ("IL2026", "--TestLambdaWithClosureInMethodWithRequires--")]
+
+			[ExpectedWarning ("IL2026", "--TestLambdaInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
+			[ExpectedWarning ("IL2026", "--TestLambdaWithClosureInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
 			// NonPublicMethods doesn't warn for lambdas emitted into display class types.
 			static void TestNonPublicMethods ()
 			{
