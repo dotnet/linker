@@ -75,7 +75,12 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				yield return 1;
 			}
 
-			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
+#if !RELEASE
+			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Trimmer)]
+#else
+			// In release mode, the compiler optimizes away the unused Action (and reference to MethodWithRequires)
+#endif
+			[ExpectedWarning ("IL2026", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			static IEnumerable<int> TestLdftn ()
@@ -248,7 +253,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				await MethodAsync ();
 			}
 
-			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
+#if !RELEASE
+			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Trimmer)]
+#endif
+			[ExpectedWarning ("IL2026", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			static async void TestLdftn ()
@@ -418,7 +426,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				yield return 1;
 			}
 
-			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true)]
+#if !RELEASE
+			[ExpectedWarning ("IL2026", "--MethodWithRequires--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Trimmer)]
+#endif
+			[ExpectedWarning ("IL2026", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			static async IAsyncEnumerable<int> TestLdftn ()
@@ -628,7 +639,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 				LocalFunction ();
 
-				[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
+#if !RELEASE
+				[ExpectedWarning ("IL2026", "--MethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+#endif
+				[ExpectedWarning ("IL2026", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 				void LocalFunction ()
@@ -1136,7 +1150,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static void TestCallWithClosureUnused (int p = 0)
 			{
 				Action _ =
-				[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
+#if !RELEASE
+				[ExpectedWarning ("IL2026", "--MethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+#endif
+				[ExpectedWarning ("IL2026", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 				() => {
@@ -1159,7 +1176,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static void TestLdftn ()
 			{
 				Action _ =
-				[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
+#if !RELEASE
+				[ExpectedWarning ("IL2026", "--MethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
+#endif
+				[ExpectedWarning ("IL2026", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 				() => {
@@ -1751,18 +1771,18 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 		class StateMachinesOnlyReferencedViaReflection
 		{
-			[RequiresUnreferencedCode ("Requires to suppress")]
-			[RequiresAssemblyFiles ("Requires to suppress")]
-			[RequiresDynamicCode ("Requires to suppress")]
+			[RequiresUnreferencedCode ("--TestIteratorOnlyReferencedViaReflectionWhichShouldSuppress--")]
+			[RequiresAssemblyFiles ("--TestIteratorOnlyReferencedViaReflectionWhichShouldSuppress--")]
+			[RequiresDynamicCode ("--TestIteratorOnlyReferencedViaReflectionWhichShouldSuppress--")]
 			static IEnumerable<int> TestIteratorOnlyReferencedViaReflectionWhichShouldSuppress ()
 			{
 				yield return 0;
 				MethodWithRequires ();
 			}
 
-			[RequiresUnreferencedCode ("Requires to suppress")]
-			[RequiresAssemblyFiles ("Requires to suppress")]
-			[RequiresDynamicCode ("Requires to suppress")]
+			[RequiresUnreferencedCode ("--TestAsyncOnlyReferencedViaReflectionWhichShouldSuppress--")]
+			[RequiresAssemblyFiles ("--TestAsyncOnlyReferencedViaReflectionWhichShouldSuppress--")]
+			[RequiresDynamicCode ("--TestAsyncOnlyReferencedViaReflectionWhichShouldSuppress--")]
 			static async void TestAsyncOnlyReferencedViaReflectionWhichShouldSuppress ()
 			{
 				await MethodAsync ();
@@ -1787,12 +1807,18 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				MethodWithRequires ();
 			}
 
-			[ExpectedWarning ("IL2026", "Requires to suppress")]
-			[ExpectedWarning ("IL2026", "Requires to suppress")]
+			[ExpectedWarning ("IL2026", "--TestIteratorOnlyReferencedViaReflectionWhichShouldSuppress--")]
+			[ExpectedWarning ("IL2026", "--TestAsyncOnlyReferencedViaReflectionWhichShouldSuppress--")]
 			// Analyzer doesn't emit additional warnings about reflection access to the compiler-generated
 			// state machine members.
-			[ExpectedWarning ("IL2026", "Requires to suppress", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "Requires to suppress", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "--TestIteratorOnlyReferencedViaReflectionWhichShouldSuppress--", ProducedBy = ProducedBy.Trimmer)]
+#if !RELEASE
+			[ExpectedWarning ("IL2026", "--TestAsyncOnlyReferencedViaReflectionWhichShouldSuppress--", ProducedBy = ProducedBy.Trimmer)]
+			// In debug mode, the async state machine is a class with a constructor, so a warning is emitted for the constructor.
+			// The MoveNext method is virtual, so doesn't warn either way.
+#else
+			// In release mode, the async state machine is a struct which doesn't have a constructor, so no warning is emitted.
+#endif
 			// Linker warns about reflection access to compiler-generated state machine members.
 			[ExpectedWarning ("IL2118", nameof (StateMachinesOnlyReferencedViaReflection), "<" + nameof (TestAsyncOnlyReferencedViaReflectionWhichShouldWarn) + ">", "MoveNext()",
 				ProducedBy = ProducedBy.Trimmer)]
@@ -1803,8 +1829,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				typeof (StateMachinesOnlyReferencedViaReflection).RequiresAll ();
 			}
 
-			[ExpectedWarning ("IL2026", "Requires to suppress")]
-			[ExpectedWarning ("IL2026", "Requires to suppress")]
+			[ExpectedWarning ("IL2026", "--TestIteratorOnlyReferencedViaReflectionWhichShouldSuppress--")]
+			[ExpectedWarning ("IL2026", "--TestAsyncOnlyReferencedViaReflectionWhichShouldSuppress--")]
 			// NonPublicMethods doesn't warn for members emitted into compiler-generated state machine types.
 			static void TestNonPublicMethods ()
 			{
