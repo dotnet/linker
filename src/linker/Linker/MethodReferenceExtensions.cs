@@ -10,6 +10,7 @@ namespace Mono.Linker
 {
 	public static class MethodReferenceExtensions
 	{
+		[System.Diagnostics.CodeAnalysis.SuppressMessage ("ApiDesign", "RS0030:Do not used banned APIs", Justification = "MethodReference.Resolve is banned for performance reasons. GetDisplayName should be a really cold path and shouldn't require a context to call.")]
 		public static string GetDisplayName (this MethodReference method)
 		{
 			var sb = new System.Text.StringBuilder ();

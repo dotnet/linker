@@ -69,7 +69,7 @@ namespace Mono.Linker.Steps
 				case AssemblyAction.CopyUsed:
 				case AssemblyAction.Link:
 				case AssemblyAction.Save:
-					bool changed = AssemblyReferencesCorrector.SweepAssemblyReferences (assembly);
+					bool changed = AssemblyReferencesCorrector.SweepAssemblyReferences (assembly, Context);
 					if (changed && action == AssemblyAction.CopyUsed)
 						Annotations.SetAction (assembly, AssemblyAction.Save);
 					break;
@@ -174,7 +174,7 @@ namespace Mono.Linker.Steps
 				AssemblyAction assemblyAction = AssemblyAction.Copy;
 				if (SweepTypeForwarders (assembly)) {
 					// Need to sweep references, in case sweeping type forwarders removed any
-					AssemblyReferencesCorrector.SweepAssemblyReferences (assembly);
+					AssemblyReferencesCorrector.SweepAssemblyReferences (assembly, Context);
 					assemblyAction = AssemblyAction.Save;
 				}
 
@@ -194,7 +194,7 @@ namespace Mono.Linker.Steps
 			case AssemblyAction.Save:
 				if (SweepTypeForwarders (assembly)) {
 					// Need to sweep references, in case sweeping type forwarders removed any
-					AssemblyReferencesCorrector.SweepAssemblyReferences (assembly);
+					AssemblyReferencesCorrector.SweepAssemblyReferences (assembly, Context);
 				}
 				break;
 			}
@@ -242,7 +242,7 @@ namespace Mono.Linker.Steps
 			}
 
 			if (SweepTypeForwarders (assembly) || updateScopes)
-				AssemblyReferencesCorrector.SweepAssemblyReferences (assembly);
+				AssemblyReferencesCorrector.SweepAssemblyReferences (assembly, Context);
 		}
 
 		bool IsMarkedAssembly (AssemblyDefinition assembly)
@@ -460,7 +460,7 @@ namespace Mono.Linker.Steps
 				//	ov is in a `link` scope and is unmarked
 				//		ShouldRemove returns true if the method is unmarked, but we also We need to make sure the override is in a link scope.
 				//		Only things in a link scope are marked, so ShouldRemove is only valid for items in a `link` scope.
-				if (method.Overrides[i].Resolve () is not MethodDefinition ov || ov.DeclaringType is null || (IsLinkScope (ov.DeclaringType.Scope) && ShouldRemove (ov)))
+				if (Context.TryResolve (method.Overrides[i]) is not MethodDefinition ov || ov.DeclaringType is null || (IsLinkScope (ov.DeclaringType.Scope) && ShouldRemove (ov)))
 					method.Overrides.RemoveAt (i);
 				else
 					i++;
@@ -570,13 +570,16 @@ namespace Mono.Linker.Steps
 
 			bool changedAnyScopes;
 
-			AssemblyReferencesCorrector (AssemblyDefinition assembly) : base (assembly)
+			readonly LinkContext _context;
+
+			AssemblyReferencesCorrector (AssemblyDefinition assembly, LinkContext context) : base (assembly)
 			{
 				this.importer = new DefaultMetadataImporter (assembly.MainModule);
+				this._context = context;
 				changedAnyScopes = false;
 			}
 
-			public static bool SweepAssemblyReferences (AssemblyDefinition assembly)
+			public static bool SweepAssemblyReferences (AssemblyDefinition assembly, LinkContext context)
 			{
 				//
 				// We used to run over list returned by GetTypeReferences but
@@ -586,7 +589,7 @@ namespace Mono.Linker.Steps
 				//
 				assembly.MainModule.AssemblyReferences.Clear ();
 
-				var arc = new AssemblyReferencesCorrector (assembly);
+				var arc = new AssemblyReferencesCorrector (assembly, context);
 				arc.Process ();
 
 				return arc.changedAnyScopes;
@@ -627,7 +630,7 @@ namespace Mono.Linker.Steps
 
 			protected override void ProcessExportedType (ExportedType exportedType)
 			{
-				TypeDefinition td = exportedType.Resolve ();
+				TypeDefinition? td = _context.TryResolve (exportedType);
 				if (td == null) {
 					// Forwarded type cannot be resolved but it was marked
 					// linker is running in --skip-unresolved true mode
