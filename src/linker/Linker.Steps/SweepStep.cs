@@ -40,6 +40,7 @@ using Mono.Collections.Generic;
 
 namespace Mono.Linker.Steps
 {
+	[System.Diagnostics.CodeAnalysis.SuppressMessage ("ApiDesign", "RS0030:Do not used banned APIs", Justification = "When sweeping, we may not want to resolve to a removed member that was cached previously.")]
 	public class SweepStep : BaseStep
 	{
 		readonly bool sweepSymbols;
@@ -69,7 +70,7 @@ namespace Mono.Linker.Steps
 				case AssemblyAction.CopyUsed:
 				case AssemblyAction.Link:
 				case AssemblyAction.Save:
-					bool changed = AssemblyReferencesCorrector.SweepAssemblyReferences (assembly, Context);
+					bool changed = AssemblyReferencesCorrector.SweepAssemblyReferences (assembly);
 					if (changed && action == AssemblyAction.CopyUsed)
 						Annotations.SetAction (assembly, AssemblyAction.Save);
 					break;
@@ -174,7 +175,7 @@ namespace Mono.Linker.Steps
 				AssemblyAction assemblyAction = AssemblyAction.Copy;
 				if (SweepTypeForwarders (assembly)) {
 					// Need to sweep references, in case sweeping type forwarders removed any
-					AssemblyReferencesCorrector.SweepAssemblyReferences (assembly, Context);
+					AssemblyReferencesCorrector.SweepAssemblyReferences (assembly);
 					assemblyAction = AssemblyAction.Save;
 				}
 
@@ -194,7 +195,7 @@ namespace Mono.Linker.Steps
 			case AssemblyAction.Save:
 				if (SweepTypeForwarders (assembly)) {
 					// Need to sweep references, in case sweeping type forwarders removed any
-					AssemblyReferencesCorrector.SweepAssemblyReferences (assembly, Context);
+					AssemblyReferencesCorrector.SweepAssemblyReferences (assembly);
 				}
 				break;
 			}
@@ -242,7 +243,7 @@ namespace Mono.Linker.Steps
 			}
 
 			if (SweepTypeForwarders (assembly) || updateScopes)
-				AssemblyReferencesCorrector.SweepAssemblyReferences (assembly, Context);
+				AssemblyReferencesCorrector.SweepAssemblyReferences (assembly);
 		}
 
 		bool IsMarkedAssembly (AssemblyDefinition assembly)
@@ -460,7 +461,7 @@ namespace Mono.Linker.Steps
 				//	ov is in a `link` scope and is unmarked
 				//		ShouldRemove returns true if the method is unmarked, but we also We need to make sure the override is in a link scope.
 				//		Only things in a link scope are marked, so ShouldRemove is only valid for items in a `link` scope.
-				if (Context.TryResolve (method.Overrides[i]) is not MethodDefinition ov || ov.DeclaringType is null || (IsLinkScope (ov.DeclaringType.Scope) && ShouldRemove (ov)))
+				if (method.Overrides[i].Resolve () is not MethodDefinition ov || ov.DeclaringType is null || (IsLinkScope (ov.DeclaringType.Scope) && ShouldRemove (ov)))
 					method.Overrides.RemoveAt (i);
 				else
 					i++;
@@ -570,16 +571,14 @@ namespace Mono.Linker.Steps
 
 			bool changedAnyScopes;
 
-			readonly LinkContext _context;
 
-			AssemblyReferencesCorrector (AssemblyDefinition assembly, LinkContext context) : base (assembly)
+			AssemblyReferencesCorrector (AssemblyDefinition assembly) : base (assembly)
 			{
 				this.importer = new DefaultMetadataImporter (assembly.MainModule);
-				this._context = context;
 				changedAnyScopes = false;
 			}
 
-			public static bool SweepAssemblyReferences (AssemblyDefinition assembly, LinkContext context)
+			public static bool SweepAssemblyReferences (AssemblyDefinition assembly)
 			{
 				//
 				// We used to run over list returned by GetTypeReferences but
@@ -589,7 +588,7 @@ namespace Mono.Linker.Steps
 				//
 				assembly.MainModule.AssemblyReferences.Clear ();
 
-				var arc = new AssemblyReferencesCorrector (assembly, context);
+				var arc = new AssemblyReferencesCorrector (assembly);
 				arc.Process ();
 
 				return arc.changedAnyScopes;
@@ -606,9 +605,7 @@ namespace Mono.Linker.Steps
 				// But the cache doesn't know that, it would still "resolve" the type-ref to now defunct type-def.
 				// For this reason we can't use the context resolution here, and must force Cecil to perform
 				// real type resolution again (since it can fail, and that's OK).
-#pragma warning disable RS0030 // Do not used banned APIs
 				TypeDefinition td = type.Resolve ();
-#pragma warning restore RS0030 // Do not used banned APIs
 				if (td == null) {
 					//
 					// This can happen when not all assembly refences were provided and we
@@ -630,7 +627,7 @@ namespace Mono.Linker.Steps
 
 			protected override void ProcessExportedType (ExportedType exportedType)
 			{
-				TypeDefinition? td = _context.TryResolve (exportedType);
+				TypeDefinition? td = exportedType.Resolve ();
 				if (td == null) {
 					// Forwarded type cannot be resolved but it was marked
 					// linker is running in --skip-unresolved true mode
