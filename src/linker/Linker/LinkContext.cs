@@ -753,6 +753,7 @@ namespace Mono.Linker
 		readonly Dictionary<MethodReference, MethodDefinition?> methodresolveCache = new ();
 		readonly Dictionary<FieldReference, FieldDefinition?> fieldresolveCache = new ();
 		readonly Dictionary<TypeReference, TypeDefinition?> typeresolveCache = new ();
+		readonly Dictionary<ExportedType, TypeDefinition?> exportedTypeResolveCache = new ();
 
 		public MethodDefinition? Resolve (MethodReference methodReference)
 		{
@@ -881,6 +882,25 @@ namespace Mono.Linker
 			return td;
 		}
 
+		public TypeDefinition? Resolve (ExportedType et)
+		{
+			if (TryResolve (et) is not TypeDefinition td) {
+				ReportUnresolved (et);
+				return null;
+			}
+			return td;
+		}
+
+		public TypeDefinition? TryResolve (ExportedType et)
+		{
+			if (exportedTypeResolveCache.TryGetValue (et, out var td)) {
+				return td;
+			}
+			td = et.Resolve ();
+			exportedTypeResolveCache.Add (et, td);
+			return td;
+		}
+
 		public TypeDefinition? TryResolve (AssemblyDefinition assembly, string typeNameString)
 		{
 			// It could be cached if it shows up on fast path
@@ -907,6 +927,11 @@ namespace Mono.Linker
 		{
 			if (unresolved_reported.Add (typeReference))
 				LogError (string.Format (SharedStrings.FailedToResolveTypeElementMessage, typeReference.GetDisplayName ()), (int) DiagnosticId.FailedToResolveMetadataElement);
+		}
+
+		protected virtual void ReportUnresolved (ExportedType typeReference)
+		{
+			LogError (string.Format (SharedStrings.FailedToResolveTypeElementMessage, typeReference.Name), (int) DiagnosticId.FailedToResolveMetadataElement);
 		}
 	}
 
