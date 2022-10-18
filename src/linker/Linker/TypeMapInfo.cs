@@ -59,6 +59,9 @@ namespace Mono.Linker
 				MapType (type);
 		}
 
+		/// <summary>
+		/// Returns a list of all known methods that override <paramref name="method"/>. The list may be incomplete if other overrides exist in assemblies that haven't been processed by TypeMapInfo yet
+		/// </summary>
 		public IEnumerable<OverrideInformation>? GetOverrides (MethodDefinition method)
 		{
 			EnsureProcessed (method.Module.Assembly);
@@ -66,6 +69,13 @@ namespace Mono.Linker
 			return overrides;
 		}
 
+		/// <summary>
+		/// Returns all base methods that <paramref name="method"/> overrides.
+		/// This includes methods on <paramref name="method"/>'s declaring type's base type (but not methods higher up in the type hierarchy),
+		/// methods on an interface that <paramref name="method"/>'s delcaring type implements,
+		/// and methods an interface implemented by a derived type of <paramref name="method"/>'s declaring type if the derived type uses <paramref name="method"/> as the implementing method.
+		/// The list may be incomplete if there are derived types in assemblies that havent been processed yet that use <paramref name="method"/> to implement an interface.
+		/// </summary>
 		public List<OverrideInformation>? GetBaseMethods (MethodDefinition method)
 		{
 			EnsureProcessed (method.Module.Assembly);
@@ -109,11 +119,14 @@ namespace Mono.Linker
 			implementations.Add ((implementingType, matchingInterfaceImplementation));
 		}
 
-		public List<(TypeDefinition Implementor, InterfaceImplementation InterfaceImplementation)>? GetInterfaceImplementors (TypeDefinition type)
+		/// <summary>
+		/// Returns a list of all known types that implement <paramref name="interfaceType"/>. The list may be incomplete if other implementing types exist in assemblies that haven't been processed by TypeMapInfo yet
+		/// </summary>
+		public List<(TypeDefinition Implementor, InterfaceImplementation InterfaceImplementation)>? GetInterfaceImplementors (TypeDefinition interfaceType)
 		{
-			if (!type.IsInterface)
+			if (!interfaceType.IsInterface)
 				throw new InvalidOperationException ("Cannot get interface implementors of a type that is not an interface");
-			if (interface_implementors.TryGetValue (type, out var interfaces))
+			if (interface_implementors.TryGetValue (interfaceType, out var interfaces))
 				return interfaces;
 			return null;
 		}
