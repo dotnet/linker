@@ -10,13 +10,14 @@ namespace Mono.Linker
 {
 	public static class MethodReferenceExtensions
 	{
-		[System.Diagnostics.CodeAnalysis.SuppressMessage ("ApiDesign", "RS0030:Do not used banned APIs", Justification = "MethodReference.Resolve is banned for performance reasons. GetDisplayName should be a really cold path and shouldn't require a context to call.")]
 		public static string GetDisplayName (this MethodReference method)
 		{
 			var sb = new System.Text.StringBuilder ();
 
 			// Match C# syntaxis name if setter or getter
+#pragma warning disable RS0030 // Cecil's Resolve is banned -- this should be a very cold path and makes calling this method much simpler
 			var methodDefinition = method.Resolve ();
+#pragma warning restore RS0030
 			if (methodDefinition != null && (methodDefinition.IsSetter || methodDefinition.IsGetter)) {
 				// Append property name
 				string name = methodDefinition.IsSetter ? string.Concat (methodDefinition.Name.AsSpan (4), ".set") : string.Concat (methodDefinition.Name.AsSpan (4), ".get");
