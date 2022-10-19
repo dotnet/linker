@@ -3,7 +3,6 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using Mono.Cecil;
 using Mono.Collections.Generic;
 
@@ -97,7 +96,7 @@ namespace Mono.Linker.Steps
 				//
 				// cannot de-virtualize nor seal methods if something overrides them
 				//
-				if (IsAnyMarked (overrides))
+				if (IsAnyOverrideMarked (overrides))
 					continue;
 
 				SealMethod (method);
@@ -107,9 +106,9 @@ namespace Mono.Linker.Steps
 				if (!type.IsSealed)
 					continue;
 
-				var bases = Annotations.GetBaseMethods (method)?.Select (static x => x.Base).ToList ();
-				// Devirtualize if a method is not override to existing marked methods
-				if (!IsAnyMarked (bases))
+				var bases = Annotations.GetBaseMethods (method); //?.Select (static x => x.Base);
+																 // Devirtualize if a method is not override to existing marked methods
+				if (bases is not null && !IsAnyBaseMarked (bases))
 					method.IsVirtual = method.IsFinal = method.IsNewSlot = false;
 			}
 		}
@@ -124,7 +123,7 @@ namespace Mono.Linker.Steps
 			method.IsFinal = true;
 		}
 
-		bool IsAnyMarked (IEnumerable<OverrideInformation>? list)
+		bool IsAnyOverrideMarked (IEnumerable<OverrideInformation>? list)
 		{
 			if (list == null)
 				return false;
@@ -136,12 +135,13 @@ namespace Mono.Linker.Steps
 			return false;
 		}
 
-		bool IsAnyMarked (List<MethodDefinition>? list)
+		bool IsAnyBaseMarked (IEnumerable<OverrideInformation>? list)
 		{
 			if (list == null)
 				return false;
+
 			foreach (var m in list) {
-				if (Annotations.IsMarked (m))
+				if (Annotations.IsMarked (m.Base))
 					return true;
 			}
 			return false;
