@@ -733,17 +733,20 @@ namespace Mono.Linker.Steps
 
 			var isInstantiated = Annotations.IsInstantiated (overrideInformation.Override.DeclaringType);
 
-			bool markForOverride = !Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, overrideInformation.Override);
+			if (!Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, overrideInformation.Override))
+				return true;
 
 			// Methods on instantiated types that override a ov.Override from a base type (not an interface) should be marked 
 			// Interface ov.Overrides should only be marked if the interfaceImplementation is marked, which is handled below
-			markForOverride |= !overrideInformation.Base.DeclaringType.IsInterface && isInstantiated;
+			if (!overrideInformation.Base.DeclaringType.IsInterface && isInstantiated)
+				return true;
 
 			// Direct overrides of marked abstract ov.Overrides must be marked or we get invalid IL.
 			// Overrides further in the hierarchy will override the direct override (which will be implemented by the above rule), so we don't need to worry about invalid IL.
-			markForOverride |= overrideInformation.Base.IsAbstract && isDirectBase;
+			if (overrideInformation.Base.IsAbstract && isDirectBase)
+				return true;
 
-			return markForOverride;
+			return false;
 		}
 
 		/// <summary>
@@ -1932,7 +1935,7 @@ namespace Mono.Linker.Steps
 			if (reference == null)
 				return null;
 
-			using var localScoe = origin.HasValue ? ScopeStack.PushScope (origin.Value) : null;
+			using var localScope = origin.HasValue ? ScopeStack.PushScope (origin.Value) : null;
 
 			(reference, reason) = GetOriginalType (reference, reason);
 
