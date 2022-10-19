@@ -106,9 +106,9 @@ namespace Mono.Linker.Steps
 				if (!type.IsSealed)
 					continue;
 
-				var bases = Annotations.GetBaseMethods (method); //?.Select (static x => x.Base);
-																 // Devirtualize if a method is not override to existing marked methods
-				if (bases is not null && !IsAnyBaseMarked (bases))
+				var bases = Annotations.GetBaseMethods (method);
+				// Devirtualize if a method is not override to existing marked methods
+				if (!IsAnyBaseMarked (bases))
 					method.IsVirtual = method.IsFinal = method.IsNewSlot = false;
 			}
 		}
