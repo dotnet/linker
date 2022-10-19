@@ -941,6 +941,8 @@ namespace Mono.Linker
 
 		readonly HashSet<MemberReference> unresolved_reported = new ();
 
+		readonly HashSet<ExportedType> unresolved_exported_types_reported = new ();
+
 		protected virtual void ReportUnresolved (FieldReference fieldReference)
 		{
 			if (unresolved_reported.Add (fieldReference))
@@ -961,7 +963,8 @@ namespace Mono.Linker
 
 		protected virtual void ReportUnresolved (ExportedType et)
 		{
-			LogError (string.Format (SharedStrings.FailedToResolveTypeElementMessage, et.Name), (int) DiagnosticId.FailedToResolveMetadataElement);
+			if (unresolved_exported_types_reported.Add (et))
+				LogError (string.Format (SharedStrings.FailedToResolveTypeElementMessage, et.Name), (int) DiagnosticId.FailedToResolveMetadataElement);
 		}
 	}
 
