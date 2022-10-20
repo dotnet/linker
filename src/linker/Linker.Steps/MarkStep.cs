@@ -781,7 +781,7 @@ namespace Mono.Linker.Steps
 			{
 				foreach (var ov in overrides) {
 					// Immediate base methods
-					if (Annotations.IsMarked (ov.Base) || IgnoreScope (ov.Base.DeclaringType.Scope)){
+					if (Annotations.IsMarked (ov.Base) || IgnoreScope (ov.Base.DeclaringType.Scope)) {
 						yield return (ov, true);
 					} else {
 						// Bases of bases
