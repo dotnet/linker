@@ -24,6 +24,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.VirtualMethods
 		class A : B
 		{
 			[Kept]
+			[KeptBy ("Mono.Linker.Tests.Cases.Inheritance.VirtualMethods.VirtualMethodGetsPreservedIfBaseMethodGetsInvoked/A", DependencyKind.OverrideOnInstantiatedType)]
 			public override void Foo ()
 			{
 			}

@@ -12,7 +12,8 @@ namespace Mono.Linker.Tests.Cases.Inheritance.VirtualMethods
 		[KeptMember (".ctor()")]
 		class B
 		{
-			[Kept] // TODO: Would be nice to be removed
+			// TODO: Would be nice to be removed
+			[KeptBy (typeof (A), nameof (A.Foo), DependencyKind.BaseMethod)]
 			public virtual void Foo ()
 			{
 			}
@@ -22,7 +23,9 @@ namespace Mono.Linker.Tests.Cases.Inheritance.VirtualMethods
 		[KeptBaseType (typeof (B))]
 		class A : B
 		{
-			[Kept]
+			// Bug: https://github.com/dotnet/linker/issues/3078
+			//[KeptBy (typeof(A), nameof(Foo), DependencyKind.DirectCall)]
+			[KeptBy (typeof (A), DependencyKind.OverrideOnInstantiatedType)]
 			public override void Foo ()
 			{
 			}
