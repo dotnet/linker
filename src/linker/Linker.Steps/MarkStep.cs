@@ -719,6 +719,7 @@ namespace Mono.Linker.Steps
 		/// <summary>
 		/// Returns true if the Override in <paramref name="overrideInformation"/> should be marked because it is needed by the base method.
 		/// Does not take into account if the base method is in a preserved scope.
+		/// Assumes the base method is marked.
 		/// </summary>
 		/// <param name="isDirectBase">True if the Override is the immediate override method in the type hierarchy.
 		/// False if Override is further removed (e.g. Override is a method on a derived type of a derived type of Base.DeclaringType)</param>
@@ -731,14 +732,12 @@ namespace Mono.Linker.Steps
 				return false;
 			}
 
-			var isInstantiated = Annotations.IsInstantiated (overrideInformation.Override.DeclaringType);
-
 			if (!Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, overrideInformation.Override))
 				return true;
 
-			// Methods on instantiated types that override a ov.Override from a base type (not an interface) should be marked 
+			// Methods on instantiated types that override a ov.Override from a base type (not an interface) should be marked
 			// Interface ov.Overrides should only be marked if the interfaceImplementation is marked, which is handled below
-			if (!overrideInformation.Base.DeclaringType.IsInterface && isInstantiated)
+			if (Annotations.IsInstantiated (overrideInformation.Override.DeclaringType))
 				return true;
 
 			// Direct overrides of marked abstract ov.Overrides must be marked or we get invalid IL.
@@ -766,7 +765,11 @@ namespace Mono.Linker.Steps
 
 		void MarkMethodIfNeededByBaseMethod (MethodDefinition method)
 		{
-			if (!Annotations.IsMarked (method.DeclaringType) || Annotations.GetBaseMethods (method) is not List<OverrideInformation> bases)
+			if (!Annotations.IsMarked (method.DeclaringType))
+				return;
+
+			var bases = Annotations.GetBaseMethods (method);
+			if (bases is null)
 				return;
 
 			foreach (var (ov, isDirectBase) in GetMarkedBaseMethods (bases)) {
@@ -778,13 +781,15 @@ namespace Mono.Linker.Steps
 			{
 				foreach (var ov in overrides) {
 					// Immediate base methods
-					if (Annotations.IsMarked (ov.Base) || IgnoreScope (ov.Base.DeclaringType.Scope))
+					if (Annotations.IsMarked (ov.Base) || IgnoreScope (ov.Base.DeclaringType.Scope)){
 						yield return (ov, true);
-
-					// Bases of bases
-					else if (Annotations.GetBaseMethods (ov.Base) is IEnumerable<OverrideInformation> baseBases) {
-						foreach (var baseOv in GetMarkedBaseMethods (baseBases)) {
-							yield return (baseOv.Override, false);
+					} else {
+						// Bases of bases
+						var baseBases = Annotations.GetBaseMethods (ov.Base);
+						if (baseBases is not null) {
+							foreach (var baseOv in GetMarkedBaseMethods (baseBases)) {
+								yield return (baseOv.Override, false);
+							}
 						}
 					}
 				}
@@ -2398,10 +2403,6 @@ namespace Mono.Linker.Steps
 				// so as a precaution we will mark these interfaces once the type is instantiated
 				if (resolvedInterfaceType.IsImport || resolvedInterfaceType.IsWindowsRuntime)
 					return true;
-
-				if (resolvedInterfaceType.IsTypeOf<IDynamicInterfaceCastable> ())
-					return true;
-
 
 				return IsFullyPreserved (type);
 			}
