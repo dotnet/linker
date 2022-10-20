@@ -72,7 +72,7 @@ namespace Mono.Linker
 		/// <summary>
 		/// Returns all base methods that <paramref name="method"/> overrides.
 		/// This includes the closest overridden virtual method on <paramref name="method"/>'s base types
-		/// methods on an interface that <paramref name="method"/>'s delcaring type implements,
+		/// methods on an interface that <paramref name="method"/>'s declaring type implements,
 		/// and methods an interface implemented by a derived type of <paramref name="method"/>'s declaring type if the derived type uses <paramref name="method"/> as the implementing method.
 		/// The list may be incomplete if there are derived types in assemblies that havent been processed yet that use <paramref name="method"/> to implement an interface.
 		/// </summary>
