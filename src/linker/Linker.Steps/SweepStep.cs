@@ -431,7 +431,7 @@ namespace Mono.Linker.Steps
 
 				SweepOverrides (method);
 
-				if (!method.HasParameters)
+				if (!method.HasMetadataParameters())
 					continue;
 
 				bool sweepNames = CanSweepNamesForMember (method, MetadataTrimming.ParameterName);

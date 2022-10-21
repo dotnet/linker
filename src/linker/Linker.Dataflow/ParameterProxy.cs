@@ -1,20 +1,20 @@
 // Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System.Diagnostics.CodeAnalysis;
 using Mono.Cecil;
 using Mono.Linker;
 
 namespace ILLink.Shared.TypeSystemProxy
 {
-	[SuppressMessage ("ApiDesign", "RS0030:Do not used banned APIs", Justification = "This class provides wrapper methods around the banned Parameters property")]
 	internal partial struct ParameterProxy
 	{
 		public ReferenceKind ReferenceKind {
 			get {
 				if (IsImplicitThis)
 					return Method.Method.DeclaringType.IsValueType ? ReferenceKind.Ref : ReferenceKind.None;
+#pragma warning disable RS0030 // MethodReference is banned -- this class provides wrappers to use
 				var param = Method.Method.Parameters[MetadataIndex];
+#pragma warning restore RS0030 // Do not used banned APIs
 				if (!param.ParameterType.IsByReference)
 					return ReferenceKind.None;
 				if (param.IsIn)
@@ -29,19 +29,25 @@ namespace ILLink.Shared.TypeSystemProxy
 			get {
 				if (IsImplicitThis)
 					return Method.Method.DeclaringType;
+#pragma warning disable RS0030 // MethodReference is banned -- this class provides wrappers to use
 				return Method.Method.Parameters[MetadataIndex].ParameterType;
+#pragma warning restore RS0030 // Do not used banned APIs
 			}
 		}
 
+#pragma warning disable RS0030 // MethodReference is banned -- this class provides wrappers to use
 		public partial string GetDisplayName () => IsImplicitThis ? Method.GetDisplayName ()
 			: !string.IsNullOrEmpty (Method.Method.Parameters[MetadataIndex].Name) ? Method.Method.Parameters[MetadataIndex].Name
 			: $"#{Index}";
+#pragma warning restore RS0030 // Do not used banned APIs
 
 		public ICustomAttributeProvider GetCustomAttributeProvider ()
 		{
 			if (IsImplicitThis)
 				return Method.Method;
+#pragma warning disable RS0030 // MethodReference is banned -- this class provides wrappers to use
 			return Method.Method.Parameters[MetadataIndex];
+#pragma warning restore RS0030 // Do not used banned APIs
 		}
 
 		public partial bool IsTypeOf (string typeName) => ParameterType.IsTypeOf (typeName);

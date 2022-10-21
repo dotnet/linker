@@ -85,7 +85,7 @@ namespace Mono.Linker
 				if (method.HasGenericParameters)
 					builder.Append ("``").Append (method.GenericParameters.Count);
 
-				if (method.HasParameters || (method.CallingConvention == MethodCallingConvention.VarArg))
+				if (method.HasMetadataParameters () || (method.CallingConvention == MethodCallingConvention.VarArg))
 #pragma warning disable RS0030 // MethodReference.Parameters is banned. This generates documentation signatures, so it's okay to use it here
 					VisitParameters (method.Parameters, method.CallingConvention == MethodCallingConvention.VarArg, builder, resolver);
 #pragma warning restore RS0030

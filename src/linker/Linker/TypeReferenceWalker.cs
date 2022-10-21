@@ -96,9 +96,8 @@ namespace Mono.Linker
 						foreach (var mo in m.Overrides)
 							WalkMethodReference (mo);
 					}
-
-#pragma warning disable RS0030 // MethodReference.Parameters is banned. Best to leave working code as is
-					if (m.HasParameters)
+#pragma warning disable RS0030 // MethodReference.Parameters is banned - It's best to leave this as is
+					if (m.HasMetadataParameters ())
 						WalkTypeScope (m.Parameters);
 #pragma warning restore RS0030
 
@@ -218,7 +217,7 @@ namespace Mono.Linker
 					WalkScopeOfTypeReference (tr);
 			}
 
-			if (mr.HasParameters) {
+			if (mr.HasMetadataParameters ()) {
 #pragma warning disable RS0030 // MethedReference.Parameters is banned. Best to leave working code as is.
 				WalkTypeScope (mr.Parameters);
 #pragma warning restore RS0030 // Do not used banned APIs

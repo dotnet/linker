@@ -198,7 +198,7 @@ namespace Mono.Linker.Steps
 			}
 
 			sb.Append ("(");
-			if (meth.HasParameters) {
+			if (meth.HasMetadataParameters ()) {
 				int i = 0;
 				foreach (var p in meth.GetMetadataParameters ()) {
 					if (i++ > 0)

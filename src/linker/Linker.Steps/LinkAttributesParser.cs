@@ -145,7 +145,7 @@ namespace Mono.Linker.Steps
 
 			var ctorN = new MethodDefinition (".ctor", ctorAttributes, voidType);
 			var paramN = new ParameterDefinition (objectArrayType);
-#pragma warning disable RS0030 // MethodReference.Parmeters is banned. It's necessary to build the method definition here, though.
+#pragma warning disable RS0030 // MethodReference.Parameters is banned. It's necessary to build the method definition here, though.
 			ctorN.Parameters.Add (paramN);
 #pragma warning restore RS0030
 			td.Methods.Add (ctorN);
@@ -553,7 +553,7 @@ namespace Mono.Linker.Steps
 				sb.Append (">");
 			}
 			sb.Append ("(");
-			if (method.HasParameters) {
+			if (method.HasMetadataParameters ()) {
 				for (int i = 0; i < method.Parameters.Count; i++) {
 					if (i > 0)
 						sb.Append (",");

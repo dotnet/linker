@@ -13,7 +13,7 @@ namespace Mono.Linker
 	{
 		public static bool IsDefaultConstructor (this MethodDefinition method)
 		{
-			return IsInstanceConstructor (method) && !method.HasParameters;
+			return IsInstanceConstructor (method) && !method.HasMetadataParameters ();
 		}
 
 		public static bool IsInstanceConstructor (this MethodDefinition method)

@@ -3,13 +3,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
 
 namespace Mono.Linker
 {
-	[SuppressMessage ("ApiDesign", "RS0030:Do not used banned APIs", Justification = "This class provides wrapper methods around the banned Parameters property")]
 	internal static class MethodReferenceExtensions
 	{
 		public static string GetDisplayName (this MethodReference method)
@@ -45,11 +43,12 @@ namespace Mono.Linker
 
 			// Append parameters
 			sb.Append ("(");
-			if (method.HasParameters) {
+			if (method.HasMetadataParameters ()) {
+#pragma warning disable RS0030 // MethodReference.Parameters is banned -- it's best to leave this as is for now
 				for (int i = 0; i < method.Parameters.Count - 1; i++)
 					sb.Append (method.Parameters[i].ParameterType.GetDisplayNameWithoutNamespace ()).Append (", ");
-
 				sb.Append (method.Parameters[method.Parameters.Count - 1].ParameterType.GetDisplayNameWithoutNamespace ());
+#pragma warning restore RS0030 // Do not used banned APIs
 			}
 
 			sb.Append (")");
@@ -87,23 +86,35 @@ namespace Mono.Linker
 
 		public static TypeReference? GetInflatedParameterType (this MethodReference method, int parameterIndex, LinkContext context)
 		{
+#pragma warning disable RS0030 // MethodReference.Parameters is banned -- it's best to leave this as is for now
 			if (method.DeclaringType is GenericInstanceType genericInstance)
 				return TypeReferenceExtensions.InflateGenericType (genericInstance, method.Parameters[parameterIndex].ParameterType, context);
 
 			return method.Parameters[parameterIndex].ParameterType;
+#pragma warning restore RS0030 // Do not used banned APIs
 		}
 
 		/// <summary>
 		/// Gets the number of entries in the 'Parameters' section of a method's metadata (i.e. excludes the implicit 'this' from the count)
 		/// </summary>
+#pragma warning disable RS0030 // MethodReference.Parameters is banned -- this provides a wrapper
 		public static int GetMetadataParametersCount (this MethodReference method)
 			=> method.Parameters.Count;
+#pragma warning restore RS0030 // Do not used banned APIs
+
+		/// <summary>
+		/// Returns true if the method has any parameters in the .parameters section of the method's metadata
+		/// </summary>
+		public static bool HasMetadataParameters (this MethodReference method)
+			=> method.GetMetadataParametersCount () != 0;
 
 		/// <summary>
 		/// Returns a list of the parameters in the method's 'parameters' metadata section (i.e. excluding the implicit 'this' parameter)
 		/// </summary>
+#pragma warning disable RS0030 // MethodReference.Parameters is banned -- this provides a wrapper
 		public static int GetParametersCount (this MethodReference method)
 			=> method.Parameters.Count + (method.HasImplicitThis () ? 1 : 0);
+#pragma warning restore RS0030 // Do not used banned APIs
 
 		public static bool IsDeclaredOnType (this MethodReference method, string fullTypeName)
 		{
@@ -123,8 +134,11 @@ namespace Mono.Linker
 		{
 			if (method.HasImplicitThis ())
 				yield return method.DeclaringType.IsValueType ? ReferenceKind.Ref : ReferenceKind.None;
+#pragma warning disable RS0030 // MethodReference.Parameters is banned -- this provides a wrapper
 			foreach (var parameter in method.Parameters)
 				yield return GetReferenceKind (parameter);
+#pragma warning restore RS0030 // Do not used banned APIs
+
 			static ReferenceKind GetReferenceKind (ParameterDefinition param)
 			{
 				if (!param.ParameterType.IsByReference)

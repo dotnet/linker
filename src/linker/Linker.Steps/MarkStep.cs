@@ -1315,7 +1315,7 @@ namespace Mono.Linker.Steps
 		{
 			TypeDefinition? type = inputType;
 			while (type != null) {
-				MethodDefinition? method = type.Methods.FirstOrDefault (m => m.Name == methodname && !m.HasParameters);
+				MethodDefinition? method = type.Methods.FirstOrDefault (m => m.Name == methodname && !m.HasMetadataParameters ());
 				if (method != null)
 					return method;
 
@@ -3152,7 +3152,7 @@ namespace Mono.Linker.Steps
 			else if (method.TryGetEvent (out EventDefinition? @event))
 				MarkEvent (@event, new DependencyInfo (DependencyKind.EventOfEventMethod, method));
 
-			if (method.HasParameters) {
+			if (method.HasMetadataParameters ()) {
 #pragma warning disable RS0030 // MethodReference.Parameters is banned. It's easiest to leave the code as is for now
 				foreach (ParameterDefinition pd in method.Parameters) {
 					MarkType (pd.ParameterType, new DependencyInfo (DependencyKind.ParameterType, method));

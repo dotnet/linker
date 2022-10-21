@@ -313,7 +313,7 @@ namespace ILLink.Shared.TrimAnalysis
 							_context.LogWarning (setMethod, DiagnosticId.DynamicallyAccessedMembersConflictsBetweenPropertyAndAccessor, property.GetDisplayName (), setMethod.GetDisplayName ());
 						} else {
 							int offset = setMethod.HasImplicitThis () ? 1 : 0;
-							if (setMethod.HasParameters) {
+							if (setMethod.GetParametersCount () != 0) {
 								DynamicallyAccessedMemberTypes[] paramAnnotations = new DynamicallyAccessedMemberTypes[setMethod.GetParametersCount ()];
 								paramAnnotations[paramAnnotations.Length - 1] = annotation;
 								annotatedMethods.Add (new MethodAnnotations (setMethod, paramAnnotations, DynamicallyAccessedMemberTypes.None, null));

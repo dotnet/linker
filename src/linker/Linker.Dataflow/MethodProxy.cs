@@ -22,7 +22,7 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		internal partial bool IsDeclaredOnType (string fullTypeName) => Method.IsDeclaredOnType (fullTypeName);
 
-		internal partial bool HasMetadataParameters () => Method.HasParameters;
+		internal partial bool HasMetadataParameters () => Method.HasMetadataParameters ();
 
 		/// <summary>
 		/// Gets the number of entries in the 'Parameters' section of a method's metadata (i.e. excludes the implicit 'this' from the count)
