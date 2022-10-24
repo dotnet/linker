@@ -20,7 +20,7 @@ namespace ILLink.Shared.TypeSystemProxy
 		internal partial int GetMetadataParametersCount ();
 
 		/// <summary>
-		/// Returns true if the method has parameters in the 'paramters' metadata section (i.e. has parameters besides the implicit 'this' parameter)
+		/// Returns true if the method has parameters in the 'parameters' metadata section (i.e. has parameters besides the implicit 'this' parameter)
 		/// </summary>
 		internal partial bool HasMetadataParameters ();
 
@@ -33,7 +33,7 @@ namespace ILLink.Shared.TypeSystemProxy
 		/// <summary>
 		/// Returns a List of <see cref="ParameterProxy"/> representing the parameters the method takes, including the implicit 'this' parameters.
 		/// </summary>
-		internal partial ParameterCollection GetParameters ();
+		internal partial ParameterProxyEnumerable GetParameters ();
 
 		/// <summary>
 		/// Returns the ParameterProxy corresponding to the parameter at <paramref name="index"/>.

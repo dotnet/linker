@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
-using ILLink.Shared.DataFlow;
 using ILLink.Shared.TypeSystemProxy;
 using Mono.Linker.Dataflow;
 using TypeDefinition = Mono.Cecil.TypeDefinition;
@@ -26,14 +25,6 @@ namespace ILLink.Shared.TrimAnalysis
 
 		public override DynamicallyAccessedMemberTypes DynamicallyAccessedMemberTypes { get; }
 
-		public ParameterProxy Parameter { get; }
-
 		public TypeDefinition? StaticType { get; }
-
-		public override SingleValue DeepCopy () => this; // This value is immutable
-
-		public override string ToString () => this.ValueToString (Parameter, Parameter.Method.GetDisplayName (), (int) Parameter.Index, DynamicallyAccessedMemberTypes);
-
-		public bool IsThisParameter () => _overrideIsThis || Parameter.IsImplicitThis;
 	}
 }

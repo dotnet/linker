@@ -132,19 +132,19 @@ namespace Mono.Linker
 		/// <summary>
 		/// Returns a foreach-enumerable collection of the parameters pushed onto the stack before the method call (including the implicit 'this' parameter)
 		/// </summary>
-		public static ParameterCollection GetParameters (this MethodDefinition method)
+		public static ParameterProxyEnumerable GetParameters (this MethodDefinition method)
 		{
 			int implicitThisOffset = method.HasImplicitThis () ? 1 : 0;
-			return new ParameterCollection (0, method.Parameters.Count + implicitThisOffset, method);
+			return new ParameterProxyEnumerable (0, method.Parameters.Count + implicitThisOffset, method);
 		}
 
 		/// <summary>
 		/// Returns a list of ParameterProxy representing the parameters listed in the "Parameters" metadata section (i.e. not including the implicit 'this' parameter)
 		/// </summary>
-		public static ParameterCollection GetMetadataParameters (this MethodDefinition method)
+		public static ParameterProxyEnumerable GetMetadataParameters (this MethodDefinition method)
 		{
 			int implicitThisOffset = method.HasImplicitThis () ? 1 : 0;
-			return new ParameterCollection (implicitThisOffset, method.Parameters.Count + implicitThisOffset, method);
+			return new ParameterProxyEnumerable (implicitThisOffset, method.Parameters.Count + implicitThisOffset, method);
 		}
 	}
 }

@@ -21,7 +21,7 @@ namespace ILLink.Shared.TypeSystemProxy
 		public ParameterIndex Index { get; }
 
 		/// <summary>
-		/// The index of the entry in the '.parameters' metadata section corresponding to thie parameter.
+		/// The index of the entry in the '.parameters' metadata section corresponding to this parameter.
 		/// Maps to the index of the parameter in Cecil's MethodReference.Parameters or Roslyn's IMethodSymbol.Parameters
 		/// Throws if the parameter is the implicit 'this' parameter.
 		/// </summary>
@@ -36,9 +36,7 @@ namespace ILLink.Shared.TypeSystemProxy
 			}
 		}
 
-		// C# doesn't have partial properties, but the following should be implemented in every project
-
-		// public partial ReferenceKind RefKind { get; }
+		public partial ReferenceKind GetReferenceKind ();
 
 		public partial string GetDisplayName ();
 
@@ -48,7 +46,8 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		public IEnumerable<string> GetDiagnosticArgumentsForAnnotationMismatch ()
 			=> IsImplicitThis ?
-				new string[] { GetDisplayName () }
+				new string[] { Method.GetDisplayName () }
+
 				: new string[] { GetDisplayName (), Method.GetDisplayName () };
 	}
 }

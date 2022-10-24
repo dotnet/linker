@@ -1140,7 +1140,7 @@ namespace ILLink.Shared.TrimAnalysis
 				// Verify the argument values match the annotations on the parameter definition
 				if (requiresDataFlowAnalysis) {
 					foreach (var parameter in calledMethod.GetParameters ()) {
-						if (parameter.ReferenceKind is ReferenceKind.Out)
+						if (parameter.GetReferenceKind () is ReferenceKind.Out)
 							continue;
 						if (parameter.IsImplicitThis) {
 							_requireDynamicallyAccessedMembersAction.Invoke (instanceValue, _annotations.GetMethodThisParameterValue (calledMethod));

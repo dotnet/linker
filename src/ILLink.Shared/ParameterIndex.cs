@@ -8,8 +8,7 @@ namespace ILLink.Shared.TypeSystemProxy
 	/// <summary>
 	/// Used to indicate the index of the parameter in the Parameters metadata section (i.e. the first parameter that is not the implicit 'this' is 0)
 	/// It is very error prone to use an int to represent the index in parameters metadata section / source code parameter index as well as for indexing into argument lists.
-	/// Instead, use this enum whenever representing an index of a parameter. 
-	/// The "This" enum value should be used when representing the implicit 'this' parameter.
+	/// Instead, use this struct whenever representing an index of a parameter. 
 	/// </summary>
 	/// <example>
 	/// In a call to a non-static function Foo(int a, int b, int c)

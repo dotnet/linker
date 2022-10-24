@@ -11,11 +11,11 @@ namespace ILLink.Shared.TypeSystemProxy
 	{
 		public ParameterProxy (IParameterSymbol parameter)
 		{
-			Method = new ((IMethodSymbol) parameter.ContainingSymbol);
+			Method = (new ((IMethodSymbol) parameter.ContainingSymbol));
 			Index = (ParameterIndex) parameter.Ordinal + (Method.HasImplicitThis () ? 1 : 0);
 		}
 
-		public ReferenceKind ReferenceKind =>
+		public partial ReferenceKind GetReferenceKind () =>
 			IsImplicitThis
 			? ((ITypeSymbol) Method.Method.ContainingSymbol).IsValueType
 				? ReferenceKind.Ref
@@ -46,7 +46,7 @@ namespace ILLink.Shared.TypeSystemProxy
 		public partial string GetDisplayName ()
 		{
 			if (IsImplicitThis)
-				return Method.GetDisplayName ();
+				return "this";
 			return ParameterSymbol!.GetDisplayName ();
 		}
 

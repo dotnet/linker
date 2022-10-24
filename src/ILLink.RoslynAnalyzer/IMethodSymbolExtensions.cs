@@ -17,18 +17,18 @@ namespace ILLink.RoslynAnalyzer
 		/// <summary>
 		/// Returns a list of the parameters pushed onto the stack before the method call (including the implicit 'this' parameter)
 		/// </summary>
-		public static ParameterCollection GetParameters (this IMethodSymbol method)
+		public static ParameterProxyEnumerable GetParameters (this IMethodSymbol method)
 		{
-			return new ParameterCollection (0, method.GetParametersCount (), new (method));
+			return new ParameterProxyEnumerable (0, method.GetParametersCount (), new (method));
 		}
 
 		/// <summary>
 		/// Returns a list of the parameters in the method's 'parameters' metadata section (i.e. excluding the implicit 'this' parameter)
 		/// </summary>
-		public static ParameterCollection GetMetadataParameters (this IMethodSymbol method)
+		public static ParameterProxyEnumerable GetMetadataParameters (this IMethodSymbol method)
 		{
 			int implicitThisOffset = method.HasImplicitThis () ? 1 : 0;
-			return new ParameterCollection (implicitThisOffset, method.GetParametersCount (), new (method));
+			return new ParameterProxyEnumerable (implicitThisOffset, method.GetParametersCount (), new (method));
 		}
 
 		/// <summary>

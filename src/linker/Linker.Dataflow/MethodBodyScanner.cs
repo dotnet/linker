@@ -1060,7 +1060,7 @@ namespace Mono.Linker.Dataflow
 			if (_context.TryResolve (calledMethod) is MethodDefinition calledMethodDefinition) {
 				// We resolved the method and can put the ref/out values into the arguments
 				foreach (var parameter in calledMethodDefinition.GetParameters ()) {
-					if (parameter.ReferenceKind is not (ReferenceKind.Ref or ReferenceKind.Out))
+					if (parameter.GetReferenceKind () is not (ReferenceKind.Ref or ReferenceKind.Out))
 						continue;
 					var newByRefValue = _context.Annotations.FlowAnnotations.GetMethodParameterValue (parameter);
 					StoreInReference (methodArguments[(int) parameter.Index], newByRefValue, callingMethodBody.Method, operation, locals, curBasicBlock, ref ipState);
