@@ -726,6 +726,50 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				types[index].RequiresAll ();
 			}
 
+			class IndexWithTypeWithDam
+			{
+
+				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+				Type this[[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] Type idx] {
+					get => throw new NotImplementedException ();
+					set => throw new NotImplementedException ();
+				}
+
+				[ExpectedWarning ("IL2067", "this[Type].get", nameof (ParamDoesNotMeetRequirements))]
+				static void ParamDoesNotMeetRequirements (Type t)
+				{
+					var x = new IndexWithTypeWithDam ();
+					_ = x[t];
+				}
+
+				static void ParamDoesMeetRequirements ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] Type t)
+				{
+					var x = new IndexWithTypeWithDam ();
+					_ = x[t];
+				}
+
+				[ExpectedWarning ("IL2087", "this[Type].get", nameof (TypeParamDoesNotMeetRequirements))]
+				static void TypeParamDoesNotMeetRequirements<T> ()
+				{
+					var x = new IndexWithTypeWithDam ();
+					var t = typeof (T);
+					_ = x[t];
+				}
+
+				static void TypeParamDoesMeetRequirements<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] T> ()
+				{
+					var x = new IndexWithTypeWithDam ();
+					var t = typeof (T);
+					_ = x[t];
+				}
+
+				static void KnownTypeDoesMeetRequirements ()
+				{
+					var x = new IndexWithTypeWithDam ();
+					var t = typeof (int);
+					_ = x[t];
+				}
+			}
 			public static void Test ()
 			{
 				TestRead ();
