@@ -7,11 +7,15 @@ using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Helpers;
+using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.RequiresCapability
 {
 	[SkipKeptItemsValidation]
 	[ExpectedNoWarnings]
+#if NATIVEAOT
+	[Define ("NATIVEAOT")]
+#endif
 	public class RequiresInCompilerGeneratedCode
 	{
 		public static void Main ()
@@ -191,6 +195,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				yield return 0;
 			}
 
+			// https://github.com/dotnet/runtime/issues/68688
+			// This test passes on NativeAot even without the Requires* attributes.
 			[RequiresUnreferencedCode ("Suppress in body")]
 			[RequiresAssemblyFiles ("Suppress in body")]
 			[RequiresDynamicCode ("Suppress in body")]
@@ -200,6 +206,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				yield return 0;
 			}
 
+			// https://github.com/dotnet/runtime/issues/68688
+			// This test passes on NativeAot even without the Requires* attributes.
 			[RequiresUnreferencedCode ("Suppress in body")]
 			[RequiresAssemblyFiles ("Suppress in body")]
 			[RequiresDynamicCode ("Suppress in body")]
@@ -362,6 +370,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				await MethodAsync ();
 			}
 
+			// https://github.com/dotnet/runtime/issues/68688
+			// This test passes on NativeAot even without the Requires* attributes.
 			[RequiresUnreferencedCode ("Suppress in body")]
 			[RequiresAssemblyFiles ("Suppress in body")]
 			[RequiresDynamicCode ("Suppress in body")]
@@ -371,6 +381,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				await MethodAsync ();
 			}
 
+			// https://github.com/dotnet/runtime/issues/68688
+			// This test passes on NativeAot even without the Requires* attributes.
 			[RequiresUnreferencedCode ("Suppress in body")]
 			[RequiresAssemblyFiles ("Suppress in body")]
 			[RequiresDynamicCode ("Suppress in body")]
@@ -547,6 +559,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				yield return 0;
 			}
 
+			// https://github.com/dotnet/runtime/issues/68688
+			// This test passes on NativeAot even without the Requires* attributes.
 			[RequiresUnreferencedCode ("Suppress in body")]
 			[RequiresAssemblyFiles ("Suppress in body")]
 			[RequiresDynamicCode ("Suppress in body")]
@@ -557,6 +571,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				await MethodAsync ();
 			}
 
+			// https://github.com/dotnet/runtime/issues/68688
+			// This test passes on NativeAot even without the Requires* attributes.
 			[RequiresUnreferencedCode ("Suppress in body")]
 			[RequiresAssemblyFiles ("Suppress in body")]
 			[RequiresDynamicCode ("Suppress in body")]
@@ -592,6 +608,19 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				[ExpectedWarning ("IL2026", "--MethodWithRequires--")]
 				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
 				[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
+				void LocalFunction () => MethodWithRequires ();
+			}
+
+			[ExpectedWarning ("IL2026", "--LocalFunctionWithRequires--")]
+			[ExpectedWarning ("IL3002", "--LocalFunctionWithRequires--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
+			[ExpectedWarning ("IL3050", "--LocalFunctionWithRequires--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
+			static void TestLocalFunctionWithRequires ()
+			{
+				LocalFunction ();
+
+				[RequiresUnreferencedCode ("--LocalFunctionWithRequires--")]
+				[RequiresAssemblyFiles ("--LocalFunctionWithRequires--")]
+				[RequiresDynamicCode ("--LocalFunctionWithRequires--")]
 				void LocalFunction () => MethodWithRequires ();
 			}
 
@@ -685,6 +714,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			public static void Test ()
 			{
 				TestCall ();
+				TestLocalFunctionWithRequires ();
 				TestCallUnused ();
 				TestCallWithClosure ();
 				TestCallWithClosureUnused ();
@@ -893,6 +923,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 			class DynamicallyAccessedLocalFunctionUnusedShouldWarn
 			{
+				// TODO: implement this for NativeAot (https://github.com/dotnet/runtime/issues/68786)
 				[ExpectedWarning ("IL2118", nameof (TestCallMethodWithRequiresInDynamicallyAccessedLocalFunction), "LocalFunction", ProducedBy = ProducedBy.Trimmer)]
 				public static void TestCallMethodWithRequiresInDynamicallyAccessedLocalFunction ()
 				{
@@ -1336,6 +1367,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				() => unknownType.RequiresNonPublicMethods ();
 			}
 
+			// https://github.com/dotnet/runtime/issues/68688
+			// This test passes on NativeAot even without the Requires* attributes.
 			[RequiresUnreferencedCode ("Suppress in body")]
 			[RequiresAssemblyFiles ("Suppress in body")]
 			[RequiresDynamicCode ("Suppress in body")]
@@ -1347,6 +1380,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				};
 			}
 
+			// https://github.com/dotnet/runtime/issues/68688
+			// This test passes on NativeAot even without the Requires* attributes.
 			[RequiresUnreferencedCode ("Suppress in body")]
 			[RequiresAssemblyFiles ("Suppress in body")]
 			[RequiresDynamicCode ("Suppress in body")]
@@ -1488,6 +1523,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 			}
 
+#if !NATIVEAOT
+			// BUG: https://github.com/dotnet/runtime/issues/77455
+			// NativeAot produces an incorrect warning pointing to the InstantiatedMethod, which isn't associated
+			// with the calling context.
 			[ExpectedWarning ("IL2026", "--TypeWithMethodWithRequires.MethodWithRequires--", CompilerGeneratedCode = true)]
 			static IEnumerable<int> TestDynamicallyAccessedMethodViaGenericMethodParameterInIterator ()
 			{
@@ -1501,6 +1540,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				yield return 1;
 				new TypeWithGenericWhichRequiresMethods<TypeWithMethodWithRequires> ();
 			}
+#endif
 
 			static void TestLocalFunctionInIteratorLocalFunction ()
 			{
@@ -1539,8 +1579,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			public static void Test ()
 			{
 				TestIteratorLocalFunctionInAsync ();
+#if !NATIVEAOT
 				TestDynamicallyAccessedMethodViaGenericMethodParameterInIterator ();
 				TestDynamicallyAccessedMethodViaGenericTypeParameterInIterator ();
+#endif
 				TestLocalFunctionInIteratorLocalFunction ();
 				TestLocalFunctionCalledFromIteratorLocalFunctionAndMethod ();
 			}
@@ -1707,6 +1749,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				}
 			}
 
+#if !NATIVEAOT
+			// BUG: https://github.com/dotnet/runtime/issues/77455
+			// NativeAot produces an incorrect warning pointing to the InstantiatedMethod, which isn't associated
+			// with the calling context.
 			[RequiresUnreferencedCode ("Suppress in body")]
 			[RequiresAssemblyFiles ("Suppress in body")]
 			[RequiresDynamicCode ("Suppress in body")]
@@ -1715,6 +1761,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				MethodWithGenericWhichRequiresMethods<TypeWithMethodWithRequires> ();
 				yield return 0;
 			}
+#endif
 
 			[ExpectedWarning ("IL2026", "--IteratorLocalFunction--")]
 			[ExpectedWarning ("IL3002", "--IteratorLocalFunction--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
@@ -1781,7 +1828,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				TestLambdaInAsyncLambdaWithClosure ();
 				TestIteratorLocalFunctionInAsync ();
 				TestIteratorLocalFunctionInAsyncWithoutInner ();
+#if !NATIVEAOT
 				TestDynamicallyAccessedMethodViaGenericMethodParameterInIterator ();
+#endif
 				TestLocalFunctionInIteratorLocalFunction ();
 				TestLocalFunctionCalledFromIteratorLocalFunctionAndMethod ();
 			}
@@ -1838,6 +1887,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			// In release mode, the async state machine is a struct which doesn't have a constructor, so no warning is emitted.
 #endif
 			// Linker warns about reflection access to compiler-generated state machine members.
+			// TODO: implement this for NativeAot (https://github.com/dotnet/runtime/issues/68786)
 			[ExpectedWarning ("IL2118", nameof (StateMachinesOnlyReferencedViaReflection), "<" + nameof (TestAsyncOnlyReferencedViaReflectionWhichShouldWarn) + ">", "MoveNext()",
 				ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2118", nameof (StateMachinesOnlyReferencedViaReflection), "<" + nameof (TestIteratorOnlyReferencedViaReflectionWhichShouldWarn) + ">", "MoveNext()",
@@ -1946,11 +1996,12 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithRequires--", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
 			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithRequiresOnlyAccessedViaReflection--", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
 			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithClosureWithRequires--", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
-			// BUG: NativeAot doesn't associate Requires on method with the local functions it contains.
+			// BUG: https://github.com/dotnet/runtime/issues/68786
+			// NativeAot doesn't associate Requires on method with the local functions it contains.
 			[ExpectedWarning ("IL2026", "--TestLocalFunctionInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithClosureInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
 			// Linker warns about reflection access to compiler-generated code
-			// TODO: implement this for NativeAot
+			// TODO: implement this for NativeAot (https://github.com/dotnet/runtime/issues/68786)
 			[ExpectedWarning ("IL2118", nameof (LocalFunctionsReferencedViaReflection), nameof (TestLocalFunctionInMethodWithRequiresOnlyAccessedViaReflection),
 				ProducedBy = ProducedBy.Trimmer)]
 			static void TestAll ()
@@ -1966,11 +2017,12 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithRequires--", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
 			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithRequiresOnlyAccessedViaReflection--", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
 			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithClosureWithRequires--", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
-			// BUG: NativeAot doesn't associate Requires on method with the local functions it contains.
+			// BUG: https://github.com/dotnet/runtime/issues/68786
+			// NativeAot doesn't associate Requires on method with the local functions it contains.
 			[ExpectedWarning ("IL2026", "--TestLocalFunctionInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2026", "--TestLocalFunctionWithClosureInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
 			// Linker warns about reflection access to compiler-generated code
-			// TODO: implement this for NativeAot
+			// TODO: implement this for NativeAot (https://github.com/dotnet/runtime/issues/68786)
 			[ExpectedWarning ("IL2118", nameof (LocalFunctionsReferencedViaReflection), "<" + nameof (TestLocalFunctionInMethodWithRequiresOnlyAccessedViaReflection) + ">",
 				ProducedBy = ProducedBy.Trimmer)]
 			static void TestNonPublicMethods ()
@@ -2049,7 +2101,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			// so does not warn here.
 			[ExpectedWarning ("IL2026", "--TestLambdaWithRequires--", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
 			[ExpectedWarning ("IL2026", "--TestLambdaWithClosureWithRequires--", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
-			// BUG: NativeAot doesn't associate Requires on method with the lambdas it contains.
+			// BUG: https://github.com/dotnet/runtime/issues/68786
+			// NativeAot doesn't associate Requires on method with the lambdas it contains.
 			[ExpectedWarning ("IL2026", "--TestLambdaInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2026", "--TestLambdaWithClosureInMethodWithRequires--", ProducedBy = ProducedBy.Trimmer)]
 			static void TestAll ()
