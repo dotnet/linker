@@ -724,7 +724,7 @@ namespace Mono.Linker.Steps
 		/// False if Override is further removed (e.g. Override is a method on a derived type of a derived type of Base.DeclaringType)</param>
 		// TODO: Take into account a base method in preserved scope
 		// TODO: Move interface method marking logic here
-		bool ShouldMarkOverrideForBase (OverrideInformation overrideInformation, bool isDirectBase)
+		bool ShouldMarkOverrideForBase (OverrideInformation overrideInformation)
 		{
 			if (overrideInformation.IsOverrideOfInterfaceMember) {
 				_interfaceOverrides.Add ((overrideInformation, ScopeStack.CurrentScope));
@@ -741,7 +741,7 @@ namespace Mono.Linker.Steps
 
 			// Direct overrides of marked abstract ov.Overrides must be marked or we get invalid IL.
 			// Overrides further in the hierarchy will override the direct override (which will be implemented by the above rule), so we don't need to worry about invalid IL.
-			if (overrideInformation.Base.IsAbstract && isDirectBase)
+			if (overrideInformation.Base.IsAbstract)
 				return true;
 
 			return false;
@@ -771,18 +771,14 @@ namespace Mono.Linker.Steps
 			if (bases is null)
 				return;
 
-			foreach (var (ov, isDirectBase) in GetMarkedBaseMethods (bases)) {
-				if (ShouldMarkOverrideForBase (ov, isDirectBase))
+			foreach (var ov in GetMarkedBaseMethods (bases)) {
+				if (ShouldMarkOverrideForBase (ov))
 					MarkOverrideForBaseMethod (ov);
 			}
 
-			IEnumerable<(OverrideInformation Override, bool IsDirectBase)> GetMarkedBaseMethods (IEnumerable<OverrideInformation> overrides)
+			IEnumerable<OverrideInformation> GetMarkedBaseMethods (List<OverrideInformation> overrides)
 			{
-				foreach (var ov in overrides) {
-					if (Annotations.IsMarked (ov.Base) || IgnoreScope (ov.Base.DeclaringType.Scope)) {
-						yield return (ov, true);
-					}
-				}
+				return overrides.Where (ov => Annotations.IsMarked (ov.Base) || IgnoreScope (ov.Base.DeclaringType.Scope));
 			}
 		}
 
@@ -2029,16 +2025,6 @@ namespace Mono.Linker.Steps
 			if (type.IsInterface) {
 				// There's no benefit to deferring processing of an interface type until we know a type implementing that interface is marked
 				MarkRequirementsForInstantiatedTypes (type);
-				// Mark interface implementation on each implementor that requires interfaces.
-				if (Annotations.GetInterfaceImplementors (type) is List<(TypeDefinition Implementor, InterfaceImplementation InterfaceImplementation)> implementors) {
-					foreach (var implementor in implementors) {
-						// Knowing that the interface type is marked, we need to mark the interface implementation if
-						// to make sure that the implementing type is instantiated or relevant to variant casting
-						if (Annotations.IsMarked (type) || Annotations.IsRelevantToVariantCasting (type)) {
-							MarkInterfaceImplementation (implementor.InterfaceImplementation);
-						}
-					}
-				}
 			} else if (type.IsValueType) {
 				// Note : Technically interfaces could be removed from value types in some of the same cases as reference types, however, it's harder to know when
 				// a value type instance could exist.  You'd have to track initobj and maybe locals types.  Going to punt for now.
@@ -3215,7 +3201,7 @@ namespace Mono.Linker.Steps
 
 			if (Annotations.GetOverrides (method) is IEnumerable<OverrideInformation> overrides) {
 				foreach (var @override in overrides) {
-					if (ShouldMarkOverrideForBase (@override, true))
+					if (ShouldMarkOverrideForBase (@override))
 						MarkOverrideForBaseMethod (@override);
 				}
 			}
