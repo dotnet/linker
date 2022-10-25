@@ -209,15 +209,15 @@ namespace ILLink.RoslynAnalyzer
 					SymbolAnalysisContext symbolAnalysisContext,
 					ISymbol symbol)
 				{
-					//if (symbol.IsInRequiresScope (RequiresAttributeName))
-					//	return;
+					if (symbol.IsInRequiresScope (RequiresAttributeName))
+						return;
 
-					//foreach (var attr in symbol.GetAttributes ()) {
-					//	if (attr.AttributeConstructor?.DoesMemberRequire (RequiresAttributeName, out var requiresAttribute) == true) {
-					//		symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (RequiresDiagnosticRule,
-					//			symbol.Locations[0], attr.AttributeConstructor.GetDisplayName (), GetMessageFromAttribute (requiresAttribute), GetUrlFromAttribute (requiresAttribute)));
-					//	}
-					//}
+					foreach (var attr in symbol.GetAttributes ()) {
+						if (attr.AttributeConstructor?.DoesMemberRequire (RequiresAttributeName, out var requiresAttribute) == true) {
+							symbolAnalysisContext.ReportDiagnostic (Diagnostic.Create (RequiresDiagnosticRule,
+								symbol.Locations[0], attr.AttributeConstructor.GetDisplayName (), GetMessageFromAttribute (requiresAttribute), GetUrlFromAttribute (requiresAttribute)));
+						}
+					}
 				}
 
 				void CheckCalledMember (

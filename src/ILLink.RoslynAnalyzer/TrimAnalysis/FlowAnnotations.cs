@@ -47,7 +47,7 @@ namespace ILLink.Shared.TrimAnalysis
 			// If there are conflicts between the setter and the property annotation,
 			// the setter annotation wins. (But DAMT.None is ignored)
 
-			// Is this a property method?
+			// Is this a property setter `value` parameter?
 			if (parameterMethod!.MethodKind == MethodKind.PropertySet
 				&& damt == DynamicallyAccessedMemberTypes.None
 				&& parameter.Ordinal == parameterMethod.Parameters.Length - 1) {

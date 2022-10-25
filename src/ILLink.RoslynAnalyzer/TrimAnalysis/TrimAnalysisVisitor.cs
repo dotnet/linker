@@ -252,8 +252,6 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 			var diagnosticContext = DiagnosticContext.CreateDisabled ();
 			var handleCallAction = new HandleCallAction (diagnosticContext, Method, operation);
-			if (calledMethod.GetDisplayName () == "Mono.Linker.Tests.Cases.DataFlow.PropertyDataFlow.TestAutomaticPropagationType.PropertyWithIndexer.this[Int32].set")
-				;
 			MethodProxy method = new (calledMethod);
 			var intrinsicId = Intrinsics.GetIntrinsicIdForMethod (method);
 
