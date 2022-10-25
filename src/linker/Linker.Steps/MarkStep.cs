@@ -2029,16 +2029,6 @@ namespace Mono.Linker.Steps
 			if (type.IsInterface) {
 				// There's no benefit to deferring processing of an interface type until we know a type implementing that interface is marked
 				MarkRequirementsForInstantiatedTypes (type);
-				// Mark interface implementation on each implementor that requires interfaces.
-				if (Annotations.GetInterfaceImplementors (type) is List<(TypeDefinition Implementor, InterfaceImplementation InterfaceImplementation)> implementors) {
-					foreach (var implementor in implementors) {
-						// Knowing that the interface type is marked, we need to mark the interface implementation if
-						// to make sure that the implementing type is instantiated or relevant to variant casting
-						if (Annotations.IsMarked (type) || Annotations.IsRelevantToVariantCasting (type)) {
-							MarkInterfaceImplementation (implementor.InterfaceImplementation);
-						}
-					}
-				}
 			} else if (type.IsValueType) {
 				// Note : Technically interfaces could be removed from value types in some of the same cases as reference types, however, it's harder to know when
 				// a value type instance could exist.  You'd have to track initobj and maybe locals types.  Going to punt for now.

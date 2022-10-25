@@ -461,14 +461,6 @@ namespace Mono.Linker
 			return TypeMapInfo.GetBaseMethods (method);
 		}
 
-		/// <summary>
-		/// Returns a list of all known types that implement <paramref name="interfaceType"/>. The list may be incomplete if other implementing types exist in assemblies that haven't been processed by TypeMapInfo yet
-		/// </summary>
-		public List<(TypeDefinition Implementor, InterfaceImplementation InterfaceImplementation)>? GetInterfaceImplementors (TypeDefinition type)
-		{
-			return TypeMapInfo.GetInterfaceImplementors (type);
-		}
-
 		public List<MethodDefinition>? GetPreservedMethods (TypeDefinition type)
 		{
 			return GetPreservedMethods (type as IMemberDefinition);
