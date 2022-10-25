@@ -779,17 +779,8 @@ namespace Mono.Linker.Steps
 			IEnumerable<(OverrideInformation Override, bool IsDirectBase)> GetMarkedBaseMethods (IEnumerable<OverrideInformation> overrides)
 			{
 				foreach (var ov in overrides) {
-					// Immediate base methods
 					if (Annotations.IsMarked (ov.Base) || IgnoreScope (ov.Base.DeclaringType.Scope)) {
 						yield return (ov, true);
-					} else {
-						// Bases of bases
-						var baseBases = Annotations.GetBaseMethods (ov.Base);
-						if (baseBases is not null) {
-							foreach (var baseOv in GetMarkedBaseMethods (baseBases)) {
-								yield return (baseOv.Override, false);
-							}
-						}
 					}
 				}
 			}
