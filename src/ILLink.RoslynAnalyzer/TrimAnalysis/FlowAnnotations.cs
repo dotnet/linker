@@ -44,14 +44,17 @@ namespace ILLink.Shared.TrimAnalysis
 			IParameterSymbol parameter = param.ParameterSymbol!;
 			var damt = parameter.GetDynamicallyAccessedMemberTypes ();
 
-			// Is this a property setter parameter?
-			Debug.Assert (method != null);
+			var parameterMethod = (IMethodSymbol) parameter.ContainingSymbol;
+			Debug.Assert (parameterMethod != null);
+
 			// If there are conflicts between the setter and the property annotation,
 			// the setter annotation wins. (But DAMT.None is ignored)
-			if (method!.MethodKind == MethodKind.PropertySet && damt == DynamicallyAccessedMemberTypes.None
-				// Indexer setters (.Item[int].set) will have the indexer as the first param and the value as the last. We only want annotations applied to the value parameter.
-				&& (int) param.Index + 1 == param.Method.GetParametersCount ()) {
-				var property = (IPropertySymbol) method.AssociatedSymbol!;
+
+			// Is this a property setter `value` parameter?
+			if (parameterMethod!.MethodKind == MethodKind.PropertySet
+				&& damt == DynamicallyAccessedMemberTypes.None
+				&& parameter.Ordinal == parameterMethod.Parameters.Length - 1) {
+				var property = (IPropertySymbol) parameterMethod.AssociatedSymbol!;
 				Debug.Assert (property != null);
 				damt = property!.GetDynamicallyAccessedMemberTypes ();
 			}
