@@ -724,7 +724,7 @@ namespace Mono.Linker.Steps
 		/// False if Override is further removed (e.g. Override is a method on a derived type of a derived type of Base.DeclaringType)</param>
 		// TODO: Take into account a base method in preserved scope
 		// TODO: Move interface method marking logic here
-		bool ShouldMarkOverrideForBase (OverrideInformation overrideInformation, bool isDirectBase)
+		bool ShouldMarkOverrideForBase (OverrideInformation overrideInformation)
 		{
 			if (overrideInformation.IsOverrideOfInterfaceMember) {
 				_interfaceOverrides.Add ((overrideInformation, ScopeStack.CurrentScope));
@@ -741,7 +741,7 @@ namespace Mono.Linker.Steps
 
 			// Direct overrides of marked abstract ov.Overrides must be marked or we get invalid IL.
 			// Overrides further in the hierarchy will override the direct override (which will be implemented by the above rule), so we don't need to worry about invalid IL.
-			if (overrideInformation.Base.IsAbstract && isDirectBase)
+			if (overrideInformation.Base.IsAbstract)
 				return true;
 
 			return false;
@@ -771,18 +771,14 @@ namespace Mono.Linker.Steps
 			if (bases is null)
 				return;
 
-			foreach (var (ov, isDirectBase) in GetMarkedBaseMethods (bases)) {
-				if (ShouldMarkOverrideForBase (ov, isDirectBase))
+			foreach (var ov in GetMarkedBaseMethods (bases)) {
+				if (ShouldMarkOverrideForBase (ov))
 					MarkOverrideForBaseMethod (ov);
 			}
 
-			IEnumerable<(OverrideInformation Override, bool IsDirectBase)> GetMarkedBaseMethods (IEnumerable<OverrideInformation> overrides)
+			IEnumerable<OverrideInformation> GetMarkedBaseMethods (List<OverrideInformation> overrides)
 			{
-				foreach (var ov in overrides) {
-					if (Annotations.IsMarked (ov.Base) || IgnoreScope (ov.Base.DeclaringType.Scope)) {
-						yield return (ov, true);
-					}
-				}
+				return overrides.Where (ov => Annotations.IsMarked (ov.Base) || IgnoreScope (ov.Base.DeclaringType.Scope));
 			}
 		}
 
@@ -3205,7 +3201,7 @@ namespace Mono.Linker.Steps
 
 			if (Annotations.GetOverrides (method) is IEnumerable<OverrideInformation> overrides) {
 				foreach (var @override in overrides) {
-					if (ShouldMarkOverrideForBase (@override, true))
+					if (ShouldMarkOverrideForBase (@override))
 						MarkOverrideForBaseMethod (@override);
 				}
 			}
