@@ -319,13 +319,12 @@ namespace ILLink.Shared.TrimAnalysis
 						if (setterAnnotation?.ParameterAnnotations?[^1] is not (null or DynamicallyAccessedMemberTypes.None)) {
 							_context.LogWarning (setMethod, DiagnosticId.DynamicallyAccessedMembersConflictsBetweenPropertyAndAccessor, property.GetDisplayName (), setMethod.GetDisplayName ());
 						} else {
-							int offset = setMethod.HasImplicitThis () ? 1 : 0;
 							if (setterAnnotation is not null)
 								annotatedMethods.Remove (setterAnnotation.Value);
 
 							DynamicallyAccessedMemberTypes[] paramAnnotations;
 							if (setterAnnotation?.ParameterAnnotations is null)
-								paramAnnotations = new DynamicallyAccessedMemberTypes[setMethod.Parameters.Count + offset];
+								paramAnnotations = new DynamicallyAccessedMemberTypes[setMethod.GetParametersCount ()];
 							else
 								paramAnnotations = setterAnnotation.Value.ParameterAnnotations;
 

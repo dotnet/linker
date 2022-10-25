@@ -1139,8 +1139,7 @@ namespace ILLink.Shared.TrimAnalysis
 			case IntrinsicId.None:
 				// Verify the argument values match the annotations on the parameter definition
 				if (requiresDataFlowAnalysis) {
-					for (int i = 0; i < argumentValues.Count; i++) {
-						ParameterProxy parameter = calledMethod.GetParameter ((ParameterIndex) i)!.Value;
+					foreach (var parameter in calledMethod.GetParameters ()) {
 						if (parameter.GetReferenceKind () is ReferenceKind.Out)
 							continue;
 						if (parameter.IsImplicitThis) {
