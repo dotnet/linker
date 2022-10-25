@@ -764,8 +764,7 @@ namespace Mono.Linker.Steps
 
 		void MarkMethodIfNeededByBaseMethod (MethodDefinition method)
 		{
-			if (!Annotations.IsMarked (method.DeclaringType))
-				return;
+			Debug.Assert (Annotations.IsMarked (method.DeclaringType));
 
 			var bases = Annotations.GetBaseMethods (method);
 			if (bases is null)
@@ -3256,8 +3255,6 @@ namespace Mono.Linker.Steps
 				return;
 			Annotations.MarkRelevantToVariantCasting (type);
 			MarkInterfaceImplementations (type);
-			// Look at all methods on base types that may implement
-			MarkMethodsOnTypeIfNeededByBaseMethod (type);
 		}
 
 		void MarkMethodsOnTypeIfNeededByBaseMethod (TypeDefinition type)
