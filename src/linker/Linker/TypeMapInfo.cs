@@ -29,6 +29,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 
@@ -42,6 +43,7 @@ namespace Mono.Linker
 		protected readonly Dictionary<MethodDefinition, List<OverrideInformation>> base_methods = new Dictionary<MethodDefinition, List<OverrideInformation>> ();
 		protected readonly Dictionary<MethodDefinition, List<OverrideInformation>> override_methods = new Dictionary<MethodDefinition, List<OverrideInformation>> ();
 		protected readonly Dictionary<MethodDefinition, List<(TypeDefinition InstanceType, InterfaceImplementation ImplementationProvider)>> default_interface_implementations = new Dictionary<MethodDefinition, List<(TypeDefinition, InterfaceImplementation)>> ();
+		protected readonly Dictionary<TypeDefinition, List<(TypeDefinition, InterfaceImplementation)>> interface_implementors = new ();
 
 		public TypeMapInfo (LinkContext context)
 		{
@@ -117,10 +119,23 @@ namespace Mono.Linker
 			implementations.Add ((implementingType, matchingInterfaceImplementation));
 		}
 
+		/// <summary>
+		/// Returns a list of all known types that implement <paramref name="interfaceType"/>. The list may be incomplete if other implementing types exist in assemblies that haven't been processed by TypeMapInfo yet
+		/// </summary>
+		public List<(TypeDefinition Implementor, InterfaceImplementation InterfaceImplementation)>? GetInterfaceImplementors (TypeDefinition interfaceType)
+		{
+			if (!interfaceType.IsInterface)
+				throw new InvalidOperationException ("Cannot get interface implementors of a type that is not an interface");
+			if (interface_implementors.TryGetValue (interfaceType, out var interfaces))
+				return interfaces;
+			return null;
+		}
+
 		protected virtual void MapType (TypeDefinition type)
 		{
 			MapVirtualMethods (type);
 			MapInterfaceMethodsInTypeHierarchy (type);
+			MapInterfaces (type);
 
 			if (!type.HasNestedTypes)
 				return;
@@ -170,6 +185,18 @@ namespace Mono.Linker
 						AddDefaultInterfaceImplementation (resolvedInterfaceMethod, type, defaultImpl);
 					}
 				}
+			}
+		}
+
+		void MapInterfaces (TypeDefinition type)
+		{
+			foreach (var iface in type.GetAllInterfaceImplementations (context, true)) {
+				if (context.Resolve (iface.InterfaceType) is not TypeDefinition ifaceType)
+					continue;
+				if (!interface_implementors.TryGetValue (ifaceType, out var implementors)) {
+					implementors = new ();
+				}
+				implementors.Add ((type, iface));
 			}
 		}
 
