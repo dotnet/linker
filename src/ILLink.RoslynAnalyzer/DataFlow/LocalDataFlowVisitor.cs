@@ -182,6 +182,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 					HandleAssignment (value, targetValue, operation);
 					return value;
 				}
+
 			// The remaining cases don't have a dataflow value that represents LValues, so we need
 			// to handle the LHS specially.
 			case IPropertyReferenceOperation propertyRef: {
@@ -198,14 +199,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 						// For now, just don't warn. https://github.com/dotnet/linker/issues/2731
 						break;
 					}
-
-					// Property may be an indexer, in which case there will be one or more index arguments followed by a value argument
-					ImmutableArray<TValue>.Builder arguments = ImmutableArray.CreateBuilder<TValue> ();
-					foreach (var val in propertyRef.Arguments)
-						arguments.Add (Visit (val, state));
-					arguments.Add (value);
-
-					HandleMethodCall (setMethod, instanceValue, arguments.ToImmutableArray (), operation);
+					HandleMethodCall (setMethod, instanceValue, ImmutableArray.Create (value), operation);
 					// The return value of a property set expression is the value,
 					// even though a property setter has no return value.
 					return value;
@@ -346,13 +340,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			// The setter case is handled in assignment operation since here we don't have access to the value to pass to the setter
 			TValue instanceValue = Visit (operation.Instance, state);
 			IMethodSymbol? getMethod = operation.Property.GetGetMethod ();
-
-			// Property may be an indexer, in which case there will be one or more index arguments followed by a value argument
-			ImmutableArray<TValue>.Builder arguments = ImmutableArray.CreateBuilder<TValue> ();
-			foreach (var val in operation.Arguments)
-				arguments.Add (Visit (val, state));
-
-			return HandleMethodCall (getMethod!, instanceValue, arguments.ToImmutableArray (), operation);
+			return HandleMethodCall (getMethod!, instanceValue, ImmutableArray<TValue>.Empty, operation);
 		}
 
 		public override TValue VisitImplicitIndexerReference (IImplicitIndexerReferenceOperation operation, LocalDataFlowState<TValue, TValueLattice> state)

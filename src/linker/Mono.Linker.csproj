@@ -19,16 +19,6 @@
     <NoWarn Condition="'$(DotNetBuildFromSource)' == 'true'">$(NoWarn);CS8524</NoWarn>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DebugType>full</DebugType>
-    <DebugSymbols>true</DebugSymbols>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DebugType>full</DebugType>
-    <DebugSymbols>true</DebugSymbols>
-  </PropertyGroup>
-
   <ItemGroup>
     <AdditionalFiles Include="BannedSymbols.txt" />
     <Compile Remove="ref\**\*.cs" />
