@@ -348,7 +348,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			TValue instanceValue = Visit (operation.Instance, state);
 			IMethodSymbol? getMethod = operation.Property.GetGetMethod ();
 
-			// Property may be an indexer, in which case there will be one or more index arguments followed by a value argument
+			// Property may be an indexer, in which case there will be one or more index arguments
 			ImmutableArray<TValue>.Builder arguments = ImmutableArray.CreateBuilder<TValue> ();
 			foreach (var val in operation.Arguments)
 				arguments.Add (Visit (val, state));
