@@ -16,7 +16,7 @@ namespace Mono.Linker
 
 		public static bool IsNotSupportedExceptionCtorString (MethodDefinition method)
 		{
-			if (!method.IsConstructor || method.IsStatic || !method.HasMetadataParameters())
+			if (!method.IsConstructor || method.IsStatic || !method.HasMetadataParameters ())
 				return false;
 
 			if (method.GetMetadataParametersCount () != 1 || method.GetParameter ((ParameterIndex) 1).ParameterType.MetadataType != MetadataType.String)

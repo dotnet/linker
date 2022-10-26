@@ -128,7 +128,7 @@ namespace Mono.Linker
 
 					var resolvedMethod = context.TryResolve (methodReference);
 					if (resolvedMethod != null) {
-						if (resolvedMethod.HasMetadataParameters()) {
+						if (resolvedMethod.HasMetadataParameters ()) {
 							foreach (var param in resolvedMethod.GetParameters ())
 								AddIfResolved (types, param.ParameterType);
 						}

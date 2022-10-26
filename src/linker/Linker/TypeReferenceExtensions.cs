@@ -310,7 +310,7 @@ namespace Mono.Linker
 		public static bool HasDefaultConstructor (this TypeDefinition type, LinkContext context)
 		{
 			foreach (var m in type.Methods) {
-				if (m.HasMetadataParameters())
+				if (m.HasMetadataParameters ())
 					continue;
 
 				var definition = context.Resolve (m);
@@ -324,7 +324,7 @@ namespace Mono.Linker
 		public static MethodReference GetDefaultInstanceConstructor (this TypeDefinition type, LinkContext context)
 		{
 			foreach (var m in type.Methods) {
-				if (m.HasMetadataParameters())
+				if (m.HasMetadataParameters ())
 					continue;
 
 				var definition = context.Resolve (m);
