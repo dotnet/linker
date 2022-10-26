@@ -36,11 +36,11 @@ namespace ILLink.Shared.TypeSystemProxy
 		internal partial ParameterProxyEnumerable GetParameters ();
 
 		/// <summary>
-		/// Returns the ParameterProxy corresponding to the parameter at <paramref name="index"/>.
+		/// Returns the ParameterProxy corresponding to the parameter at <paramref name="index"/>, and throws if the index is out of bounds for the method.
 		/// <paramref name="index"/> is the index of the parameters as they are passed to the method, with 0 being the implicit this parameter if it exists.
 		/// See <see cref="ParameterIndex"/> for more info.
 		/// </summary>
-		internal partial ParameterProxy? GetParameter (ParameterIndex index);
+		internal partial ParameterProxy GetParameter (ParameterIndex index);
 
 		/// <summary>
 		/// Returns true if the 'parameters' metadata section has <paramref name="parameterCount"/> number of parameters.
@@ -52,7 +52,7 @@ namespace ILLink.Shared.TypeSystemProxy
 		// Currently this only needs to work on non-nested, non-generic types.
 		// The format of the fullTypeName parameter is 'namespace.typename', so for example 'System.Reflection.Assembly'
 		internal bool HasParameterOfType (ParameterIndex parameterIndex, string fullTypeName)
-			=> GetParameter (parameterIndex)?.IsTypeOf (fullTypeName) == true;
+			=> (int) parameterIndex < GetParametersCount () && GetParameter (parameterIndex).IsTypeOf (fullTypeName);
 		internal partial bool HasGenericParameters ();
 		internal partial bool HasGenericParametersCount (int genericParameterCount);
 		internal partial ImmutableArray<GenericParameterProxy> GetGenericParameters ();

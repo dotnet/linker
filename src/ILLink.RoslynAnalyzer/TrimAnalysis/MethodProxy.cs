@@ -27,7 +27,7 @@ namespace ILLink.Shared.TypeSystemProxy
 
 		internal partial ParameterProxyEnumerable GetParameters () => Method.GetParameters ();
 
-		internal partial ParameterProxy? GetParameter (ParameterIndex index) => Method.TryGetParameter (index);
+		internal partial ParameterProxy GetParameter (ParameterIndex index) => Method.GetParameter (index);
 
 		internal partial bool HasGenericParameters () => Method.IsGenericMethod;
 

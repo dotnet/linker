@@ -762,7 +762,7 @@ namespace ILLink.Shared.TrimAnalysis
 						break;
 					}
 
-					if ((calledMethod.HasMetadataParametersCount (3) && calledMethod.GetParameter ((ParameterIndex) 2)?.IsTypeOf ("System.Boolean") is true && argumentValues[2].AsConstInt () != 0) ||
+					if ((calledMethod.HasMetadataParametersCount (3) && calledMethod.HasParameterOfType ((ParameterIndex) 2, "System.Boolean") && argumentValues[2].AsConstInt () != 0) ||
 						(calledMethod.HasMetadataParametersCount (5) && argumentValues[4].AsConstInt () != 0)) {
 						_diagnosticContext.AddDiagnostic (DiagnosticId.CaseInsensitiveTypeGetTypeCallIsNotSupported, calledMethod.GetDisplayName ());
 						returnValue = MultiValueLattice.Top; // This effectively disables analysis of anything which uses the return value
