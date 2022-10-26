@@ -27,6 +27,7 @@ namespace Mono.Linker.Dataflow
 			ImmutableArray<MultiValue> arguments,
 			MessageOrigin origin)
 		{
+			Debug.Assert (origin.Provider is MethodDefinition);
 			Operation = operation;
 			CalledMethod = calledMethod;
 			Instance = instance.Clone ();
