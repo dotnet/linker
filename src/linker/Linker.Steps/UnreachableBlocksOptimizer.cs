@@ -24,6 +24,7 @@ namespace Mono.Linker.Steps
 		readonly LinkContext _context;
 		readonly Dictionary<MethodDefinition, MethodResult?> _cache_method_results = new (2048);
 		readonly Stack<MethodDefinition> _resursion_guard = new ();
+		readonly HashSet<MethodDefinition> _processed_methods = new (2048);
 
 		MethodDefinition? IntPtrSize, UIntPtrSize;
 
@@ -39,6 +40,9 @@ namespace Mono.Linker.Steps
 		/// <param name="method">The method to process</param>
 		public void ProcessMethod (MethodDefinition method)
 		{
+			if (!_processed_methods.Add (method))
+				return;
+
 			if (!IsMethodSupported (method))
 				return;
 

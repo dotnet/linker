@@ -3543,6 +3543,10 @@ namespace Mono.Linker.Steps
 			if (_compilerGeneratedMethodRequiresScanner.TryGetValue (body, out bool requiresReflectionMethodBodyScanner))
 				return requiresReflectionMethodBodyScanner;
 
+			// Make sure the method's body is processed, for compiler generated code we can get here before ProcessMethod is called
+			// and thus we need to make sure we operate on the optimized method body (to avoid marking code which is otherwise optimized away).
+			UnreachableBlocksOptimizer.ProcessMethod (body.Method);
+
 			foreach (VariableDefinition var in body.Variables)
 				MarkType (var.VariableType, new DependencyInfo (DependencyKind.VariableType, body.Method));
 
