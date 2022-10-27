@@ -720,8 +720,6 @@ namespace Mono.Linker.Steps
 		/// Does not take into account if the base method is in a preserved scope.
 		/// Assumes the base method is marked.
 		/// </summary>
-		/// <param name="isDirectBase">True if the Override is the immediate override method in the type hierarchy.
-		/// False if Override is further removed (e.g. Override is a method on a derived type of a derived type of Base.DeclaringType)</param>
 		// TODO: Move interface method marking logic here https://github.com/dotnet/linker/issues/3090
 		bool ShouldMarkOverrideForBase (OverrideInformation overrideInformation)
 		{
