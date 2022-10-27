@@ -47,8 +47,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 				Action a;
 				if (AlwaysFalse) {
 					a = () => RemovedMethod ();
-				}
-				else {
+				} else {
 					a = () => UsedMethod ();
 				}
 
