@@ -722,8 +722,7 @@ namespace Mono.Linker.Steps
 		/// </summary>
 		/// <param name="isDirectBase">True if the Override is the immediate override method in the type hierarchy.
 		/// False if Override is further removed (e.g. Override is a method on a derived type of a derived type of Base.DeclaringType)</param>
-		// TODO: Take into account a base method in preserved scope
-		// TODO: Move interface method marking logic here
+		// TODO: Move interface method marking logic here https://github.com/dotnet/linker/issues/3090
 		bool ShouldMarkOverrideForBase (OverrideInformation overrideInformation)
 		{
 			if (overrideInformation.IsOverrideOfInterfaceMember) {
@@ -770,14 +769,10 @@ namespace Mono.Linker.Steps
 			if (bases is null)
 				return;
 
-			foreach (var ov in GetMarkedBaseMethods (bases)) {
+			var markedBaseMethods = bases.Where (ov => Annotations.IsMarked (ov.Base) || IgnoreScope (ov.Base.DeclaringType.Scope));
+			foreach (var ov in markedBaseMethods) {
 				if (ShouldMarkOverrideForBase (ov))
 					MarkOverrideForBaseMethod (ov);
-			}
-
-			IEnumerable<OverrideInformation> GetMarkedBaseMethods (List<OverrideInformation> overrides)
-			{
-				return overrides.Where (ov => Annotations.IsMarked (ov.Base) || IgnoreScope (ov.Base.DeclaringType.Scope));
 			}
 		}
 
@@ -1861,7 +1856,7 @@ namespace Mono.Linker.Steps
 			// If a type is visible to reflection, we need to stop doing optimization that could cause observable difference
 			// in reflection APIs. This includes APIs like MakeGenericType (where variant castability of the produced type
 			// could be incorrect) or IsAssignableFrom (where assignability of unconstructed types might change).
-			MarkAsRelevantToVariantCasting (definition);
+			Annotations.MarkRelevantToVariantCasting (definition);
 
 			Annotations.MarkReflectionUsed (definition);
 
@@ -2711,7 +2706,7 @@ namespace Mono.Linker.Steps
 				if (argumentTypeDef == null)
 					continue;
 
-				MarkAsRelevantToVariantCasting (argumentTypeDef);
+				Annotations.MarkRelevantToVariantCasting (argumentTypeDef);
 
 				if (parameter.HasDefaultConstructorConstraint)
 					MarkDefaultConstructor (argumentTypeDef, new DependencyInfo (DependencyKind.DefaultCtorForNewConstrainedGenericArgument, instance));
@@ -2920,7 +2915,7 @@ namespace Mono.Linker.Steps
 				MarkType (reference.DeclaringType, new DependencyInfo (DependencyKind.DeclaringType, reference));
 
 				if (reference.Name == ".ctor" && Context.TryResolve (arrayType) is TypeDefinition typeDefinition) {
-					MarkAsRelevantToVariantCasting (typeDefinition);
+					Annotations.MarkRelevantToVariantCasting (typeDefinition);
 				}
 				return null;
 			}
@@ -3253,21 +3248,6 @@ namespace Mono.Linker.Steps
 				MarkFields (type, includeStatic: type.IsEnum, reason: new DependencyInfo (DependencyKind.MemberOfType, type));
 		}
 
-		void MarkAsRelevantToVariantCasting (TypeDefinition type)
-		{
-			if (Annotations.IsRelevantToVariantCasting (type))
-				return;
-			Annotations.MarkRelevantToVariantCasting (type);
-			MarkInterfaceImplementations (type);
-		}
-
-		void MarkMethodsOnTypeIfNeededByBaseMethod (TypeDefinition type)
-		{
-			foreach (var method in type.Methods) {
-				MarkMethodIfNeededByBaseMethod (method);
-			}
-		}
-
 		protected virtual void MarkRequirementsForInstantiatedTypes (TypeDefinition type)
 		{
 			if (Annotations.IsInstantiated (type))
@@ -3280,7 +3260,9 @@ namespace Mono.Linker.Steps
 			MarkInterfaceImplementations (type);
 
 			// Requires interface implementations to be marked first
-			MarkMethodsOnTypeIfNeededByBaseMethod (type);
+			foreach (var method in type.Methods) {
+				MarkMethodIfNeededByBaseMethod (method);
+			}
 
 			MarkImplicitlyUsedFields (type);
 
@@ -3689,7 +3671,7 @@ namespace Mono.Linker.Steps
 				switch (instruction.OpCode.Code) {
 				case Code.Newarr:
 					if (Context.TryResolve (operand) is TypeDefinition typeDefinition) {
-						MarkAsRelevantToVariantCasting (typeDefinition);
+						Annotations.MarkRelevantToVariantCasting (typeDefinition);
 					}
 					break;
 				case Code.Isinst:
