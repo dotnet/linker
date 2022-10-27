@@ -30,6 +30,7 @@
 //
 
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Mono.Cecil;
 
 namespace Mono.Linker
@@ -327,9 +328,10 @@ namespace Mono.Linker
 			return null;
 		}
 
+		[SuppressMessage ("ApiDesign", "RS0030:Do not used banned APIs", Justification = "It's best to leave working code alone.")]
 		bool MethodMatch (MethodReference candidate, MethodReference method)
 		{
-			if (candidate.HasParameters != method.HasParameters)
+			if (candidate.HasParameters != method.HasMetadataParameters ())
 				return false;
 
 			if (candidate.Name != method.Name)
@@ -345,7 +347,7 @@ namespace Mono.Linker
 				!TypeMatch (candidateReturnType, methodReturnType))
 				return false;
 
-			if (!candidate.HasParameters)
+			if (!candidate.HasMetadataParameters ())
 				return true;
 
 			var cp = candidate.Parameters;
