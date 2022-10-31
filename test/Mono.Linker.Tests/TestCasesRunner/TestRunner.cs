@@ -133,8 +133,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				builder.AddReference (extraReference);
 				builder.AddAssemblyAction (coreAction, extraReference.FileNameWithoutExtension);
 			}
-			builder.AddReference (new NPath (typeof (Mono.Linker.Driver).Assembly.Location));
-			builder.AddReference (new NPath (typeof (Mono.Cecil.TypeDefinition).Assembly.Location));
 
 			builder.ProcessOptions (caseDefinedOptions);
 

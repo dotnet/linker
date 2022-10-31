@@ -137,7 +137,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		public virtual IEnumerable<string> GetCommonReferencedAssemblies (NPath workingDirectory)
 		{
 			yield return workingDirectory.Combine ("Mono.Linker.Tests.Cases.Expectations.dll").ToString ();
-			yield return typeof (Driver).Assembly.Location;
 			if (Characteristics.HasFlag (TestRunCharacteristics.TargetingNetCore)) {
 				string referenceDir = GetReferenceDir ();
 

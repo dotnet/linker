@@ -10,8 +10,8 @@ namespace Mono.Linker.Tests.Cases.CoreLink
 	// has unresolved references.
 	[SetupLinkerArgument ("--skip-unresolved")]
 
-	[KeptAssembly (PlatformAssemblies.CoreLib + ".dll")]
-	[KeptAllTypesAndMembersInAssembly (PlatformAssemblies.CoreLib + ".dll")]
+	[KeptAssembly (PlatformAssemblies.CoreLib)]
+	[KeptAllTypesAndMembersInAssembly (PlatformAssemblies.CoreLib)]
 
 	[SkipPeVerify]
 	class CopyOfCoreLibrariesKeepsUnusedTypes
