@@ -12,7 +12,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			public string Source;
 			public string Target;
 			public bool Marked;
-			public DependencyKind? DependencyKind;
+			public string DependencyKind;
 		}
 
 		public List<Dependency> Dependencies = new List<Dependency> ();
@@ -32,7 +32,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				Source = reason.Source?.ToString (),
 				Target = target.ToString (),
 				Marked = marked,
-				DependencyKind = reason.Kind
+				DependencyKind = reason.Kind.ToString ()
 			});
 		}
 

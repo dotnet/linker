@@ -13,16 +13,16 @@ namespace Mono.Linker.Tests.Cases.Expectations.Assertions
 		/// <summary>
 		/// Place on an type member to indicate that the linker should log that the member is kept as a depenendency of <paramref name="dependencyProvider"/> with reason <paramref name="reason"/>.
 		/// </summary>
-		public KeptByAttribute (string dependencyProvider, DependencyKind reason) { }
+		public KeptByAttribute (string dependencyProvider, string reason) { }
 
 		/// <summary>
 		/// Place on an type member to indicate that the linker should log that the member is kept as a depenendency of <paramref name="dependencyProviderType"/> with reason <paramref name="reason"/>.
 		/// </summary>
-		public KeptByAttribute (Type dependencyProviderType, DependencyKind reason) { }
+		public KeptByAttribute (Type dependencyProviderType, string reason) { }
 
 		/// <summary>
 		/// Place on an type member to indicate that the linker should log that the member is kept as a depenendency of <paramref name="dependencyProviderType"/>.<paramref name="memberName"/> with reason <paramref name="reason"/>.
 		/// </summary>
-		public KeptByAttribute (Type dependencyProviderType, string memberName, DependencyKind reason) { }
+		public KeptByAttribute (Type dependencyProviderType, string memberName, string reason) { }
 	}
 }

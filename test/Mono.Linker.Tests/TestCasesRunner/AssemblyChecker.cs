@@ -95,7 +95,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			Assert.That (actual, Is.EquivalentTo (expected));
 
 			VerifyCustomAttributes (original, linked);
-			VerifyKeptByAttributes (original, original.FullName);
 		}
 
 		protected virtual void VerifyTypeDefinition (TypeDefinition original, TypeDefinition linked)
@@ -164,9 +163,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		void VerifyKeptByAttribute (string keptAttributeProviderName, CustomAttribute attribute)
 		{
-			//public KeptByAttribute (string dependencyProvider, DependencyKind reason) { }
-			//public KeptByAttribute (Type dependencyProvider, DependencyKind reason) { }
-			//public KeptByAttribute (Type dependencyProvider, string memberName, DependencyKind reason) { }
+			// public KeptByAttribute (string dependencyProvider, DependencyKind reason) { }
+			// public KeptByAttribute (Type dependencyProvider, DependencyKind reason) { }
+			// public KeptByAttribute (Type dependencyProvider, string memberName, DependencyKind reason) { }
 			Assert.AreEqual (nameof (KeptByAttribute), attribute.AttributeType.Name);
 			var expectedDependency = GetDependency ();
 			foreach (var dep in this.linkedTestCase.Customizations.DependencyRecorder.Dependencies) {
@@ -183,8 +182,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				dependency.Target = keptAttributeProviderName;
 				dependency.Marked = true;
 
-				//public KeptByAttribute (string dependencyProvider, DependencyKind reason) { }
-				//public KeptByAttribute (Type dependencyProvider, DependencyKind reason) { }
+				// public KeptByAttribute (string dependencyProvider, DependencyKind reason) { }
+				// public KeptByAttribute (Type dependencyProvider, DependencyKind reason) { }
 				if (attribute.ConstructorArguments.Count == 2) {
 					if (attribute.ConstructorArguments[0].Type.IsTypeOf<string> ())
 						dependency.Source = (string) attribute.ConstructorArguments[0].Value;
@@ -193,11 +192,11 @@ namespace Mono.Linker.Tests.TestCasesRunner
 					else
 						throw new NotImplementedException ("Unexpected KeptByAttribute ctor variant");
 
-					dependency.DependencyKind = (DependencyKind) attribute.ConstructorArguments[1].Value;
+					dependency.DependencyKind = (string) attribute.ConstructorArguments[1].Value;
 					return dependency;
 				}
 
-				//public KeptByAttribute (Type dependencyProvider, string memberName, DependencyKind reason) { }
+				// public KeptByAttribute (Type dependencyProvider, string memberName, DependencyKind reason) { }
 				if (attribute.ConstructorArguments.Count == 3) {
 					if (!attribute.ConstructorArguments[0].Type.IsTypeOf<Type> ())
 						throw new NotImplementedException ("Unexpected KeptByAttribute ctor variant");
@@ -205,7 +204,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 					string memberName = (string) attribute.ConstructorArguments[1].Value as string;
 					var memberDefinition = type.AllMembers ().Where (m => m.Name == memberName).Single ();
 					dependency.Source = memberDefinition.FullName;
-					dependency.DependencyKind = (DependencyKind) attribute.ConstructorArguments[2].Value;
+					dependency.DependencyKind = (string) attribute.ConstructorArguments[2].Value;
 					return dependency;
 				}
 

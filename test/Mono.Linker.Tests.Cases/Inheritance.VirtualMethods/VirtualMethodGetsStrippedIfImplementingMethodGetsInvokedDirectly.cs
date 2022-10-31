@@ -13,7 +13,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.VirtualMethods
 		class B
 		{
 			// TODO: Would be nice to be removed
-			[KeptBy (typeof (A), nameof (A.Foo), DependencyKind.BaseMethod)]
+			[KeptBy (typeof (A), nameof (A.Foo), "BaseMethod")]
 			public virtual void Foo ()
 			{
 			}
@@ -25,7 +25,7 @@ namespace Mono.Linker.Tests.Cases.Inheritance.VirtualMethods
 		{
 			// Bug: https://github.com/dotnet/linker/issues/3078
 			//[KeptBy (typeof(A), nameof(Foo), DependencyKind.DirectCall)]
-			[KeptBy (typeof (A), DependencyKind.OverrideOnInstantiatedType)]
+			[KeptBy (typeof (A), "OverrideOnInstantiatedType")]
 			public override void Foo ()
 			{
 			}
