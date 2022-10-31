@@ -61,7 +61,7 @@ namespace Mono.Linker.Dataflow
 			TrimAnalysisPatterns = new TrimAnalysisPatternStore (MultiValueLattice, context);
 		}
 
-		public override void InterproceduralScan (MethodBody methodBody)
+		public override void InterproceduralScan (MethodBodyInstructionsProvider.ProcessedMethodBody methodBody)
 		{
 			base.InterproceduralScan (methodBody);
 
@@ -69,7 +69,7 @@ namespace Mono.Linker.Dataflow
 			TrimAnalysisPatterns.MarkAndProduceDiagnostics (reflectionMarker, _markStep);
 		}
 
-		protected override void Scan (MethodBody methodBody, ref InterproceduralState interproceduralState)
+		protected override void Scan (MethodBodyInstructionsProvider.ProcessedMethodBody methodBody, ref InterproceduralState interproceduralState)
 		{
 			_origin = new MessageOrigin (methodBody.Method);
 			base.Scan (methodBody, ref interproceduralState);

@@ -64,12 +64,15 @@ namespace Mono.Linker.Steps
 				ret = Instruction.Create (OpCodes.Ret);
 				processor.Append (ret);
 			} else {
-				ret = cctor.Body.Instructions.Last (l => l.OpCode.Code == Code.Ret);
 				var body = cctor.Body;
-				processor = cctor.Body.GetLinkerILProcessor ();
+#pragma warning disable RS0030 // After MarkStep all methods should be processed and thus accessing Cecil directly is the right approach
+				var instructions = body.Instructions;
+#pragma warning restore RS0030
+				ret = instructions.Last (l => l.OpCode.Code == Code.Ret);
+				processor = body.GetLinkerILProcessor ();
 
-				for (int i = 0; i < body.Instructions.Count; ++i) {
-					var instr = body.Instructions[i];
+				for (int i = 0; i < instructions.Count; ++i) {
+					var instr = instructions[i];
 					if (instr.OpCode.Code != Code.Stsfld)
 						continue;
 

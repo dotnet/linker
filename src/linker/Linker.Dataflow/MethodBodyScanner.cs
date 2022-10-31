@@ -12,6 +12,7 @@ using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Collections.Generic;
+using Mono.Linker.Steps;
 using static Mono.Linker.ParameterHelpers;
 using LocalVariableStore = System.Collections.Generic.Dictionary<
 	Mono.Cecil.Cil.VariableDefinition,
@@ -52,7 +53,7 @@ namespace Mono.Linker.Dataflow
 		protected MethodBodyScanner (LinkContext context)
 		{
 			this._context = context;
-			this.InterproceduralStateLattice = default;
+			this.InterproceduralStateLattice = new InterproceduralStateLattice(default, default, context);
 		}
 
 		internal MultiValue ReturnValue { private set; get; }
@@ -152,7 +153,7 @@ namespace Mono.Linker.Dataflow
 			int _currentBlockIndex;
 			bool _foundEndOfPrevBlock;
 
-			public BasicBlockIterator (MethodBody methodBody)
+			public BasicBlockIterator (MethodBodyInstructionsProvider.ProcessedMethodBody methodBody)
 			{
 				_methodBranchTargets = methodBody.ComputeBranchTargets ();
 				_currentBlockIndex = -1;
@@ -227,7 +228,7 @@ namespace Mono.Linker.Dataflow
 
 		// Scans the method as well as any nested functions (local functions or lambdas) and state machines
 		// reachable from it.
-		public virtual void InterproceduralScan (MethodBody startingMethodBody)
+		public virtual void InterproceduralScan (MethodBodyInstructionsProvider.ProcessedMethodBody startingMethodBody)
 		{
 			MethodDefinition startingMethod = startingMethodBody.Method;
 
@@ -275,8 +276,9 @@ namespace Mono.Linker.Dataflow
 			interproceduralState.TrackMethod (method);
 		}
 
-		protected virtual void Scan (MethodBody methodBody, ref InterproceduralState interproceduralState)
+		protected virtual void Scan (MethodBodyInstructionsProvider.ProcessedMethodBody processedMethodBody, ref InterproceduralState interproceduralState)
 		{
+			MethodBody methodBody = processedMethodBody.Body;
 			MethodDefinition thisMethod = methodBody.Method;
 
 			LocalVariableStore locals = new (methodBody.Variables.Count);
@@ -284,12 +286,12 @@ namespace Mono.Linker.Dataflow
 			Dictionary<int, Stack<StackSlot>> knownStacks = new Dictionary<int, Stack<StackSlot>> ();
 			Stack<StackSlot>? currentStack = new Stack<StackSlot> (methodBody.MaxStackSize);
 
-			ScanExceptionInformation (knownStacks, methodBody);
+			ScanExceptionInformation (knownStacks, processedMethodBody);
 
-			BasicBlockIterator blockIterator = new BasicBlockIterator (methodBody);
+			BasicBlockIterator blockIterator = new BasicBlockIterator (processedMethodBody);
 
 			ReturnValue = new ();
-			foreach (Instruction operation in methodBody.Instructions) {
+			foreach (Instruction operation in processedMethodBody.Instructions) {
 				int curBasicBlock = blockIterator.MoveNext (operation);
 
 				if (knownStacks.ContainsKey (operation.Offset)) {
@@ -700,7 +702,7 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		private static void ScanExceptionInformation (Dictionary<int, Stack<StackSlot>> knownStacks, MethodBody methodBody)
+		private static void ScanExceptionInformation (Dictionary<int, Stack<StackSlot>> knownStacks, MethodBodyInstructionsProvider.ProcessedMethodBody methodBody)
 		{
 			foreach (ExceptionHandler exceptionClause in methodBody.ExceptionHandlers) {
 				Stack<StackSlot> catchStack = new Stack<StackSlot> (1);

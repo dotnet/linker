@@ -7,6 +7,7 @@ using System.Diagnostics;
 using ILLink.Shared.DataFlow;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Linker.Steps;
 using HoistedLocalState = ILLink.Shared.DataFlow.DefaultValueDictionary<
 	Mono.Linker.Dataflow.HoistedLocalKey,
 	ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>>;
@@ -15,7 +16,7 @@ using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.Single
 namespace Mono.Linker.Dataflow
 {
 	// Wrapper that implements IEquatable for MethodBody.
-	readonly record struct MethodBodyValue (MethodBody MethodBody);
+	readonly record struct MethodBodyValue (MethodBodyInstructionsProvider.ProcessedMethodBody MethodBody);
 
 	// Tracks the set of methods which get analyzer together during interprocedural analysis,
 	// and the possible states of hoisted locals in state machine methods and lambdas/local functions.
@@ -44,6 +45,11 @@ namespace Mono.Linker.Dataflow
 
 		public void TrackMethod (MethodBody methodBody)
 		{
+			TrackMethod (lattice.Context.MethodBodyInstructionsProvider.GetMethodBody (methodBody));
+		}
+
+		public void TrackMethod (MethodBodyInstructionsProvider.ProcessedMethodBody methodBody)
+		{
 			// Work around the fact that ValueSet is readonly
 			var methodsList = new List<MethodBodyValue> (MethodBodies);
 			methodsList.Add (new MethodBodyValue (methodBody));
@@ -55,7 +61,7 @@ namespace Mono.Linker.Dataflow
 				foreach (var stateMachineMethod in stateMachineType.Methods) {
 					Debug.Assert (!CompilerGeneratedNames.IsLambdaOrLocalFunction (stateMachineMethod.Name));
 					if (stateMachineMethod.Body is MethodBody stateMachineMethodBody)
-						methodsList.Add (new MethodBodyValue (stateMachineMethodBody));
+						methodsList.Add (new MethodBodyValue (lattice.Context.MethodBodyInstructionsProvider.GetMethodBody(stateMachineMethodBody)));
 				}
 			}
 
@@ -80,11 +86,13 @@ namespace Mono.Linker.Dataflow
 	{
 		public readonly ValueSetLattice<MethodBodyValue> MethodBodyLattice;
 		public readonly DictionaryLattice<HoistedLocalKey, MultiValue, ValueSetLattice<SingleValue>> HoistedLocalsLattice;
+		public readonly LinkContext Context;
 
 		public InterproceduralStateLattice (
 			ValueSetLattice<MethodBodyValue> methodBodyLattice,
-			DictionaryLattice<HoistedLocalKey, MultiValue, ValueSetLattice<SingleValue>> hoistedLocalsLattice)
-			=> (MethodBodyLattice, HoistedLocalsLattice) = (methodBodyLattice, hoistedLocalsLattice);
+			DictionaryLattice<HoistedLocalKey, MultiValue, ValueSetLattice<SingleValue>> hoistedLocalsLattice,
+			LinkContext context)
+			=> (MethodBodyLattice, HoistedLocalsLattice, Context) = (methodBodyLattice, hoistedLocalsLattice, context);
 
 		public InterproceduralState Top => new InterproceduralState (MethodBodyLattice.Top, HoistedLocalsLattice.Top, this);
 

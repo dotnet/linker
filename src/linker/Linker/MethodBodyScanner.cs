@@ -7,12 +7,13 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Linker.Steps;
 
 namespace Mono.Linker
 {
 	public static class MethodBodyScanner
 	{
-		public static bool IsWorthConvertingToThrow (MethodBody body)
+		public static bool IsWorthConvertingToThrow (MethodBodyInstructionsProvider.ProcessedMethodBody body)
 		{
 			// Some bodies are cheaper size wise to leave alone than to convert to a throw
 			Instruction? previousMeaningful = null;
@@ -64,9 +65,9 @@ namespace Mono.Linker
 			this.context = context;
 		}
 
-		public IEnumerable<(InterfaceImplementation, TypeDefinition)>? GetReferencedInterfaces (MethodBody body)
+		public IEnumerable<(InterfaceImplementation, TypeDefinition)>? GetReferencedInterfaces (MethodBodyInstructionsProvider.ProcessedMethodBody body)
 		{
-			var possibleStackTypes = AllPossibleStackTypes (body.Method);
+			var possibleStackTypes = AllPossibleStackTypes (body);
 			if (possibleStackTypes.Count == 0)
 				return null;
 
@@ -95,12 +96,8 @@ namespace Mono.Linker
 			return interfaceImplementations;
 		}
 
-		HashSet<TypeDefinition> AllPossibleStackTypes (MethodDefinition method)
+		HashSet<TypeDefinition> AllPossibleStackTypes (MethodBodyInstructionsProvider.ProcessedMethodBody body)
 		{
-			if (!method.HasBody)
-				throw new ArgumentException ("Method does not have body", nameof (method));
-
-			var body = method.Body;
 			var types = new HashSet<TypeDefinition> ();
 
 			foreach (VariableDefinition var in body.Variables)

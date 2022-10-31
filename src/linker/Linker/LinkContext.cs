@@ -189,6 +189,8 @@ namespace Mono.Linker
 
 		public SerializationMarker SerializationMarker { get; }
 
+		public MethodBodyInstructionsProvider MethodBodyInstructionsProvider { get; }
+
 		public LinkContext (Pipeline pipeline, ILogger logger, string outputDirectory)
 		{
 			_pipeline = pipeline;
@@ -223,6 +225,7 @@ namespace Mono.Linker
 			GeneralSingleWarn = false;
 			SingleWarn = new Dictionary<string, bool> ();
 			AssembliesWithGeneratedSingleWarning = new HashSet<string> ();
+			MethodBodyInstructionsProvider = new MethodBodyInstructionsProvider (this);
 
 			const CodeOptimizations defaultOptimizations =
 				CodeOptimizations.BeforeFieldInit |

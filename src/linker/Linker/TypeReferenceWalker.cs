@@ -153,6 +153,7 @@ namespace Mono.Linker
 
 		void WalkTypeScope (MethodBody body)
 		{
+#pragma warning disable RS0030 // Processing type references should not trigger method marking/processing, so access Cecil directly
 			if (body.HasVariables) {
 				foreach (var v in body.Variables) {
 					WalkScopeOfTypeReference (v.VariableType);
@@ -204,6 +205,7 @@ namespace Mono.Linker
 					}
 				}
 			}
+#pragma warning restore RS0030 // Do not used banned APIs
 		}
 
 		void WalkMethodReference (MethodReference mr)
