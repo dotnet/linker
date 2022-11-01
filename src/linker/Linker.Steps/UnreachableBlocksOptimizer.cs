@@ -24,7 +24,6 @@ namespace Mono.Linker.Steps
 		readonly LinkContext _context;
 		readonly Dictionary<MethodDefinition, MethodResult?> _cache_method_results = new (2048);
 		readonly Stack<MethodDefinition> _resursion_guard = new ();
-		readonly HashSet<MethodDefinition> _processed_methods = new (2048);
 
 		MethodDefinition? IntPtrSize, UIntPtrSize;
 
@@ -40,9 +39,6 @@ namespace Mono.Linker.Steps
 		/// <param name="method">The method to process</param>
 		public void ProcessMethod (MethodDefinition method)
 		{
-			if (!_processed_methods.Add (method))
-				return;
-
 			if (!IsMethodSupported (method))
 				return;
 
@@ -556,7 +552,8 @@ namespace Mono.Linker.Steps
 			public MethodBody Body { get; }
 
 #pragma warning disable RS0030 // This optimizer is the reason for the banned API, so it needs to use the Cecil directly
-			private Collection<Instruction> Instructions => Body.Instructions;
+			Collection<Instruction> Instructions => Body.Instructions;
+			Collection<ExceptionHandler> ExceptionHandlers => Body.ExceptionHandlers;
 #pragma warning restore RS0030
 
 			public int InstructionsReplaced { get; set; }
@@ -1053,8 +1050,7 @@ namespace Mono.Linker.Steps
 						exceptionHandlersChecked = true;
 
 						var instrs = Instructions;
-#pragma warning disable RS0030 // This optimizer is the reason for the banned API, so it needs to use the Cecil directly
-						foreach (var handler in Body.ExceptionHandlers) {
+						foreach (var handler in ExceptionHandlers) {
 							int start = instrs.IndexOf (handler.TryStart);
 							int end = instrs.IndexOf (handler.TryEnd) - 1;
 
@@ -1071,7 +1067,6 @@ namespace Mono.Linker.Steps
 							if (handler.FilterStart != null)
 								condBranches.Push (GetInstructionIndex (handler.FilterStart));
 						}
-#pragma warning restore RS0030
 
 						if (condBranches?.Count > 0) {
 							i = condBranches.Pop ();
@@ -1167,7 +1162,9 @@ namespace Mono.Linker.Steps
 		{
 			readonly MethodBody body;
 #pragma warning disable RS0030 // This optimizer is the reason for the banned API, so it needs to use the Cecil directly
-			private Collection<Instruction> Instructions => body.Instructions;
+			Collection<Instruction> Instructions => body.Instructions;
+			Collection<VariableDefinition> Variables => body.Variables;
+			Collection<ExceptionHandler> ExceptionHandlers => body.ExceptionHandlers;
 #pragma warning restore RS0030
 			readonly BitArray reachable;
 			readonly List<ExceptionHandler>? unreachableExceptionHandlers;
@@ -1330,7 +1327,7 @@ namespace Mono.Linker.Steps
 				}
 
 				variables.Sort ((a, b) => b.Index.CompareTo (a.Index));
-				var body_variables = body.Variables;
+				var body_variables = Variables;
 
 				foreach (var variable in variables) {
 					var index = body_variables.IndexOf (variable);
@@ -1354,10 +1351,8 @@ namespace Mono.Linker.Steps
 				if (unreachableExceptionHandlers == null)
 					return;
 
-#pragma warning disable RS0030 // This optimizer is the reason for the banned API, so it needs to use the Cecil directly
 				foreach (var eh in unreachableExceptionHandlers)
-					body.ExceptionHandlers.Remove (eh);
-#pragma warning restore RS0030
+					ExceptionHandlers.Remove (eh);
 			}
 
 			VariableDefinition? GetVariableReference (Instruction instruction)
@@ -1365,16 +1360,16 @@ namespace Mono.Linker.Steps
 				switch (instruction.OpCode.Code) {
 				case Code.Stloc_0:
 				case Code.Ldloc_0:
-					return body.Variables[0];
+					return Variables[0];
 				case Code.Stloc_1:
 				case Code.Ldloc_1:
-					return body.Variables[1];
+					return Variables[1];
 				case Code.Stloc_2:
 				case Code.Ldloc_2:
-					return body.Variables[2];
+					return Variables[2];
 				case Code.Stloc_3:
 				case Code.Ldloc_3:
-					return body.Variables[3];
+					return Variables[3];
 				}
 
 				if (instruction.Operand is VariableReference vr)
@@ -1855,8 +1850,12 @@ namespace Mono.Linker.Steps
 				if (!body.InitLocals)
 					return null;
 
+#pragma warning disable RS0030 // This optimizer is the reason for the banned API, so it needs to use the Cecil directly
+				var variables = body.Variables;
+#pragma warning restore RS0030
+
 				// local variables don't need to be explicitly initialized
-				return CodeRewriterStep.CreateConstantResultInstruction (context, body.Variables[index].VariableType);
+				return CodeRewriterStep.CreateConstantResultInstruction (context, variables[index].VariableType);
 			}
 
 			bool GetOperandConstantValue ([NotNullWhen (true)] out object? value)

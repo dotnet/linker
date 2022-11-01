@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using Mono.Cecil.Cil;
-using Mono.Linker.Steps;
 
 namespace Mono.Linker.Dataflow
 {
@@ -17,10 +16,10 @@ namespace Mono.Linker.Dataflow
 				|| (opcode.FlowControl == FlowControl.Return && opcode.Code != Code.Ret);
 		}
 
-		public static HashSet<int> ComputeBranchTargets (this MethodBodyInstructionsProvider.ProcessedMethodBody methodBody)
+		public static HashSet<int> ComputeBranchTargets (this MethodIL methodIL)
 		{
 			HashSet<int> branchTargets = new HashSet<int> ();
-			foreach (Instruction operation in methodBody.Instructions) {
+			foreach (Instruction operation in methodIL.Instructions) {
 				if (!operation.OpCode.IsControlFlowInstruction ())
 					continue;
 				Object value = operation.Operand;
@@ -32,7 +31,7 @@ namespace Mono.Linker.Dataflow
 					}
 				}
 			}
-			foreach (ExceptionHandler einfo in methodBody.ExceptionHandlers) {
+			foreach (ExceptionHandler einfo in methodIL.ExceptionHandlers) {
 				if (einfo.HandlerType == ExceptionHandlerType.Filter) {
 					branchTargets.Add (einfo.FilterStart.Offset);
 				}

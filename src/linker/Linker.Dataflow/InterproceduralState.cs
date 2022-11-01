@@ -7,7 +7,6 @@ using System.Diagnostics;
 using ILLink.Shared.DataFlow;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using Mono.Linker.Steps;
 using HoistedLocalState = ILLink.Shared.DataFlow.DefaultValueDictionary<
 	Mono.Linker.Dataflow.HoistedLocalKey,
 	ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.SingleValue>>;
@@ -15,22 +14,24 @@ using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.Single
 
 namespace Mono.Linker.Dataflow
 {
-	// Wrapper that implements IEquatable for MethodBody.
-	readonly record struct MethodBodyValue (MethodBodyInstructionsProvider.ProcessedMethodBody MethodBody);
-
 	// Tracks the set of methods which get analyzer together during interprocedural analysis,
 	// and the possible states of hoisted locals in state machine methods and lambdas/local functions.
 	struct InterproceduralState : IEquatable<InterproceduralState>
 	{
-		public ValueSet<MethodBodyValue> MethodBodies;
+		public ValueSet<MethodIL> MethodBodies;
 		public HoistedLocalState HoistedLocals;
 		readonly InterproceduralStateLattice lattice;
 
-		public InterproceduralState (ValueSet<MethodBodyValue> methodBodies, HoistedLocalState hoistedLocals, InterproceduralStateLattice lattice)
+		public InterproceduralState (ValueSet<MethodIL> methodBodies, HoistedLocalState hoistedLocals, InterproceduralStateLattice lattice)
 			=> (MethodBodies, HoistedLocals, this.lattice) = (methodBodies, hoistedLocals, lattice);
 
 		public bool Equals (InterproceduralState other)
 			=> MethodBodies.Equals (other.MethodBodies) && HoistedLocals.Equals (other.HoistedLocals);
+
+		public override bool Equals (object? obj)
+			=> obj is InterproceduralState state && Equals (state);
+
+		public override int GetHashCode () => base.GetHashCode ();
 
 		public InterproceduralState Clone ()
 			=> new (MethodBodies.Clone (), HoistedLocals.Clone (), lattice);
@@ -45,27 +46,27 @@ namespace Mono.Linker.Dataflow
 
 		public void TrackMethod (MethodBody methodBody)
 		{
-			TrackMethod (lattice.Context.MethodBodyInstructionsProvider.GetMethodBody (methodBody));
+			TrackMethod (lattice.Context.GetMethodIL (methodBody));
 		}
 
-		public void TrackMethod (MethodBodyInstructionsProvider.ProcessedMethodBody methodBody)
+		public void TrackMethod (MethodIL methodIL)
 		{
 			// Work around the fact that ValueSet is readonly
-			var methodsList = new List<MethodBodyValue> (MethodBodies);
-			methodsList.Add (new MethodBodyValue (methodBody));
+			var methodsList = new List<MethodIL> (MethodBodies);
+			methodsList.Add (methodIL);
 
 			// For state machine methods, also scan the state machine members.
 			// Simplification: assume that all generated methods of the state machine type are
 			// reached at the point where the state machine method is reached.
-			if (CompilerGeneratedState.TryGetStateMachineType (methodBody.Method, out TypeDefinition? stateMachineType)) {
+			if (CompilerGeneratedState.TryGetStateMachineType (methodIL.Method, out TypeDefinition? stateMachineType)) {
 				foreach (var stateMachineMethod in stateMachineType.Methods) {
 					Debug.Assert (!CompilerGeneratedNames.IsLambdaOrLocalFunction (stateMachineMethod.Name));
 					if (stateMachineMethod.Body is MethodBody stateMachineMethodBody)
-						methodsList.Add (new MethodBodyValue (lattice.Context.MethodBodyInstructionsProvider.GetMethodBody(stateMachineMethodBody)));
+						methodsList.Add (lattice.Context.GetMethodIL (stateMachineMethodBody));
 				}
 			}
 
-			MethodBodies = new ValueSet<MethodBodyValue> (methodsList);
+			MethodBodies = new ValueSet<MethodIL> (methodsList);
 		}
 
 		public void SetHoistedLocal (HoistedLocalKey key, MultiValue value)
@@ -82,14 +83,14 @@ namespace Mono.Linker.Dataflow
 			=> HoistedLocals.Get (key);
 	}
 
-	struct InterproceduralStateLattice : ILattice<InterproceduralState>
+	readonly struct InterproceduralStateLattice : ILattice<InterproceduralState>
 	{
-		public readonly ValueSetLattice<MethodBodyValue> MethodBodyLattice;
+		public readonly ValueSetLattice<MethodIL> MethodBodyLattice;
 		public readonly DictionaryLattice<HoistedLocalKey, MultiValue, ValueSetLattice<SingleValue>> HoistedLocalsLattice;
 		public readonly LinkContext Context;
 
 		public InterproceduralStateLattice (
-			ValueSetLattice<MethodBodyValue> methodBodyLattice,
+			ValueSetLattice<MethodIL> methodBodyLattice,
 			DictionaryLattice<HoistedLocalKey, MultiValue, ValueSetLattice<SingleValue>> hoistedLocalsLattice,
 			LinkContext context)
 			=> (MethodBodyLattice, HoistedLocalsLattice, Context) = (methodBodyLattice, hoistedLocalsLattice, context);

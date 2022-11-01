@@ -12,8 +12,6 @@ using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Collections.Generic;
-using Mono.Linker.Steps;
-using static Mono.Linker.ParameterHelpers;
 using LocalVariableStore = System.Collections.Generic.Dictionary<
 	Mono.Cecil.Cil.VariableDefinition,
 	Mono.Linker.Dataflow.ValueBasicBlockPair>;
@@ -53,7 +51,7 @@ namespace Mono.Linker.Dataflow
 		protected MethodBodyScanner (LinkContext context)
 		{
 			this._context = context;
-			this.InterproceduralStateLattice = new InterproceduralStateLattice(default, default, context);
+			this.InterproceduralStateLattice = new InterproceduralStateLattice (default, default, context);
 		}
 
 		internal MultiValue ReturnValue { private set; get; }
@@ -153,9 +151,9 @@ namespace Mono.Linker.Dataflow
 			int _currentBlockIndex;
 			bool _foundEndOfPrevBlock;
 
-			public BasicBlockIterator (MethodBodyInstructionsProvider.ProcessedMethodBody methodBody)
+			public BasicBlockIterator (MethodIL methodIL)
 			{
-				_methodBranchTargets = methodBody.ComputeBranchTargets ();
+				_methodBranchTargets = methodIL.ComputeBranchTargets ();
 				_currentBlockIndex = -1;
 				_foundEndOfPrevBlock = true;
 			}
@@ -228,9 +226,9 @@ namespace Mono.Linker.Dataflow
 
 		// Scans the method as well as any nested functions (local functions or lambdas) and state machines
 		// reachable from it.
-		public virtual void InterproceduralScan (MethodBodyInstructionsProvider.ProcessedMethodBody startingMethodBody)
+		public virtual void InterproceduralScan (MethodIL startingMethodIL)
 		{
-			MethodDefinition startingMethod = startingMethodBody.Method;
+			MethodDefinition startingMethod = startingMethodIL.Method;
 
 			// Note that the default value of a hoisted local will be MultiValueLattice.Top, not UnknownValue.Instance.
 			// This ensures that there are no warnings for the "unassigned state" of a parameter.
@@ -238,15 +236,15 @@ namespace Mono.Linker.Dataflow
 			var interproceduralState = InterproceduralStateLattice.Top;
 
 			var oldInterproceduralState = interproceduralState.Clone ();
-			interproceduralState.TrackMethod (startingMethodBody);
+			interproceduralState.TrackMethod (startingMethodIL);
 
 			while (!interproceduralState.Equals (oldInterproceduralState)) {
 				oldInterproceduralState = interproceduralState.Clone ();
 
 				// Flow state through all methods encountered so far, as long as there
 				// are changes discovered in the hoisted local state on entry to any method.
-				foreach (var methodBodyValue in oldInterproceduralState.MethodBodies)
-					Scan (methodBodyValue.MethodBody, ref interproceduralState);
+				foreach (var methodIL in oldInterproceduralState.MethodBodies)
+					Scan (methodIL, ref interproceduralState);
 			}
 
 #if DEBUG
@@ -276,22 +274,22 @@ namespace Mono.Linker.Dataflow
 			interproceduralState.TrackMethod (method);
 		}
 
-		protected virtual void Scan (MethodBodyInstructionsProvider.ProcessedMethodBody processedMethodBody, ref InterproceduralState interproceduralState)
+		protected virtual void Scan (MethodIL methodIL, ref InterproceduralState interproceduralState)
 		{
-			MethodBody methodBody = processedMethodBody.Body;
+			MethodBody methodBody = methodIL.Body;
 			MethodDefinition thisMethod = methodBody.Method;
 
-			LocalVariableStore locals = new (methodBody.Variables.Count);
+			LocalVariableStore locals = new (methodIL.Variables.Count);
 
 			Dictionary<int, Stack<StackSlot>> knownStacks = new Dictionary<int, Stack<StackSlot>> ();
 			Stack<StackSlot>? currentStack = new Stack<StackSlot> (methodBody.MaxStackSize);
 
-			ScanExceptionInformation (knownStacks, processedMethodBody);
+			ScanExceptionInformation (knownStacks, methodIL);
 
-			BasicBlockIterator blockIterator = new BasicBlockIterator (processedMethodBody);
+			BasicBlockIterator blockIterator = new BasicBlockIterator (methodIL);
 
 			ReturnValue = new ();
-			foreach (Instruction operation in processedMethodBody.Instructions) {
+			foreach (Instruction operation in methodIL.Instructions) {
 				int curBasicBlock = blockIterator.MoveNext (operation);
 
 				if (knownStacks.ContainsKey (operation.Offset)) {
@@ -414,7 +412,7 @@ namespace Mono.Linker.Dataflow
 				case Code.Ldloc_S:
 				case Code.Ldloca:
 				case Code.Ldloca_S:
-					ScanLdloc (operation, currentStack, methodBody, locals);
+					ScanLdloc (operation, currentStack, methodIL, locals);
 					ValidateNoReferenceToReference (locals, methodBody.Method, operation.Offset);
 					break;
 
@@ -579,7 +577,7 @@ namespace Mono.Linker.Dataflow
 				case Code.Stloc_1:
 				case Code.Stloc_2:
 				case Code.Stloc_3:
-					ScanStloc (operation, currentStack, methodBody, locals, curBasicBlock);
+					ScanStloc (operation, currentStack, methodIL, locals, curBasicBlock);
 					ValidateNoReferenceToReference (locals, methodBody.Method, operation.Offset);
 					break;
 
@@ -702,9 +700,9 @@ namespace Mono.Linker.Dataflow
 			}
 		}
 
-		private static void ScanExceptionInformation (Dictionary<int, Stack<StackSlot>> knownStacks, MethodBodyInstructionsProvider.ProcessedMethodBody methodBody)
+		private static void ScanExceptionInformation (Dictionary<int, Stack<StackSlot>> knownStacks, MethodIL methodIL)
 		{
-			foreach (ExceptionHandler exceptionClause in methodBody.ExceptionHandlers) {
+			foreach (ExceptionHandler exceptionClause in methodIL.ExceptionHandlers) {
 				Stack<StackSlot> catchStack = new Stack<StackSlot> (1);
 				catchStack.Push (new StackSlot ());
 
@@ -758,12 +756,12 @@ namespace Mono.Linker.Dataflow
 		private void ScanLdloc (
 			Instruction operation,
 			Stack<StackSlot> currentStack,
-			MethodBody methodBody,
+			MethodIL methodIL,
 			LocalVariableStore locals)
 		{
-			VariableDefinition localDef = GetLocalDef (operation, methodBody.Variables);
+			VariableDefinition localDef = GetLocalDef (operation, methodIL.Variables);
 			if (localDef == null) {
-				PushUnknownAndWarnAboutInvalidIL (currentStack, methodBody, operation.Offset);
+				PushUnknownAndWarnAboutInvalidIL (currentStack, methodIL.Body, operation.Offset);
 				return;
 			}
 
@@ -821,14 +819,14 @@ namespace Mono.Linker.Dataflow
 		private void ScanStloc (
 			Instruction operation,
 			Stack<StackSlot> currentStack,
-			MethodBody methodBody,
+			MethodIL methodIL,
 			LocalVariableStore locals,
 			int curBasicBlock)
 		{
-			StackSlot valueToStore = PopUnknown (currentStack, 1, methodBody, operation.Offset);
-			VariableDefinition localDef = GetLocalDef (operation, methodBody.Variables);
+			StackSlot valueToStore = PopUnknown (currentStack, 1, methodIL.Body, operation.Offset);
+			VariableDefinition localDef = GetLocalDef (operation, methodIL.Variables);
 			if (localDef == null) {
-				WarnAboutInvalidILInMethod (methodBody, operation.Offset);
+				WarnAboutInvalidILInMethod (methodIL.Body, operation.Offset);
 				return;
 			}
 

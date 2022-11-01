@@ -204,7 +204,9 @@ namespace Mono.Linker.Steps
 			case MetadataType.MVar:
 			case MetadataType.ValueType:
 				var vd = new VariableDefinition (method.ReturnType);
+#pragma warning disable RS0030 // Anything after MarkStep should not use ILProvider since all methods are guaranteed processed
 				body.Variables.Add (vd);
+#pragma warning restore RS0030
 				body.InitLocals = true;
 
 				il.Emit (OpCodes.Ldloca_S, vd);

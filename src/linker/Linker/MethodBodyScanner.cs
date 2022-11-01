@@ -1,19 +1,17 @@
 // Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using Mono.Linker.Steps;
 
 namespace Mono.Linker
 {
 	public static class MethodBodyScanner
 	{
-		public static bool IsWorthConvertingToThrow (MethodBodyInstructionsProvider.ProcessedMethodBody body)
+		public static bool IsWorthConvertingToThrow (MethodIL body)
 		{
 			// Some bodies are cheaper size wise to leave alone than to convert to a throw
 			Instruction? previousMeaningful = null;
@@ -65,9 +63,9 @@ namespace Mono.Linker
 			this.context = context;
 		}
 
-		public IEnumerable<(InterfaceImplementation, TypeDefinition)>? GetReferencedInterfaces (MethodBodyInstructionsProvider.ProcessedMethodBody body)
+		public IEnumerable<(InterfaceImplementation, TypeDefinition)>? GetReferencedInterfaces (MethodIL methodIL)
 		{
-			var possibleStackTypes = AllPossibleStackTypes (body);
+			var possibleStackTypes = AllPossibleStackTypes (methodIL);
 			if (possibleStackTypes.Count == 0)
 				return null;
 
@@ -96,23 +94,23 @@ namespace Mono.Linker
 			return interfaceImplementations;
 		}
 
-		HashSet<TypeDefinition> AllPossibleStackTypes (MethodBodyInstructionsProvider.ProcessedMethodBody body)
+		HashSet<TypeDefinition> AllPossibleStackTypes (MethodIL methodIL)
 		{
 			var types = new HashSet<TypeDefinition> ();
 
-			foreach (VariableDefinition var in body.Variables)
+			foreach (VariableDefinition var in methodIL.Variables)
 				AddIfResolved (types, var.VariableType);
 
-			foreach (var param in body.Method.GetParameters ())
+			foreach (var param in methodIL.Method.GetParameters ())
 				AddIfResolved (types, param.ParameterType);
 
-			foreach (ExceptionHandler eh in body.ExceptionHandlers) {
+			foreach (ExceptionHandler eh in methodIL.ExceptionHandlers) {
 				if (eh.HandlerType == ExceptionHandlerType.Catch) {
 					AddIfResolved (types, eh.CatchType);
 				}
 			}
 
-			foreach (Instruction instruction in body.Instructions) {
+			foreach (Instruction instruction in methodIL.Instructions) {
 				if (instruction.Operand is FieldReference fieldReference) {
 					if (context.TryResolve (fieldReference)?.FieldType is TypeReference fieldType)
 						AddIfResolved (types, fieldType);
