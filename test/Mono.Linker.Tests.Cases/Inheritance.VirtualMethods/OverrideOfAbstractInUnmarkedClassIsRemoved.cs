@@ -11,7 +11,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Inheritance.VirtualMethods
 {
-	public class OverrideInUnmarkedClassIsRemoved
+	public class OverrideOfAbstractInUnmarkedClassIsRemoved
 	{
 		[Kept]
 		public static void Main ()
