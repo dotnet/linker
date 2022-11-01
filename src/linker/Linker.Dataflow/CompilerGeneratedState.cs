@@ -145,7 +145,7 @@ namespace Mono.Linker.Dataflow
 				// Discover calls or references to lambdas or local functions. This includes
 				// calls to local functions, and lambda assignments (which use ldftn).
 				if (method.Body != null) {
-					foreach (var instruction in _context.GetMethodIL (method.Body).Instructions) {
+					foreach (var instruction in _context.GetMethodIL (method).Instructions) {
 						switch (instruction.OpCode.OperandType) {
 						case OperandType.InlineMethod: {
 								MethodDefinition? referencedMethod = _context.TryResolve ((MethodReference) instruction.Operand);

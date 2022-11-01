@@ -2569,7 +2569,7 @@ namespace Mono.Linker.Steps
 			if (!method.HasBody || !method.IsIL)
 				return true;
 
-			var body = Context.GetMethodIL (method.Body);
+			var body = Context.GetMethodIL (method);
 
 			if (body.Body.CodeSize != 1)
 				return true;
@@ -2949,7 +2949,7 @@ namespace Mono.Linker.Steps
 			// the reflection scanner. Checking this will also mark direct dependencies of the method body, if it
 			// hasn't been marked already. A cache ensures this only happens once for the method, whether or not
 			// it is accessed via reflection.
-			return CheckRequiresReflectionMethodBodyScanner (Context.GetMethodIL (method.Body));
+			return CheckRequiresReflectionMethodBodyScanner (Context.GetMethodIL (method));
 		}
 
 		void ProcessAnalysisAnnotationsForMethod (MethodDefinition method, DependencyKind dependencyKind, in MessageOrigin origin)
