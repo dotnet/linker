@@ -59,7 +59,7 @@ namespace Mono.Linker.Steps
 		}
 
 		protected Queue<(MethodDefinition, DependencyInfo, MessageOrigin)> _methods;
-		protected List<(MethodDefinition, MarkScopeStack.Scope)> _virtual_methods;
+		protected HashSet<(MethodDefinition, MarkScopeStack.Scope)> _virtual_methods;
 		protected Queue<AttributeProviderPair> _assemblyLevelAttributes;
 		readonly List<AttributeProviderPair> _ivt_attributes;
 		protected Queue<(AttributeProviderPair, DependencyInfo, MarkScopeStack.Scope)> _lateMarkedAttributes;
@@ -75,13 +75,6 @@ namespace Mono.Linker.Steps
 		// method body scanner.
 		readonly Dictionary<MethodBody, bool> _compilerGeneratedMethodRequiresScanner;
 
-		UnreachableBlocksOptimizer? _unreachableBlocksOptimizer;
-		UnreachableBlocksOptimizer UnreachableBlocksOptimizer {
-			get {
-				Debug.Assert (_unreachableBlocksOptimizer != null);
-				return _unreachableBlocksOptimizer;
-			}
-		}
 		MarkStepContext? _markContext;
 		MarkStepContext MarkContext {
 			get {
@@ -224,7 +217,7 @@ namespace Mono.Linker.Steps
 		public MarkStep ()
 		{
 			_methods = new Queue<(MethodDefinition, DependencyInfo, MessageOrigin)> ();
-			_virtual_methods = new List<(MethodDefinition, MarkScopeStack.Scope)> ();
+			_virtual_methods = new HashSet<(MethodDefinition, MarkScopeStack.Scope)> ();
 			_assemblyLevelAttributes = new Queue<AttributeProviderPair> ();
 			_ivt_attributes = new List<AttributeProviderPair> ();
 			_lateMarkedAttributes = new Queue<(AttributeProviderPair, DependencyInfo, MarkScopeStack.Scope)> ();
@@ -245,7 +238,6 @@ namespace Mono.Linker.Steps
 		public virtual void Process (LinkContext context)
 		{
 			_context = context;
-			_unreachableBlocksOptimizer = new UnreachableBlocksOptimizer (_context);
 			_markContext = new MarkStepContext ();
 			_scopeStack = new MarkScopeStack ();
 			_dynamicallyAccessedMembersTypeHierarchy = new DynamicallyAccessedMembersTypeHierarchy (_context, this);
@@ -281,6 +273,9 @@ namespace Mono.Linker.Steps
 			// instead of the per-assembly stores.
 			foreach (var (provider, annotations) in xmlInfo.CustomAttributes)
 				Context.CustomAttributes.PrimaryAttributeInfo.AddCustomAttributes (provider, annotations);
+
+			foreach (var (ca, origin) in xmlInfo.CustomAttributesOrigins)
+				Context.CustomAttributes.PrimaryAttributeInfo.CustomAttributesOrigins.Add (ca, origin);
 		}
 
 		void Complete ()
@@ -604,12 +599,12 @@ namespace Mono.Linker.Steps
 					}
 					// OverrideInformation for interfaces in PreservedScope aren't added yet
 					foreach (var method in type.Methods) {
-						var bases = Annotations.GetBaseMethods (method);
-						if (bases is null)
+						var baseOverrideInformations = Annotations.GetBaseMethods (method);
+						if (baseOverrideInformations is null)
 							continue;
-						foreach (var @base in bases) {
-							if (@base.DeclaringType.IsInterface && IgnoreScope (@base.DeclaringType.Scope))
-								_interfaceOverrides.Add ((new OverrideInformation (@base, method, Context), ScopeStack.CurrentScope));
+						foreach (var ov in baseOverrideInformations) {
+							if (ov.Base.DeclaringType is not null && ov.Base.DeclaringType.IsInterface && IgnoreScope (ov.Base.DeclaringType.Scope))
+								_interfaceOverrides.Add ((ov, ScopeStack.CurrentScope));
 						}
 					}
 				}
@@ -704,12 +699,6 @@ namespace Mono.Linker.Steps
 		{
 			Annotations.EnqueueVirtualMethod (method);
 
-			var overrides = Annotations.GetOverrides (method);
-			if (overrides != null) {
-				foreach (OverrideInformation @override in overrides)
-					ProcessOverride (@override);
-			}
-
 			var defaultImplementations = Annotations.GetDefaultInterfaceImplementations (method);
 			if (defaultImplementations != null) {
 				foreach (var defaultImplementationInfo in defaultImplementations) {
@@ -718,43 +707,65 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		void ProcessOverride (OverrideInformation overrideInformation)
+		/// <summary>
+		/// Returns true if the Override in <paramref name="overrideInformation"/> should be marked because it is needed by the base method.
+		/// Does not take into account if the base method is in a preserved scope.
+		/// Assumes the base method is marked.
+		/// </summary>
+		// TODO: Move interface method marking logic here https://github.com/dotnet/linker/issues/3090
+		bool ShouldMarkOverrideForBase (OverrideInformation overrideInformation)
 		{
-			var method = overrideInformation.Override;
-			var @base = overrideInformation.Base;
-			if (!Annotations.IsMarked (method.DeclaringType))
-				return;
-
-			if (Annotations.IsProcessed (method))
-				return;
-
-			if (Annotations.IsMarked (method))
-				return;
-
-			var isInstantiated = Annotations.IsInstantiated (method.DeclaringType);
-
-			// Handle interface methods once we know more about whether the type is instantiated or relevant to variant casting
+			if (!Annotations.IsMarked (overrideInformation.Override.DeclaringType))
+				return false;
 			if (overrideInformation.IsOverrideOfInterfaceMember) {
 				_interfaceOverrides.Add ((overrideInformation, ScopeStack.CurrentScope));
-				return;
+				return false;
 			}
 
-			// Interface static veitual methods will be abstract and will also by pass this check to get marked
-			if (!isInstantiated && !@base.IsAbstract && Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method))
-				return;
+			if (!Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, overrideInformation.Override))
+				return true;
 
-			// Only track instantiations if override removal is enabled and the type is instantiated.
-			// If it's disabled, all overrides are kept, so there's no instantiation site to blame.
-			if (Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method) && isInstantiated) {
-				MarkMethod (method, new DependencyInfo (DependencyKind.OverrideOnInstantiatedType, method.DeclaringType), ScopeStack.CurrentScope.Origin);
+			// Methods on instantiated types that override a ov.Override from a base type (not an interface) should be marked
+			// Interface ov.Overrides should only be marked if the interfaceImplementation is marked, which is handled below
+			if (Annotations.IsInstantiated (overrideInformation.Override.DeclaringType))
+				return true;
+
+			// Direct overrides of marked abstract ov.Overrides must be marked or we get invalid IL.
+			// Overrides further in the hierarchy will override the direct override (which will be implemented by the above rule), so we don't need to worry about invalid IL.
+			if (overrideInformation.Base.IsAbstract)
+				return true;
+
+			return false;
+		}
+
+		/// <summary>
+		/// Marks the Override of <paramref name="overrideInformation"/> with the correct reason. Should be called when <see cref="ShouldMarkOverrideForBase(OverrideInformation, bool)"/> returns true.
+		/// </summary>
+		// TODO: Take into account a base method in preserved scope
+		void MarkOverrideForBaseMethod (OverrideInformation overrideInformation)
+		{
+			if (Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, overrideInformation.Override) && Annotations.IsInstantiated (overrideInformation.Override.DeclaringType)) {
+				MarkMethod (overrideInformation.Override, new DependencyInfo (DependencyKind.OverrideOnInstantiatedType, overrideInformation.Override.DeclaringType), ScopeStack.CurrentScope.Origin);
 			} else {
 				// If the optimization is disabled or it's an abstract type, we just mark it as a normal override.
-				Debug.Assert (!Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, method) || @base.IsAbstract);
-				MarkMethod (method, new DependencyInfo (DependencyKind.Override, @base), ScopeStack.CurrentScope.Origin);
+				Debug.Assert (!Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, overrideInformation.Override) || overrideInformation.Base.IsAbstract);
+				MarkMethod (overrideInformation.Override, new DependencyInfo (DependencyKind.Override, overrideInformation.Base), ScopeStack.CurrentScope.Origin);
 			}
+		}
 
-			if (method.IsVirtual)
-				ProcessVirtualMethod (method);
+		void MarkMethodIfNeededByBaseMethod (MethodDefinition method)
+		{
+			Debug.Assert (Annotations.IsMarked (method.DeclaringType));
+
+			var bases = Annotations.GetBaseMethods (method);
+			if (bases is null)
+				return;
+
+			var markedBaseMethods = bases.Where (ov => Annotations.IsMarked (ov.Base) || IgnoreScope (ov.Base.DeclaringType.Scope));
+			foreach (var ov in markedBaseMethods) {
+				if (ShouldMarkOverrideForBase (ov))
+					MarkOverrideForBaseMethod (ov);
+			}
 		}
 
 		/// <summary>
@@ -944,19 +955,19 @@ namespace Mono.Linker.Steps
 			if (dynamicDependency.MemberSignature is string memberSignature) {
 				members = DocumentationSignatureParser.GetMembersByDocumentationSignature (type, memberSignature, Context, acceptName: true);
 				if (!members.Any ()) {
-					Context.LogWarning (ScopeStack.CurrentScope.Origin, DiagnosticId.NoMembersResolvedForMemberSignatureOrType, memberSignature);
+					Context.LogWarning (ScopeStack.CurrentScope.Origin, DiagnosticId.NoMembersResolvedForMemberSignatureOrType, memberSignature, type.GetDisplayName ());
 					return;
 				}
 			} else {
 				var memberTypes = dynamicDependency.MemberTypes;
 				members = type.GetDynamicallyAccessedMembers (Context, memberTypes);
 				if (!members.Any ()) {
-					Context.LogWarning (ScopeStack.CurrentScope.Origin, DiagnosticId.NoMembersResolvedForMemberSignatureOrType, memberTypes.ToString ());
+					Context.LogWarning (ScopeStack.CurrentScope.Origin, DiagnosticId.NoMembersResolvedForMemberSignatureOrType, memberTypes.ToString (), type.GetDisplayName ());
 					return;
 				}
 			}
 
-			MarkMembersVisibleToReflection (members, new DependencyInfo (DependencyKind.DynamicDependency, dynamicDependency.OriginalAttribute));
+			MarkMembersVisibleToReflection (members, new DependencyInfo (DependencyKind.DynamicDependency, context));
 		}
 
 		void MarkMembersVisibleToReflection (IEnumerable<IMetadataTokenProvider> members, in DependencyInfo reason)
@@ -1079,19 +1090,18 @@ namespace Mono.Linker.Steps
 					continue;
 				}
 
-				var mp = m.Parameters;
-				if (mp.Count != signature.Length)
+				if (m.GetMetadataParametersCount () != signature.Length)
 					continue;
 
-				int i = 0;
-				for (; i < signature.Length; ++i) {
-					if (mp[i].ParameterType.FullName != signature[i].Trim ().ToCecilName ()) {
-						i = -1;
+				bool matched = true;
+				foreach (var p in m.GetMetadataParameters ()) {
+					if (p.ParameterType.FullName != signature[p.MetadataIndex].Trim ().ToCecilName ()) {
+						matched = false;
 						break;
 					}
 				}
 
-				if (i < 0)
+				if (!matched)
 					continue;
 
 				MarkIndirectlyCalledMethod (m, reason, ScopeStack.CurrentScope.Origin);
@@ -1313,7 +1323,7 @@ namespace Mono.Linker.Steps
 		{
 			TypeDefinition? type = inputType;
 			while (type != null) {
-				MethodDefinition? method = type.Methods.FirstOrDefault (m => m.Name == methodname && !m.HasParameters);
+				MethodDefinition? method = type.Methods.FirstOrDefault (m => m.Name == methodname && !m.HasMetadataParameters ());
 				if (method != null)
 					return method;
 
@@ -2024,6 +2034,10 @@ namespace Mono.Linker.Steps
 				_typesWithInterfaces.Add ((type, ScopeStack.CurrentScope));
 
 			if (type.HasMethods) {
+				// TODO: MarkMethodIfNeededByBaseMethod should include logic for IsMethodNeededBytTypeDueToPreservedScope
+				foreach (var method in type.Methods) {
+					MarkMethodIfNeededByBaseMethod (method);
+				}
 				// For methods that must be preserved, blame the declaring type.
 				MarkMethodsIf (type.Methods, IsMethodNeededByTypeDueToPreservedScope, new DependencyInfo (DependencyKind.VirtualNeededDueToPreservedScope, type), ScopeStack.CurrentScope.Origin);
 				if (ShouldMarkTypeStaticConstructor (type) && reason.Kind != DependencyKind.TriggersCctorForCalledMethod) {
@@ -2331,6 +2345,28 @@ namespace Mono.Linker.Steps
 				if (ShouldMarkInterfaceImplementation (type, iface))
 					MarkInterfaceImplementation (iface, new MessageOrigin (type));
 			}
+
+			bool ShouldMarkInterfaceImplementation (TypeDefinition type, InterfaceImplementation iface)
+			{
+				if (Annotations.IsMarked (iface))
+					return false;
+
+				if (!Context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces, type))
+					return true;
+
+				if (Context.Resolve (iface.InterfaceType) is not TypeDefinition resolvedInterfaceType)
+					return false;
+
+				if (Annotations.IsMarked (resolvedInterfaceType))
+					return true;
+
+				// It's hard to know if a com or windows runtime interface will be needed from managed code alone,
+				// so as a precaution we will mark these interfaces once the type is instantiated
+				if (resolvedInterfaceType.IsImport || resolvedInterfaceType.IsWindowsRuntime)
+					return true;
+
+				return IsFullyPreserved (type);
+			}
 		}
 
 		void MarkGenericParameterProvider (IGenericParameterProvider provider)
@@ -2375,19 +2411,19 @@ namespace Mono.Linker.Steps
 			if (base_list == null)
 				return false;
 
-			foreach (MethodDefinition @base in base_list) {
+			foreach (OverrideInformation ov in base_list) {
 				// Skip interface methods, they will be captured later by IsInterfaceImplementationMethodNeededByTypeDueToInterface
-				if (@base.DeclaringType.IsInterface)
+				if (ov.Base.DeclaringType.IsInterface)
 					continue;
 
-				if (!IgnoreScope (@base.DeclaringType.Scope) && !IsMethodNeededByTypeDueToPreservedScope (@base))
+				if (!IgnoreScope (ov.Base.DeclaringType.Scope) && !IsMethodNeededByTypeDueToPreservedScope (ov.Base))
 					continue;
 
 				// If the type is marked, we need to keep overrides of abstract members defined in assemblies
 				// that are copied to keep the IL valid.
 				// However, if the base method is a non-abstract virtual (has an implementation on the base type), then we don't need to keep the override
 				// until the type could be instantiated
-				if (!@base.IsAbstract)
+				if (!ov.Base.IsAbstract)
 					continue;
 
 				return true;
@@ -2403,6 +2439,9 @@ namespace Mono.Linker.Steps
 		{
 			var @base = overrideInformation.Base;
 			var method = overrideInformation.Override;
+			if (@base is null || method is null || @base.DeclaringType is null)
+				return false;
+
 			if (Annotations.IsMarked (method))
 				return false;
 
@@ -2437,46 +2476,16 @@ namespace Mono.Linker.Steps
 			return Annotations.IsInstantiated (method.DeclaringType);
 		}
 
-		/// <summary>
-		/// Returns true if any of the base methods of <paramref name="method" /> is defined in an assembly that is not trimmed (i.e. action!=trim).
-		/// This is meant to be used on methods from a type that is known to be instantiated.
-		/// </summary>
-		/// <remarks>
-		/// This is very similar to <see cref="IsMethodNeededByTypeDueToPreservedScope (MethodDefinition)"/>,
-		///	but will mark methods from an interface defined in a non-link assembly regardless of the optimization, and does not handle static interface methods.
-		/// </remarks>
-		bool IsMethodNeededByInstantiatedTypeDueToPreservedScope (MethodDefinition method)
-		{
-			// Any static interface methods are captured by <see cref="IsVirtualNeededByTypeDueToPreservedScope">, which should be called on all relevant methods so no need to check again here.
-			if (!method.IsVirtual)
-				return false;
-
-			var base_list = Annotations.GetBaseMethods (method);
-			if (base_list == null)
-				return false;
-
-			foreach (MethodDefinition @base in base_list) {
-				if (IgnoreScope (@base.DeclaringType.Scope))
-					return true;
-
-				if (IsMethodNeededByTypeDueToPreservedScope (@base))
-					return true;
-			}
-
-			return false;
-		}
-
 		static bool IsSpecialSerializationConstructor (MethodDefinition method)
 		{
 			if (!method.IsInstanceConstructor ())
 				return false;
 
-			var parameters = method.Parameters;
-			if (parameters.Count != 2)
+			if (method.GetMetadataParametersCount () != 2)
 				return false;
 
-			return parameters[0].ParameterType.Name == "SerializationInfo" &&
-				parameters[1].ParameterType.Name == "StreamingContext";
+			return method.TryGetParameter ((ParameterIndex) 1)?.ParameterType.Name == "SerializationInfo" &&
+				method.TryGetParameter ((ParameterIndex) 2)?.ParameterType.Name == "StreamingContext";
 		}
 
 		protected internal bool MarkMethodsIf (Collection<MethodDefinition> methods, Func<MethodDefinition, bool> predicate, in DependencyInfo reason, in MessageOrigin origin)
@@ -2515,8 +2524,12 @@ namespace Mono.Linker.Steps
 			if (!type.HasMethods)
 				return;
 
-			MarkMethodIf (type.Methods, m =>
-				m.Name == "GetInstance" && m.IsStatic && m.Parameters.Count == 1 && m.Parameters[0].ParameterType.MetadataType == MetadataType.String,
+			MarkMethodIf (type.Methods,
+				m =>
+					m.Name == "GetInstance"
+					&& m.IsStatic
+					&& m.GetMetadataParametersCount () == 1
+					&& m.GetParameter ((ParameterIndex) 0).ParameterType.MetadataType == MetadataType.String,
 				reason,
 				ScopeStack.CurrentScope.Origin);
 		}
@@ -2550,7 +2563,7 @@ namespace Mono.Linker.Steps
 			} while ((type = Context.TryResolve (type.BaseType)) != null);
 		}
 
-		static bool IsNonEmptyStaticConstructor (MethodDefinition method)
+		bool IsNonEmptyStaticConstructor (MethodDefinition method)
 		{
 			if (!method.IsStaticConstructor ())
 				return false;
@@ -2558,10 +2571,12 @@ namespace Mono.Linker.Steps
 			if (!method.HasBody || !method.IsIL)
 				return true;
 
-			if (method.Body.CodeSize != 1)
+			var body = Context.GetMethodIL (method);
+
+			if (body.Body.CodeSize != 1)
 				return true;
 
-			return method.Body.Instructions[0].OpCode.Code != Code.Ret;
+			return body.Instructions[0].OpCode.Code != Code.Ret;
 		}
 
 		static bool HasOnSerializeOrDeserializeAttribute (MethodDefinition method)
@@ -2837,14 +2852,14 @@ namespace Mono.Linker.Steps
 			return true;
 		}
 
-		static PropertyDefinition? SearchPropertiesForMatchingFieldDefinition (FieldDefinition field)
+		PropertyDefinition? SearchPropertiesForMatchingFieldDefinition (FieldDefinition field)
 		{
 			foreach (var property in field.DeclaringType.Properties) {
-				var instr = property.GetMethod?.Body?.Instructions;
-				if (instr == null)
+				var body = property.GetMethod?.Body;
+				if (body == null)
 					continue;
 
-				foreach (var ins in instr) {
+				foreach (var ins in Context.GetMethodIL (body).Instructions) {
 					if (ins?.Operand == field)
 						return property;
 				}
@@ -2936,7 +2951,7 @@ namespace Mono.Linker.Steps
 			// the reflection scanner. Checking this will also mark direct dependencies of the method body, if it
 			// hasn't been marked already. A cache ensures this only happens once for the method, whether or not
 			// it is accessed via reflection.
-			return CheckRequiresReflectionMethodBodyScanner (method.Body);
+			return CheckRequiresReflectionMethodBodyScanner (Context.GetMethodIL (method));
 		}
 
 		void ProcessAnalysisAnnotationsForMethod (MethodDefinition method, DependencyKind dependencyKind, in MessageOrigin origin)
@@ -3118,8 +3133,6 @@ namespace Mono.Linker.Steps
 			if (CheckProcessed (method))
 				return;
 
-			UnreachableBlocksOptimizer.ProcessMethod (method);
-
 			foreach (Action<MethodDefinition> handleMarkMethod in MarkContext.MarkMethodActions)
 				handleMarkMethod (method);
 
@@ -3144,12 +3157,14 @@ namespace Mono.Linker.Steps
 			else if (method.TryGetEvent (out EventDefinition? @event))
 				MarkEvent (@event, new DependencyInfo (DependencyKind.EventOfEventMethod, method));
 
-			if (method.HasParameters) {
+			if (method.HasMetadataParameters ()) {
+#pragma warning disable RS0030 // MethodReference.Parameters is banned. It's easiest to leave the code as is for now
 				foreach (ParameterDefinition pd in method.Parameters) {
 					MarkType (pd.ParameterType, new DependencyInfo (DependencyKind.ParameterType, method));
 					MarkCustomAttributes (pd, new DependencyInfo (DependencyKind.ParameterAttribute, method));
 					MarkMarshalSpec (pd, new DependencyInfo (DependencyKind.ParameterMarshalSpec, method));
 				}
+#pragma warning restore RS0030
 			}
 
 			if (method.HasOverrides) {
@@ -3173,6 +3188,13 @@ namespace Mono.Linker.Steps
 			MarkNewCodeDependencies (method);
 
 			MarkBaseMethods (method);
+
+			if (Annotations.GetOverrides (method) is IEnumerable<OverrideInformation> overrides) {
+				foreach (var @override in overrides) {
+					if (ShouldMarkOverrideForBase (@override))
+						MarkOverrideForBaseMethod (@override);
+				}
+			}
 
 			MarkType (method.ReturnType, new DependencyInfo (DependencyKind.ReturnType, method));
 			MarkCustomAttributes (method.MethodReturnType, new DependencyInfo (DependencyKind.ReturnTypeAttribute, method));
@@ -3229,27 +3251,14 @@ namespace Mono.Linker.Steps
 
 			MarkInterfaceImplementations (type);
 
-			foreach (var method in GetRequiredMethodsForInstantiatedType (type))
-				MarkMethod (method, new DependencyInfo (DependencyKind.MethodForInstantiatedType, type), ScopeStack.CurrentScope.Origin);
+			// Requires interface implementations to be marked first
+			foreach (var method in type.Methods) {
+				MarkMethodIfNeededByBaseMethod (method);
+			}
 
 			MarkImplicitlyUsedFields (type);
 
 			DoAdditionalInstantiatedTypeProcessing (type);
-		}
-
-		/// <summary>
-		/// Collect methods that must be marked once a type is determined to be instantiated.
-		///
-		/// This method is virtual in order to give derived mark steps an opportunity to modify the collection of methods that are needed
-		/// </summary>
-		/// <param name="type"></param>
-		/// <returns></returns>
-		protected virtual IEnumerable<MethodDefinition> GetRequiredMethodsForInstantiatedType (TypeDefinition type)
-		{
-			foreach (var method in type.Methods) {
-				if (IsMethodNeededByInstantiatedTypeDueToPreservedScope (method))
-					yield return method;
-			}
 		}
 
 		void MarkExplicitInterfaceImplementation (MethodDefinition method, MethodReference ov)
@@ -3345,19 +3354,18 @@ namespace Mono.Linker.Steps
 			if (base_methods == null)
 				return;
 
-			foreach (MethodDefinition base_method in base_methods) {
+			foreach (OverrideInformation ov in base_methods) {
 				// We should add all interface base methods to _virtual_methods for virtual override annotation validation
 				// Interfaces from preserved scope will be missed if we don't add them here
 				// This will produce warnings for all interface methods and virtual methods regardless of whether the interface, interface implementation, or interface method is kept or not.
-				if (base_method.DeclaringType.IsInterface && !method.DeclaringType.IsInterface) {
+				if (ov.Base.DeclaringType.IsInterface && !method.DeclaringType.IsInterface) {
 					// These are all virtual, no need to check IsVirtual before adding to list
-					_virtual_methods.Add ((base_method, ScopeStack.CurrentScope));
-					// _virtual_methods is a list and might have duplicates, but it's mostly just used for override validation, so it shouldn't matter
+					_virtual_methods.Add ((ov.Base, ScopeStack.CurrentScope));
 					continue;
 				}
 
-				MarkMethod (base_method, new DependencyInfo (DependencyKind.BaseMethod, method), ScopeStack.CurrentScope.Origin);
-				MarkBaseMethods (base_method);
+				MarkMethod (ov.Base, new DependencyInfo (DependencyKind.BaseMethod, method), ScopeStack.CurrentScope.Origin);
+				MarkBaseMethods (ov.Base);
 			}
 		}
 
@@ -3392,6 +3400,7 @@ namespace Mono.Linker.Steps
 				MarkFields (method.DeclaringType, includeStaticFields, new DependencyInfo (DependencyKind.InteropMethodDependency, method));
 			}
 
+#pragma warning disable RS0030 // MethodReference.Parameters is banned. It's easiest to leave this code as is for now
 			foreach (ParameterDefinition pd in method.Parameters) {
 				TypeReference paramTypeReference = pd.ParameterType;
 				if (paramTypeReference is TypeSpecification paramTypeSpecification) {
@@ -3408,6 +3417,7 @@ namespace Mono.Linker.Steps
 					}
 				}
 			}
+#pragma warning restore RS0030
 		}
 
 		protected virtual bool ShouldParseMethodBody (MethodDefinition method)
@@ -3472,7 +3482,9 @@ namespace Mono.Linker.Steps
 
 		protected virtual void MarkMethodBody (MethodBody body)
 		{
-			if (Context.IsOptimizationEnabled (CodeOptimizations.UnreachableBodies, body.Method) && IsUnreachableBody (body)) {
+			var processedMethodBody = Context.GetMethodIL (body);
+
+			if (Context.IsOptimizationEnabled (CodeOptimizations.UnreachableBodies, body.Method) && IsUnreachableBody (processedMethodBody)) {
 				MarkAndCacheConvertToThrowExceptionCtor (new DependencyInfo (DependencyKind.UnreachableBodyRequirement, body.Method));
 				_unreachableBodies.Add ((body, ScopeStack.CurrentScope));
 				return;
@@ -3483,38 +3495,28 @@ namespace Mono.Linker.Steps
 			// But for compiler-generated methods we only do dataflow analysis if they're used through their
 			// corresponding user method, so we will skip dataflow for compiler-generated methods which
 			// are only accessed via reflection.
-			bool requiresReflectionMethodBodyScanner = MarkAndCheckRequiresReflectionMethodBodyScanner (body);
+			bool requiresReflectionMethodBodyScanner = MarkAndCheckRequiresReflectionMethodBodyScanner (processedMethodBody);
 
 			// Data-flow (reflection scanning) for compiler-generated methods will happen as part of the
 			// data-flow scan of the user-defined method which uses this compiler-generated method.
 			if (CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (body.Method))
 				return;
 
-			MarkReflectionLikeDependencies (body, requiresReflectionMethodBodyScanner);
+			MarkReflectionLikeDependencies (processedMethodBody, requiresReflectionMethodBodyScanner);
 		}
 
-		bool CheckRequiresReflectionMethodBodyScanner (MethodBody body)
+		bool CheckRequiresReflectionMethodBodyScanner (MethodIL methodIL)
 		{
 			// This method is only called on reflection access to compiler-generated methods.
 			// This should be uncommon, so don't cache the result.
-			if (ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForMethodBody (Context, body.Method))
+			if (ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForMethodBody (Context, methodIL.Method))
 				return true;
 
-			foreach (Instruction instruction in body.Instructions) {
+			foreach (Instruction instruction in methodIL.Instructions) {
 				switch (instruction.OpCode.OperandType) {
 				case OperandType.InlineField:
-					switch (instruction.OpCode.Code) {
-					case Code.Stfld:
-					case Code.Stsfld:
-					case Code.Ldflda:
-					case Code.Ldsflda:
-						if (ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForAccess (Context, (FieldReference) instruction.Operand))
-							return true;
-						break;
-
-					default:
-						break;
-					}
+					if (InstructionRequiresReflectionMethodBodyScannerForFieldAccess (instruction))
+						return true;
 					break;
 
 				case OperandType.InlineMethod:
@@ -3530,64 +3532,64 @@ namespace Mono.Linker.Steps
 		// It computes the same value, while also marking as it goes, as an optimization.
 		// This should only be called behind a check to IsProcessed for the method or corresponding user method,
 		// to avoid recursion.
-		bool MarkAndCheckRequiresReflectionMethodBodyScanner (MethodBody body)
+		bool MarkAndCheckRequiresReflectionMethodBodyScanner (MethodIL methodIL)
 		{
 #if DEBUG
-			if (!Annotations.IsProcessed (body.Method)) {
-				Debug.Assert (CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (body.Method));
-				MethodDefinition owningMethod = body.Method;
+			if (!Annotations.IsProcessed (methodIL.Method)) {
+				Debug.Assert (CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (methodIL.Method));
+				MethodDefinition owningMethod = methodIL.Method;
 				while (Context.CompilerGeneratedState.TryGetOwningMethodForCompilerGeneratedMember (owningMethod, out var owner))
 					owningMethod = owner;
-				Debug.Assert (owningMethod != body.Method);
+				Debug.Assert (owningMethod != methodIL.Method);
 				Debug.Assert (Annotations.IsProcessed (owningMethod));
 			}
 #endif
 			// This may get called multiple times for compiler-generated code: once for
 			// reflection access, and once as part of the interprocedural scan of the user method.
 			// This check ensures that we only do the work and produce warnings once.
-			if (_compilerGeneratedMethodRequiresScanner.TryGetValue (body, out bool requiresReflectionMethodBodyScanner))
+			if (_compilerGeneratedMethodRequiresScanner.TryGetValue (methodIL.Body, out bool requiresReflectionMethodBodyScanner))
 				return requiresReflectionMethodBodyScanner;
 
-			foreach (VariableDefinition var in body.Variables)
-				MarkType (var.VariableType, new DependencyInfo (DependencyKind.VariableType, body.Method));
+			foreach (VariableDefinition var in methodIL.Variables)
+				MarkType (var.VariableType, new DependencyInfo (DependencyKind.VariableType, methodIL.Method));
 
-			foreach (ExceptionHandler eh in body.ExceptionHandlers)
+			foreach (ExceptionHandler eh in methodIL.ExceptionHandlers)
 				if (eh.HandlerType == ExceptionHandlerType.Catch)
-					MarkType (eh.CatchType, new DependencyInfo (DependencyKind.CatchType, body.Method));
+					MarkType (eh.CatchType, new DependencyInfo (DependencyKind.CatchType, methodIL.Method));
 
 			requiresReflectionMethodBodyScanner =
-				ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForMethodBody (Context, body.Method);
-			using var _ = ScopeStack.PushScope (new MessageOrigin (body.Method));
-			foreach (Instruction instruction in body.Instructions)
-				MarkInstruction (instruction, body.Method, ref requiresReflectionMethodBodyScanner);
+				ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForMethodBody (Context, methodIL.Method);
+			using var _ = ScopeStack.PushScope (new MessageOrigin (methodIL.Method));
+			foreach (Instruction instruction in methodIL.Instructions)
+				MarkInstruction (instruction, methodIL.Method, ref requiresReflectionMethodBodyScanner);
 
-			MarkInterfacesNeededByBodyStack (body);
+			MarkInterfacesNeededByBodyStack (methodIL);
 
-			if (CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (body.Method))
-				_compilerGeneratedMethodRequiresScanner.Add (body, requiresReflectionMethodBodyScanner);
+			if (CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (methodIL.Method))
+				_compilerGeneratedMethodRequiresScanner.Add (methodIL.Body, requiresReflectionMethodBodyScanner);
 
-			PostMarkMethodBody (body);
+			PostMarkMethodBody (methodIL.Body);
 
-			Debug.Assert (requiresReflectionMethodBodyScanner == CheckRequiresReflectionMethodBodyScanner (body));
+			Debug.Assert (requiresReflectionMethodBodyScanner == CheckRequiresReflectionMethodBodyScanner (methodIL));
 			return requiresReflectionMethodBodyScanner;
 		}
 
-		bool IsUnreachableBody (MethodBody body)
+		bool IsUnreachableBody (MethodIL methodIL)
 		{
-			return !body.Method.IsStatic
-				&& !Annotations.IsInstantiated (body.Method.DeclaringType)
-				&& MethodBodyScanner.IsWorthConvertingToThrow (body);
+			return !methodIL.Method.IsStatic
+				&& !Annotations.IsInstantiated (methodIL.Method.DeclaringType)
+				&& MethodBodyScanner.IsWorthConvertingToThrow (methodIL);
 		}
 
 
 		partial void PostMarkMethodBody (MethodBody body);
 
-		void MarkInterfacesNeededByBodyStack (MethodBody body)
+		void MarkInterfacesNeededByBodyStack (MethodIL methodIL)
 		{
 			// If a type could be on the stack in the body and an interface it implements could be on the stack on the body
 			// then we need to mark that interface implementation.  When this occurs it is not safe to remove the interface implementation from the type
 			// even if the type is never instantiated
-			var implementations = new InterfacesOnStackScanner (Context).GetReferencedInterfaces (body);
+			var implementations = new InterfacesOnStackScanner (Context).GetReferencedInterfaces (methodIL);
 			if (implementations == null)
 				return;
 
@@ -3595,22 +3597,27 @@ namespace Mono.Linker.Steps
 				MarkInterfaceImplementation (implementation, new MessageOrigin (type));
 		}
 
+		bool InstructionRequiresReflectionMethodBodyScannerForFieldAccess (Instruction instruction)
+			=> instruction.OpCode.Code switch {
+				// Field stores (Storing value to annotated field must be checked)
+				Code.Stfld or
+				Code.Stsfld or
+				// Field address loads (as those can be used to store values to annotated field and thus must be checked)
+				Code.Ldflda or
+				Code.Ldsflda
+					=> ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForAccess (Context, (FieldReference) instruction.Operand),
+				// For ref fields, ldfld loads an address which can be used to store values to annotated fields
+				Code.Ldfld or Code.Ldsfld when ((FieldReference) instruction.Operand).FieldType.IsByRefOrPointer ()
+					=> ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForAccess (Context, (FieldReference) instruction.Operand),
+				// Other field operations are not interesting as they don't need to be checked
+				_ => false
+			};
+
 		protected virtual void MarkInstruction (Instruction instruction, MethodDefinition method, ref bool requiresReflectionMethodBodyScanner)
 		{
 			switch (instruction.OpCode.OperandType) {
 			case OperandType.InlineField:
-				switch (instruction.OpCode.Code) {
-				case Code.Stfld: // Field stores (Storing value to annotated field must be checked)
-				case Code.Stsfld:
-				case Code.Ldflda: // Field address loads (as those can be used to store values to annotated field and thus must be checked)
-				case Code.Ldsflda:
-					requiresReflectionMethodBodyScanner |=
-						ReflectionMethodBodyScanner.RequiresReflectionMethodBodyScannerForAccess (Context, (FieldReference) instruction.Operand);
-					break;
-
-				default: // Other field operations are not interesting as they don't need to be checked
-					break;
-				}
+				requiresReflectionMethodBodyScanner |= InstructionRequiresReflectionMethodBodyScannerForFieldAccess (instruction);
 
 				ScopeStack.UpdateCurrentScopeInstructionOffset (instruction.Offset);
 				MarkField ((FieldReference) instruction.Operand, new DependencyInfo (DependencyKind.FieldAccess, method), ScopeStack.CurrentScope.Origin);
@@ -3657,8 +3664,9 @@ namespace Mono.Linker.Steps
 				var operand = (TypeReference) instruction.Operand;
 				switch (instruction.OpCode.Code) {
 				case Code.Newarr:
-					if (Context.TryResolve (operand) is TypeDefinition typeDefinition)
+					if (Context.TryResolve (operand) is TypeDefinition typeDefinition) {
 						Annotations.MarkRelevantToVariantCasting (typeDefinition);
+					}
 					break;
 				case Code.Isinst:
 					if (operand is TypeSpecification || operand is GenericParameter)
@@ -3688,33 +3696,12 @@ namespace Mono.Linker.Steps
 			}
 		}
 
-		protected virtual bool ShouldMarkInterfaceImplementation (TypeDefinition type, InterfaceImplementation iface)
-		{
-			if (Annotations.IsMarked (iface))
-				return false;
-
-			if (!Context.IsOptimizationEnabled (CodeOptimizations.UnusedInterfaces, type))
-				return true;
-
-			if (Context.Resolve (iface.InterfaceType) is not TypeDefinition resolvedInterfaceType)
-				return false;
-
-			if (Annotations.IsMarked (resolvedInterfaceType))
-				return true;
-
-			// It's hard to know if a com or windows runtime interface will be needed from managed code alone,
-			// so as a precaution we will mark these interfaces once the type is instantiated
-			if (resolvedInterfaceType.IsImport || resolvedInterfaceType.IsWindowsRuntime)
-				return true;
-
-
-			return IsFullyPreserved (type);
-		}
 
 		protected internal virtual void MarkInterfaceImplementation (InterfaceImplementation iface, MessageOrigin? origin = null, DependencyInfo? reason = null)
 		{
 			if (Annotations.IsMarked (iface))
 				return;
+			Annotations.MarkProcessed (iface, reason ?? new DependencyInfo (DependencyKind.InterfaceImplementationOnType, ScopeStack.CurrentScope.Origin.Provider));
 
 			using var localScope = origin.HasValue ? ScopeStack.PushScope (origin.Value) : null;
 
@@ -3722,7 +3709,6 @@ namespace Mono.Linker.Steps
 			MarkCustomAttributes (iface, new DependencyInfo (DependencyKind.CustomAttribute, iface));
 			// Blame the interface type on the interfaceimpl itself.
 			MarkType (iface.InterfaceType, reason ?? new DependencyInfo (DependencyKind.InterfaceImplementationInterfaceType, iface));
-			Annotations.MarkProcessed (iface, reason ?? new DependencyInfo (DependencyKind.InterfaceImplementationOnType, ScopeStack.CurrentScope.Origin.Provider));
 		}
 
 		//
@@ -3736,24 +3722,24 @@ namespace Mono.Linker.Steps
 		//
 		// Tries to mark additional dependencies used in reflection like calls (e.g. typeof (MyClass).GetField ("fname"))
 		//
-		protected virtual void MarkReflectionLikeDependencies (MethodBody body, bool requiresReflectionMethodBodyScanner)
+		protected virtual void MarkReflectionLikeDependencies (MethodIL methodIL, bool requiresReflectionMethodBodyScanner)
 		{
-			Debug.Assert (!CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (body.Method));
+			Debug.Assert (!CompilerGeneratedState.IsNestedFunctionOrStateMachineMember (methodIL.Method));
 			// requiresReflectionMethodBodyScanner tells us whether the method body itself requires a dataflow scan.
 
 			// If the method body owns any compiler-generated code, we might still need to do a scan of it together with
 			// all of the compiler-generated code it owns, so first check any compiler-generated callees.
-			if (Context.CompilerGeneratedState.TryGetCompilerGeneratedCalleesForUserMethod (body.Method, out List<IMemberDefinition>? compilerGeneratedCallees)) {
+			if (Context.CompilerGeneratedState.TryGetCompilerGeneratedCalleesForUserMethod (methodIL.Method, out List<IMemberDefinition>? compilerGeneratedCallees)) {
 				foreach (var compilerGeneratedCallee in compilerGeneratedCallees) {
 					switch (compilerGeneratedCallee) {
 					case MethodDefinition nestedFunction:
 						if (nestedFunction.Body is MethodBody nestedBody)
-							requiresReflectionMethodBodyScanner |= MarkAndCheckRequiresReflectionMethodBodyScanner (nestedBody);
+							requiresReflectionMethodBodyScanner |= MarkAndCheckRequiresReflectionMethodBodyScanner (Context.GetMethodIL (nestedBody));
 						break;
 					case TypeDefinition stateMachineType:
 						foreach (var method in stateMachineType.Methods) {
 							if (method.Body is MethodBody stateMachineBody)
-								requiresReflectionMethodBodyScanner |= MarkAndCheckRequiresReflectionMethodBodyScanner (stateMachineBody);
+								requiresReflectionMethodBodyScanner |= MarkAndCheckRequiresReflectionMethodBodyScanner (Context.GetMethodIL (stateMachineBody));
 						}
 						break;
 					default:
@@ -3765,9 +3751,9 @@ namespace Mono.Linker.Steps
 			if (!requiresReflectionMethodBodyScanner)
 				return;
 
-			Debug.Assert (ScopeStack.CurrentScope.Origin.Provider == body.Method);
+			Debug.Assert (ScopeStack.CurrentScope.Origin.Provider == methodIL.Method);
 			var scanner = new ReflectionMethodBodyScanner (Context, this, ScopeStack.CurrentScope.Origin);
-			scanner.InterproceduralScan (body);
+			scanner.InterproceduralScan (methodIL);
 		}
 
 		protected class AttributeProviderPair

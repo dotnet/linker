@@ -291,8 +291,10 @@ namespace Mono.Linker
 				CallingConvention = methodDef.CallingConvention
 			};
 
+#pragma warning disable RS0030 // MethodReference.Parameters is banned. It makes sense to use when needing to directly use Cecil's api.
 			foreach (var parameter in methodDef.Parameters)
 				method.Parameters.Add (new ParameterDefinition (parameter.Name, parameter.Attributes, parameter.ParameterType));
+#pragma warning restore RS0030
 
 			foreach (var gp in methodDef.GenericParameters)
 				method.GenericParameters.Add (new GenericParameter (gp.Name, method));
@@ -305,13 +307,13 @@ namespace Mono.Linker
 			return fullTypeName.Replace ('+', '/');
 		}
 
-		public static bool HasDefaultConstructor (this TypeDefinition type)
+		public static bool HasDefaultConstructor (this TypeDefinition type, LinkContext context)
 		{
 			foreach (var m in type.Methods) {
-				if (m.HasParameters)
+				if (m.HasMetadataParameters ())
 					continue;
 
-				var definition = m.Resolve ();
+				var definition = context.Resolve (m);
 				if (definition?.IsDefaultConstructor () == true)
 					return true;
 			}
@@ -319,14 +321,14 @@ namespace Mono.Linker
 			return false;
 		}
 
-		public static MethodReference GetDefaultInstanceConstructor (this TypeDefinition type)
+		public static MethodReference GetDefaultInstanceConstructor (this TypeDefinition type, LinkContext context)
 		{
 			foreach (var m in type.Methods) {
-				if (m.HasParameters)
+				if (m.HasMetadataParameters ())
 					continue;
 
-				var definition = m.Resolve ();
-				if (!definition.IsDefaultConstructor ())
+				var definition = context.Resolve (m);
+				if (definition?.IsDefaultConstructor () != true)
 					continue;
 
 				return m;

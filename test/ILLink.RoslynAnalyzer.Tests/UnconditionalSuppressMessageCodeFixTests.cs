@@ -270,6 +270,55 @@ public class C
 		}
 
 		[Fact]
+		public Task FixInPropertyAccessor ()
+		{
+			var src = $$"""
+			using System;
+			using System.Diagnostics.CodeAnalysis;
+
+			public class C
+			{
+				[RequiresUnreferencedCodeAttribute("message")]
+				public int M1() => 0;
+
+				public int field;
+
+				private int M2 {
+					get { return M1(); }
+					set { field = M1(); }
+				}
+			}
+			""";
+			var fix = $$"""
+			using System;
+			using System.Diagnostics.CodeAnalysis;
+
+			public class C
+			{
+				[RequiresUnreferencedCodeAttribute("message")]
+				public int M1() => 0;
+
+				public int field;
+
+				private int M2 {
+			        [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
+			        get { return M1(); }
+
+			        [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
+			        set { field = M1(); }
+				}
+			}
+			""";
+			var diag = new[] {
+				// /0/Test0.cs(12,16): warning IL2026: Using member 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
+				VerifyCSUSMwithRUC.Diagnostic(DiagnosticId.RequiresUnreferencedCode).WithSpan(12, 16, 12, 20).WithArguments("C.M1()", " message.", ""),
+				// /0/Test0.cs(13,17): warning IL2026: Using member 'C.M1()' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. message.
+				VerifyCSUSMwithRUC.Diagnostic(DiagnosticId.RequiresUnreferencedCode).WithSpan(13, 17, 13, 21).WithArguments("C.M1()", " message.", "")
+			};
+			return VerifyUnconditionalSuppressMessageCodeFixWithRUC (src, fix, diag, Array.Empty<DiagnosticResult> ());
+		}
+
+		[Fact]
 		public Task FixInField ()
 		{
 			const string src = @"
@@ -340,7 +389,7 @@ public class C
 
     Action M2()
     {
-        [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute(""Trimming"", ""IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code"", Justification = ""<Pending>"")] void Wrapper () => M1();
+        [UnconditionalSuppressMessage(""Trimming"", ""IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code"", Justification = ""<Pending>"")] void Wrapper () => M1();
         return Wrapper;
     }
 }";
@@ -421,9 +470,9 @@ public class C
     [RequiresUnreferencedCodeAttribute(""message"")]
     public int M1() => 0;
 
-    [UnconditionalSuppressMessage(""Trimming"", ""IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code"", Justification = ""<Pending>"")]
     public event EventHandler E1
     {
+        [UnconditionalSuppressMessage(""Trimming"", ""IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code"", Justification = ""<Pending>"")]
         add
         {
             var a = M1();

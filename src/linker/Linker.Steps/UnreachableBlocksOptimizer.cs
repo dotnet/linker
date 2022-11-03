@@ -238,7 +238,7 @@ namespace Mono.Linker.Steps
 			MethodResult? value;
 
 			MethodDefinition method = callee.Method;
-			if (!method.HasParameters || callee.HasUnknownArguments) {
+			if (!method.HasMetadataParameters () || callee.HasUnknownArguments) {
 				if (!_cache_method_results.TryGetValue (method, out value) && !IsDeepStack (callStack)) {
 					value = AnalyzeMethodForConstantResult (callee, callStack);
 					_cache_method_results.Add (method, value);
@@ -310,22 +310,21 @@ namespace Mono.Linker.Steps
 
 		static Instruction[]? GetArgumentsOnStack (MethodDefinition method, Collection<Instruction> instructions, int index)
 		{
-			if (!method.HasParameters)
+			if (!method.HasMetadataParameters ())
 				return Array.Empty<Instruction> ();
 
 			Instruction[]? result = null;
-			for (int i = method.Parameters.Count, pos = 0; i != 0; --i, ++pos) {
+			for (int i = method.GetMetadataParametersCount (), pos = 0; i != 0; --i, ++pos) {
 				Instruction instr = instructions[index - i];
 				if (!IsConstantValue (instr))
 					return null;
 
-				if (result == null)
-					result = new Instruction[method.Parameters.Count];
+				result ??= new Instruction[method.GetMetadataParametersCount ()];
 
 				result[pos] = instr;
 			}
 
-			if (result != null && HasJumpIntoTargetRange (instructions, index - method.Parameters.Count + 1, index))
+			if (result != null && HasJumpIntoTargetRange (instructions, index - method.GetMetadataParametersCount () + 1, index))
 				return null;
 
 			return result;
@@ -416,7 +415,7 @@ namespace Mono.Linker.Steps
 			if (type == null)
 				return null;
 
-			return type.Methods.First (l => !l.HasParameters && l.IsStatic && l.Name == "get_Size");
+			return type.Methods.First (l => !l.HasMetadataParameters () && l.IsStatic && l.Name == "get_Size");
 		}
 
 		readonly struct CallInliner
@@ -434,9 +433,11 @@ namespace Mono.Linker.Steps
 			{
 				bool changed = false;
 				LinkerILProcessor processor = body.GetLinkerILProcessor ();
+#pragma warning disable RS0030 // This optimizer is the reason for the banned API, so it needs to use the Cecil directly
 				Collection<Instruction> instrs = body.Instructions;
+#pragma warning restore RS0030
 
-				for (int i = 0; i < body.Instructions.Count; ++i) {
+				for (int i = 0; i < instrs.Count; ++i) {
 					Instruction instr = instrs[i];
 					switch (instr.OpCode.Code) {
 
@@ -455,7 +456,7 @@ namespace Mono.Linker.Steps
 						if (md.NoInlining)
 							break;
 
-						var cpl = new CalleePayload (md, GetArgumentsOnStack (md, body.Instructions, i));
+						var cpl = new CalleePayload (md, GetArgumentsOnStack (md, instrs, i));
 						MethodResult? call_result = optimizer.TryGetMethodCallResult (cpl);
 						if (call_result is not MethodResult result)
 							break;
@@ -466,7 +467,7 @@ namespace Mono.Linker.Steps
 						}
 
 						if (!md.IsStatic) {
-							if (!md.HasParameters && CanInlineInstanceCall (instrs, i)) {
+							if (!md.HasMetadataParameters () && CanInlineInstanceCall (instrs, i)) {
 								processor.Replace (i - 1, Instruction.Create (OpCodes.Nop));
 								processor.Replace (i, result.GetPrototype ()!);
 								changed = true;
@@ -475,11 +476,11 @@ namespace Mono.Linker.Steps
 							continue;
 						}
 
-						if (md.HasParameters) {
+						if (md.HasMetadataParameters ()) {
 							if (!IsCalledWithoutSideEffects (md, instrs, i))
 								continue;
 
-							for (int p = 1; p <= md.Parameters.Count; ++p) {
+							for (int p = 1; p <= md.GetMetadataParametersCount (); ++p) {
 								processor.Replace (i - p, Instruction.Create (OpCodes.Nop));
 							}
 						}
@@ -517,7 +518,7 @@ namespace Mono.Linker.Steps
 
 			static bool IsCalledWithoutSideEffects (MethodDefinition method, Collection<Instruction> instructions, int index)
 			{
-				for (int i = 1; i <= method.Parameters.Count; ++i) {
+				for (int i = 1; i <= method.GetMetadataParametersCount (); ++i) {
 					if (!IsSideEffectFreeLoad (instructions[index - i]))
 						return false;
 				}
@@ -550,6 +551,11 @@ namespace Mono.Linker.Steps
 
 			public MethodBody Body { get; }
 
+#pragma warning disable RS0030 // This optimizer is the reason for the banned API, so it needs to use the Cecil directly
+			Collection<Instruction> Instructions => Body.Instructions;
+			Collection<ExceptionHandler> ExceptionHandlers => Body.ExceptionHandlers;
+#pragma warning restore RS0030
+
 			public int InstructionsReplaced { get; set; }
 
 			Collection<Instruction>? FoldedInstructions { get; set; }
@@ -558,7 +564,7 @@ namespace Mono.Linker.Steps
 			[MemberNotNull ("mapping")]
 			void InitializeFoldedInstruction ()
 			{
-				FoldedInstructions = new Collection<Instruction> (Body.Instructions);
+				FoldedInstructions = new Collection<Instruction> (Instructions);
 				mapping = new Dictionary<Instruction, int> ();
 			}
 
@@ -571,15 +577,14 @@ namespace Mono.Linker.Steps
 
 				// Tracks mapping for replaced instructions for easier
 				// branch targets resolution later
-				mapping[Body.Instructions[index]] = index;
+				mapping[Instructions[index]] = index;
 
 				FoldedInstructions[index] = newInstruction;
 			}
 
 			void RewriteConditionToNop (int index)
 			{
-				if (conditionInstrsToRemove == null)
-					conditionInstrsToRemove = new List<int> ();
+				conditionInstrsToRemove ??= new List<int> ();
 
 				conditionInstrsToRemove.Add (index);
 				RewriteToNop (index);
@@ -735,7 +740,7 @@ namespace Mono.Linker.Steps
 			public bool ApplyTemporaryInlining (in UnreachableBlocksOptimizer optimizer)
 			{
 				bool changed = false;
-				var instructions = Body.Instructions;
+				var instructions = Instructions;
 				Instruction? targetResult;
 
 				for (int i = 0; i < instructions.Count; ++i) {
@@ -755,8 +760,7 @@ namespace Mono.Linker.Steps
 						Instruction[]? args = GetArgumentsOnStack (md, FoldedInstructions ?? instructions, i);
 						targetResult = args?.Length > 0 && md.IsStatic ? EvaluateIntrinsicCall (md, args) : null;
 
-						if (targetResult == null)
-							targetResult = optimizer.TryGetMethodCallResult (new CalleePayload (md, args))?.Instruction;
+						targetResult ??= optimizer.TryGetMethodCallResult (new CalleePayload (md, args))?.Instruction;
 
 						if (targetResult == null)
 							break;
@@ -806,6 +810,9 @@ namespace Mono.Linker.Steps
 				return changed;
 			}
 
+			static bool IsConditionalBranch (OpCode opCode)
+			=> opCode.Code is Code.Brfalse or Code.Brfalse_S or Code.Brtrue or Code.Brtrue_S;
+
 			void RemoveUnreachableInstructions (BitArray reachable)
 			{
 				LinkerILProcessor processor = Body.GetLinkerILProcessor ();
@@ -815,8 +822,22 @@ namespace Mono.Linker.Steps
 					if (reachable[i])
 						continue;
 
-					processor.RemoveAt (i - removed);
-					++removed;
+					int index = i - removed;
+					// If we intend to remove the last instruction we replaced it with "ret" above (not "nop")
+					// but we can't get rid of it completely because it may happen that the last kept instruction
+					// is a conditional branch - in which case to keep the IL valid, there has to be something after
+					// the conditional branch instruction (the else branch). So if that's the case
+					// inject "ldnull; throw;" at the end - this branch should never be reachable and it's always valid
+					// (ret may need to return a value of the right type if the method has a return value which is complicated
+					// to construct out of nothing).
+					if (index == Instructions.Count - 1 && Instructions[index].OpCode == OpCodes.Ret &&
+						index > 0 && IsConditionalBranch (Instructions[index - 1].OpCode)) {
+						processor.Replace (index, Instruction.Create (OpCodes.Ldnull));
+						processor.InsertAfter (Instructions[index], Instruction.Create (OpCodes.Throw));
+					} else {
+						processor.RemoveAt (index);
+						++removed;
+					}
 				}
 			}
 
@@ -990,8 +1011,7 @@ namespace Mono.Linker.Steps
 							continue;
 
 						case FlowControl.Cond_Branch:
-							if (condBranches == null)
-								condBranches = new Stack<int> ();
+							condBranches ??= new Stack<int> ();
 
 							switch (instr.Operand) {
 							case Instruction starget:
@@ -1029,21 +1049,19 @@ namespace Mono.Linker.Steps
 					if (!exceptionHandlersChecked) {
 						exceptionHandlersChecked = true;
 
-						var instrs = Body.Instructions;
-						foreach (var handler in Body.ExceptionHandlers) {
+						var instrs = Instructions;
+						foreach (var handler in ExceptionHandlers) {
 							int start = instrs.IndexOf (handler.TryStart);
 							int end = instrs.IndexOf (handler.TryEnd) - 1;
 
 							if (!HasAnyBitSet (reachable, start, end)) {
-								if (unreachableHandlers == null)
-									unreachableHandlers = new List<ExceptionHandler> ();
+								unreachableHandlers ??= new List<ExceptionHandler> ();
 
 								unreachableHandlers.Add (handler);
 								continue;
 							}
 
-							if (condBranches == null)
-								condBranches = new Stack<int> ();
+							condBranches ??= new Stack<int> ();
 
 							condBranches.Push (GetInstructionIndex (handler.HandlerStart));
 							if (handler.FilterStart != null)
@@ -1143,6 +1161,11 @@ namespace Mono.Linker.Steps
 		struct BodySweeper
 		{
 			readonly MethodBody body;
+#pragma warning disable RS0030 // This optimizer is the reason for the banned API, so it needs to use the Cecil directly
+			Collection<Instruction> Instructions => body.Instructions;
+			Collection<VariableDefinition> Variables => body.Variables;
+			Collection<ExceptionHandler> ExceptionHandlers => body.ExceptionHandlers;
+#pragma warning restore RS0030
 			readonly BitArray reachable;
 			readonly List<ExceptionHandler>? unreachableExceptionHandlers;
 			readonly LinkContext context;
@@ -1169,7 +1192,7 @@ namespace Mono.Linker.Steps
 
 			public void Initialize ()
 			{
-				var instrs = body.Instructions;
+				var instrs = Instructions;
 
 				//
 				// Reusing same reachable map and altering it at indexes
@@ -1204,7 +1227,7 @@ namespace Mono.Linker.Steps
 				// Initial pass which replaces unreachable instructions with nops or
 				// ret to keep the body verifiable
 				//
-				var instrs = body.Instructions;
+				var instrs = Instructions;
 				for (int i = 0; i < instrs.Count; ++i) {
 					if (reachable[i])
 						continue;
@@ -1223,8 +1246,7 @@ namespace Mono.Linker.Steps
 
 					VariableDefinition? variable = GetVariableReference (instr);
 					if (variable != null) {
-						if (removedVariablesReferences == null)
-							removedVariablesReferences = new List<VariableDefinition> ();
+						removedVariablesReferences ??= new List<VariableDefinition> ();
 						if (!removedVariablesReferences.Contains (variable))
 							removedVariablesReferences.Add (variable);
 					}
@@ -1256,8 +1278,7 @@ namespace Mono.Linker.Steps
 							if (index > 0 && IsSideEffectFreeLoad (instrs[index - 1])) {
 								var nop = Instruction.Create (OpCodes.Nop);
 
-								if (sentinelNops == null)
-									sentinelNops = new List<Instruction> ();
+								sentinelNops ??= new List<Instruction> ();
 								sentinelNops.Add (nop);
 
 								ILProcessor.Replace (index - 1, Instruction.Create (OpCodes.Pop));
@@ -1293,7 +1314,7 @@ namespace Mono.Linker.Steps
 
 			void CleanRemovedVariables (List<VariableDefinition> variables)
 			{
-				foreach (var instr in body.Instructions) {
+				foreach (var instr in Instructions) {
 					VariableDefinition? variable = GetVariableReference (instr);
 					if (variable == null)
 						continue;
@@ -1306,7 +1327,7 @@ namespace Mono.Linker.Steps
 				}
 
 				variables.Sort ((a, b) => b.Index.CompareTo (a.Index));
-				var body_variables = body.Variables;
+				var body_variables = Variables;
 
 				foreach (var variable in variables) {
 					var index = body_variables.IndexOf (variable);
@@ -1331,7 +1352,7 @@ namespace Mono.Linker.Steps
 					return;
 
 				foreach (var eh in unreachableExceptionHandlers)
-					body.ExceptionHandlers.Remove (eh);
+					ExceptionHandlers.Remove (eh);
 			}
 
 			VariableDefinition? GetVariableReference (Instruction instruction)
@@ -1339,16 +1360,16 @@ namespace Mono.Linker.Steps
 				switch (instruction.OpCode.Code) {
 				case Code.Stloc_0:
 				case Code.Ldloc_0:
-					return body.Variables[0];
+					return Variables[0];
 				case Code.Stloc_1:
 				case Code.Ldloc_1:
-					return body.Variables[1];
+					return Variables[1];
 				case Code.Stloc_2:
 				case Code.Ldloc_2:
-					return body.Variables[2];
+					return Variables[2];
 				case Code.Stloc_3:
 				case Code.Ldloc_3:
-					return body.Variables[3];
+					return Variables[3];
 				}
 
 				if (instruction.Operand is VariableReference vr)
@@ -1393,7 +1414,9 @@ namespace Mono.Linker.Steps
 			{
 				MethodDefinition method = callee.Method;
 				Instruction[]? arguments = callee.Arguments;
+#pragma warning disable RS0030 // This optimizer is the reason for the banned API, so it needs to use the Cecil directly
 				Collection<Instruction> instructions = callee.Method.Body.Instructions;
+#pragma warning restore RS0030
 				MethodBody body = method.Body;
 
 				VariableReference vr;
@@ -1646,7 +1669,7 @@ namespace Mono.Linker.Steps
 								return false;
 
 							Instruction[]? args;
-							if (!md.HasParameters) {
+							if (!md.HasMetadataParameters ()) {
 								args = Array.Empty<Instruction> ();
 							} else {
 								//
@@ -1807,7 +1830,7 @@ namespace Mono.Linker.Steps
 
 			Instruction[]? GetArgumentsOnStack (MethodDefinition method)
 			{
-				int length = method.Parameters.Count;
+				int length = method.GetMetadataParametersCount ();
 				Debug.Assert (length != 0);
 				if (stack_instr?.Count < length)
 					return null;
@@ -1827,8 +1850,12 @@ namespace Mono.Linker.Steps
 				if (!body.InitLocals)
 					return null;
 
+#pragma warning disable RS0030 // This optimizer is the reason for the banned API, so it needs to use the Cecil directly
+				var variables = body.Variables;
+#pragma warning restore RS0030
+
 				// local variables don't need to be explicitly initialized
-				return CodeRewriterStep.CreateConstantResultInstruction (context, body.Variables[index].VariableType);
+				return CodeRewriterStep.CreateConstantResultInstruction (context, variables[index].VariableType);
 			}
 
 			bool GetOperandConstantValue ([NotNullWhen (true)] out object? value)
@@ -1885,16 +1912,14 @@ namespace Mono.Linker.Steps
 
 			void PushOnStack (Instruction instruction)
 			{
-				if (stack_instr == null)
-					stack_instr = new Stack<Instruction> ();
+				stack_instr ??= new Stack<Instruction> ();
 
 				stack_instr.Push (instruction);
 			}
 
 			void StoreToLocals (int index)
 			{
-				if (locals == null)
-					locals = new Dictionary<int, Instruction> ();
+				locals ??= new Dictionary<int, Instruction> ();
 
 				if (stack_instr == null)
 					Debug.Fail ("Invalid IL?");

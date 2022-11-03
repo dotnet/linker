@@ -30,9 +30,7 @@ namespace ILLink.Shared.TrimAnalysis
 
 			seenNodes.Add (node);
 
-			if (allNodesSeen != null) {
-				allNodesSeen.Add (node);
-			}
+			allNodesSeen?.Add (node);
 
 			bool foundCycle = false;
 			switch (node) {
@@ -46,7 +44,6 @@ namespace ILLink.Shared.TrimAnalysis
 			case KnownStringValue:
 			case ConstIntValue:
 			case MethodParameterValue:
-			case MethodThisParameterValue:
 			case MethodReturnValue:
 			case GenericParameterValue:
 			case RuntimeTypeHandleForGenericParameterValue:

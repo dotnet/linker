@@ -43,7 +43,6 @@ namespace Mono.Linker.Steps
 	public class SweepStep : BaseStep
 	{
 		readonly bool sweepSymbols;
-		readonly HashSet<AssemblyDefinition> BypassNGenToSave = new HashSet<AssemblyDefinition> ();
 
 		public SweepStep (bool sweepSymbols = true)
 		{
@@ -52,9 +51,7 @@ namespace Mono.Linker.Steps
 
 		protected override void Process ()
 		{
-			// To keep facades, scan all references so that even unused facades are kept
-			var assemblies = Context.KeepTypeForwarderOnlyAssemblies ?
-				Context.GetReferencedAssemblies ().ToArray () : Annotations.GetAssemblies ().ToArray ();
+			var assemblies = Annotations.GetAssemblies ().ToArray ();
 
 			// Ensure that any assemblies which need to be removed are marked for deletion,
 			// including assemblies which are not referenced by any others.
@@ -82,13 +79,10 @@ namespace Mono.Linker.Steps
 			foreach (var assembly in assemblies)
 				ProcessAssemblyAction (assembly);
 
-			if (Context.KeepTypeForwarderOnlyAssemblies)
-				return;
-
 			// Ensure that we remove any assemblies which were resolved while sweeping references
 			foreach (var assembly in Annotations.GetAssemblies ().ToArray ()) {
 				if (!assemblies.Any (processedAssembly => processedAssembly == assembly)) {
-					Debug.Assert (!IsUsedAssembly (assembly));
+					Debug.Assert (!IsMarkedAssembly (assembly));
 					Annotations.SetAction (assembly, AssemblyAction.Delete);
 				}
 			}
@@ -102,7 +96,7 @@ namespace Mono.Linker.Steps
 			case AssemblyAction.AddBypassNGenUsed:
 			case AssemblyAction.CopyUsed:
 			case AssemblyAction.Link:
-				if (!IsUsedAssembly (assembly))
+				if (!IsMarkedAssembly (assembly))
 					RemoveAssembly (assembly);
 
 				break;
@@ -160,7 +154,6 @@ namespace Mono.Linker.Steps
 						goto case AssemblyAction.AddBypassNGen;
 
 					case AssemblyAction.AddBypassNGen:
-						BypassNGenToSave.Add (assembly);
 						continue;
 					}
 				}
@@ -177,18 +170,9 @@ namespace Mono.Linker.Steps
 				Annotations.SetAction (assembly, AssemblyAction.AddBypassNGen);
 				goto case AssemblyAction.AddBypassNGen;
 
-			case AssemblyAction.AddBypassNGen:
-				// FIXME: AddBypassNGen is just wrong, it should not be action as we need to
-				// turn it to Action.Save here to e.g. correctly update debug symbols
-				if (!Context.KeepTypeForwarderOnlyAssemblies || BypassNGenToSave.Contains (assembly)) {
-					goto case AssemblyAction.Save;
-				}
-
-				break;
-
 			case AssemblyAction.CopyUsed:
 				AssemblyAction assemblyAction = AssemblyAction.Copy;
-				if (!Context.KeepTypeForwarderOnlyAssemblies && SweepTypeForwarders (assembly)) {
+				if (SweepTypeForwarders (assembly)) {
 					// Need to sweep references, in case sweeping type forwarders removed any
 					AssemblyReferencesCorrector.SweepAssemblyReferences (assembly);
 					assemblyAction = AssemblyAction.Save;
@@ -204,8 +188,11 @@ namespace Mono.Linker.Steps
 				SweepAssembly (assembly);
 				break;
 
+			case AssemblyAction.AddBypassNGen:
+			// FIXME: AddBypassNGen is just wrong, it should not be action as we need to
+			// turn it to Action.Save here to e.g. correctly update debug symbols
 			case AssemblyAction.Save:
-				if (!Context.KeepTypeForwarderOnlyAssemblies && SweepTypeForwarders (assembly)) {
+				if (SweepTypeForwarders (assembly)) {
 					// Need to sweep references, in case sweeping type forwarders removed any
 					AssemblyReferencesCorrector.SweepAssemblyReferences (assembly);
 				}
@@ -256,17 +243,6 @@ namespace Mono.Linker.Steps
 
 			if (SweepTypeForwarders (assembly) || updateScopes)
 				AssemblyReferencesCorrector.SweepAssemblyReferences (assembly);
-		}
-
-		bool IsUsedAssembly (AssemblyDefinition assembly)
-		{
-			if (IsMarkedAssembly (assembly))
-				return true;
-
-			if (assembly.MainModule.HasExportedTypes && Context.KeepTypeForwarderOnlyAssemblies)
-				return true;
-
-			return false;
 		}
 
 		bool IsMarkedAssembly (AssemblyDefinition assembly)
@@ -455,17 +431,19 @@ namespace Mono.Linker.Steps
 
 				SweepOverrides (method);
 
-				if (!method.HasParameters)
+				if (!method.HasMetadataParameters ())
 					continue;
 
 				bool sweepNames = CanSweepNamesForMember (method, MetadataTrimming.ParameterName);
 
+#pragma warning disable RS0030 // MethodReference.Parameters is banned. It makes sense to use when directly working with the Cecil type system though.
 				foreach (var parameter in method.Parameters) {
 					if (sweepNames)
 						parameter.Name = null;
 
 					SweepCustomAttributes (parameter);
 				}
+#pragma warning restore RS0030
 			}
 		}
 		void SweepOverrides (MethodDefinition method)
@@ -484,10 +462,12 @@ namespace Mono.Linker.Steps
 				//	ov is in a `link` scope and is unmarked
 				//		ShouldRemove returns true if the method is unmarked, but we also We need to make sure the override is in a link scope.
 				//		Only things in a link scope are marked, so ShouldRemove is only valid for items in a `link` scope.
+#pragma warning disable RS0030 // Cecil's Resolve is banned - it's necessary when the metadata graph isn't stable
 				if (method.Overrides[i].Resolve () is not MethodDefinition ov || ov.DeclaringType is null || (IsLinkScope (ov.DeclaringType.Scope) && ShouldRemove (ov)))
 					method.Overrides.RemoveAt (i);
 				else
 					i++;
+#pragma warning restore RS0030
 			}
 		}
 
@@ -627,9 +607,9 @@ namespace Mono.Linker.Steps
 				// But the cache doesn't know that, it would still "resolve" the type-ref to now defunct type-def.
 				// For this reason we can't use the context resolution here, and must force Cecil to perform
 				// real type resolution again (since it can fail, and that's OK).
-#pragma warning disable RS0030 // Do not used banned APIs
+#pragma warning disable RS0030 // Cecil's Resolve is banned -- it's necessary when the metadata graph isn't stable
 				TypeDefinition td = type.Resolve ();
-#pragma warning restore RS0030 // Do not used banned APIs
+#pragma warning restore RS0030
 				if (td == null) {
 					//
 					// This can happen when not all assembly refences were provided and we
@@ -651,7 +631,9 @@ namespace Mono.Linker.Steps
 
 			protected override void ProcessExportedType (ExportedType exportedType)
 			{
-				TypeDefinition td = exportedType.Resolve ();
+#pragma warning disable RS0030 // Cecil's Resolve is banned -- it's necessary when the metadata graph is unstable
+				TypeDefinition? td = exportedType.Resolve ();
+#pragma warning restore RS0030
 				if (td == null) {
 					// Forwarded type cannot be resolved but it was marked
 					// linker is running in --skip-unresolved true mode

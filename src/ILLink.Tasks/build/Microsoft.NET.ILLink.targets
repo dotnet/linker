@@ -59,7 +59,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 
   <!-- Suppress warnings produced by the linker or by the ILLink Roslyn analyzer. -->
   <PropertyGroup Condition="'$(SuppressTrimAnalysisWarnings)' == 'true'">
-    <ILLinkWarningLevel Condition="'$(ILLinkWarningLevel)' == ''">0</ILLinkWarningLevel>
+    <_ExtraTrimmerArgs>$(_ExtraTrimmerArgs) --notrimwarn</_ExtraTrimmerArgs>
     <EnableTrimAnalyzer Condition="'$(EnableTrimAnalyzer)' == ''">false</EnableTrimAnalyzer>
   </PropertyGroup>
 
@@ -205,6 +205,15 @@ Copyright (c) .NET Foundation. All rights reserved.
     <Warning Condition="'$(TrimmerDefaultAction)' != '' And $([MSBuild]::VersionGreaterThan('$(TargetFrameworkVersion)', '6.0'))"
              Text="Property 'TrimmerDefaultAction' is deprecated in .NET 7 and will be ignored. Use TrimMode instead." />
 
+    <!-- Use a sidecar file to suppress warnings when targeting net6.0, for changes that added or changed warnings. -->
+    <ItemGroup Condition="$([MSBuild]::VersionEquals($(TargetFrameworkVersion), '6.0'))">
+      <_ILLinkSuppressions Include="$(MSBuildThisFileDirectory)6.0_suppressions.xml" />
+    </ItemGroup>
+
+    <PropertyGroup Condition="'@(_ILLinkSuppressions->Count())' != '0'">
+      <_ExtraTrimmerArgs>$(_ExtraTrimmerArgs) --link-attributes "@(_ILLinkSuppressions->'%(Identity)', '" --link-attributes "')"</_ExtraTrimmerArgs>
+    </PropertyGroup>
+
     <!-- Set up TrimMode and TrimmerDefaultAction. -->
     <PropertyGroup>
       <TrimMode Condition="'$(TrimMode)' == '' And $([MSBuild]::VersionLessThan($(TargetFrameworkVersion), '6.0'))">copyused</TrimMode>
@@ -221,6 +230,17 @@ Copyright (c) .NET Foundation. All rights reserved.
       <ILLinkTreatWarningsAsErrors Condition=" '$(ILLinkTreatWarningsAsErrors)' == '' ">$(TreatWarningsAsErrors)</ILLinkTreatWarningsAsErrors>
       <_ExtraTrimmerArgs>--skip-unresolved true $(_ExtraTrimmerArgs)</_ExtraTrimmerArgs>
       <TrimmerSingleWarn Condition=" '$(TrimmerSingleWarn)' == '' ">true</TrimmerSingleWarn>
+    </PropertyGroup>
+
+   <!-- Suppressions to work around issues in previous versions of the framework. See https://github.com/dotnet/runtime/issues/40336 -->
+    <PropertyGroup Condition="'$(SuppressTrimAnalysisWarnings)' == 'true' And $([MSBuild]::VersionLessThan('$(TargetFrameworkVersion)', '6.0'))">
+      <!-- Framework embedded XML descriptors reference windows-only members. -->
+      <NoWarn Condition=" !$(RuntimeIdentifier.StartsWith('win')) ">$(NoWarn);IL2008</NoWarn> <!-- Unresolved type referenced in XML. -->
+      <NoWarn Condition=" !$(RuntimeIdentifier.StartsWith('win')) ">$(NoWarn);IL2009</NoWarn> <!-- Unresolved member on type referenced in XML. -->
+      <!-- Framework has DynamicDependencyAttributes that reference windows-only members. -->
+      <NoWarn Condition=" !$(RuntimeIdentifier.StartsWith('win')) ">$(NoWarn);IL2037</NoWarn> <!-- Unresolved member for DynamicDependencyAttribute -->
+      <!-- Framework embedded XML descriptors reference 32-bit-only members. -->
+      <NoWarn Condition=" '$(PlatformTarget)' != 'x64' AND '$(PlatformTarget)' != 'arm64'">$(NoWarn);IL2009;IL2012</NoWarn> <!-- Unresolved field referenced in XML -->
     </PropertyGroup>
 
     <!-- Enable serialization discovery for compat in < 7.0 -->

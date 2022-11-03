@@ -15,10 +15,10 @@
 
   <ItemGroup>
     <None Include="Microsoft.NET.ILLink.Analyzers.props" CopyToOutputDirectory="PreserveNewest" />
-    <!-- The repo CodeAnalyis version is ahead of what is shipped with Visual Studio, so that version breaks the analyzers when used in .Net Framework builds -->
-    <!-- Once Visual Studio ships with a version >= $MicrosoftCodeAnalysisVersion, this should be changed to use the property -->
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisVersion)" PrivateAssets="all" />
-    <PackageReference Condition="'$(DotNetBuildFromSource)' != 'true'" Include="StaticCs" Version="$(StaticCsVersion)">
+    <!-- The repo CodeAnalyis version may be ahead of what is shipped with Visual Studio, so that version may break the analyzers when used in .Net Framework builds -->
+    <PackageReference Condition="'$(DotNetBuildFromSource)' != 'true'" Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisVersion)" PrivateAssets="all" />
+    <!-- Source-build must always build with the $(MicrosoftCodeAnalysisVersion) to prevent introducing prebuilts. -->
+    <PackageReference Condition="'$(DotNetBuildFromSource)' == 'true'" Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisVersion)" PrivateAssets="all" />
       <PrivateAssets>all</PrivateAssets>
       <ExcludeAssets>contentfiles</ExcludeAssets> <!-- We include our own copy of the ClosedAttribute to work in source build -->
     </PackageReference>
