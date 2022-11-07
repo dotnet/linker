@@ -163,9 +163,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		void VerifyKeptByAttribute (string keptAttributeProviderName, CustomAttribute attribute)
 		{
-			// public KeptByAttribute (string dependencyProvider, DependencyKind reason) { }
-			// public KeptByAttribute (Type dependencyProvider, DependencyKind reason) { }
-			// public KeptByAttribute (Type dependencyProvider, string memberName, DependencyKind reason) { }
+			// public KeptByAttribute (string dependencyProvider, string reason) { }
+			// public KeptByAttribute (Type dependencyProvider, string reason) { }
+			// public KeptByAttribute (Type dependencyProvider, string memberName, string reason) { }
 
 			Assert.AreEqual (nameof (KeptByAttribute), attribute.AttributeType.Name);
 
@@ -174,8 +174,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			expectedDependency.Target = keptAttributeProviderName;
 			expectedDependency.Marked = true;
 			if (attribute.ConstructorArguments.Count == 2) {
-				// public KeptByAttribute (string dependencyProvider, DependencyKind reason) { }
-				// public KeptByAttribute (Type dependencyProvider, DependencyKind reason) { }
+				// public KeptByAttribute (string dependencyProvider, string reason) { }
+				// public KeptByAttribute (Type dependencyProvider, string reason) { }
 				if (attribute.ConstructorArguments[0].Type.IsTypeOf<string> ())
 					expectedDependency.Source = (string) attribute.ConstructorArguments[0].Value;
 				else if (attribute.ConstructorArguments[0].Type.IsTypeOf<Type> ())
@@ -185,7 +185,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 				expectedDependency.DependencyKind = (string) attribute.ConstructorArguments[1].Value;
 			} else if (attribute.ConstructorArguments.Count == 3) {
-				// public KeptByAttribute (Type dependencyProvider, string memberName, DependencyKind reason) { }
+				// public KeptByAttribute (Type dependencyProvider, string memberName, string reason) { }
 				if (!attribute.ConstructorArguments[0].Type.IsTypeOf<Type> ())
 					throw new NotImplementedException ("Unexpected KeptByAttribute ctor variant");
 				var type = (TypeDefinition) attribute.ConstructorArguments[0].Value;
