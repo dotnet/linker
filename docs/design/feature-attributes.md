@@ -32,9 +32,9 @@ Access to members with a _feature requirement_ is always allowed from a _feature
 
 ## Feature available scope
 
-Methods and constructors (except static constructors) with a _feature requirement_ are in a _feature available_ scope.
+Methods and constructors (including static constructors) with a _feature requirement_ are in a _feature available_ scope.
 
-Methods, constructors (except static constructors), fields declared in a class or struct with a _feature requirement_ are also in a _feature available_ scope.
+Methods, constructors (including static constructors), and fields declared in a class or struct with a _feature requirement_ are also in a _feature available_ scope.
 
 Properties and events declared in a class or struct with a _feature requirement_ are also in a _feature available_ scope.
 
@@ -55,9 +55,9 @@ Static constructors never have a _feature requirement_. `RequiresFeature` on a s
 When `RequiresFeature` is used on a class, this declares a _feature requirement_ for the class.
 
 When a class has a _feature requirement_, this creates a _feature requirement_ for the following members of the class:
-  - static methods (not including the static constructor)
+  - static methods
   - static fields
-  - instance constructors
+  - all constructors (static and instance)
   - static properties
   - static events
 
@@ -67,13 +67,13 @@ Note also that this may create a _feature requirement_ for fields, properties, a
 ### Structs
 
 When a struct has a _feature requirement_, this creates a _feature requirement_ for the following members of the struct:
-  - all methods (not including the static constructor)
-  - instance constructors
+  - all methods
+  - all constructors (static and instance)
   - all fields
   - all properties
   - all events
 
-Note also that structs may have _feature requirement_ due to compiler-generated code, even though they can not have `RequiresFeature`.
+Note that structs may have _feature requirement_ due to compiler-generated code, even though they can not have `RequiresFeature`.
 
 ### State machine types
 
@@ -97,7 +97,7 @@ Note that a lambda or local function inherits _feature requirement_ from the enc
 
 ### RequiresFeatureAttribute
 
-`RequiresFeatureAttribute` on a static constructor warns.
+`RequiresFeatureAttribute` on a static constructor is disallowed.
 
 `RequiresFeatureAttribute` on a method that already has a _feature requirement_ due to another attribute is allowed.
 
@@ -105,12 +105,12 @@ Note that a lambda or local function inherits _feature requirement_ from the enc
 
 ### Virtual methods
 
-- Overriding a _feature requirement_ method with a method outside of a _feature available_ scope warns.
-- Overriding a method outside of a _feature available_ scope with a _feature requirement_ method warns.
+- Overriding a _feature requirement_ method with a method outside of a _feature available_ scope is disallowed.
+- Overriding a method outside of a _feature available_ scope with a _feature requirement_ method is disallowed.
 
 ### Member access
 
-Access to a _feature requirement_ method, constructor, field, property, or event outside of a _feature available_ scope warns.
+Access to a _feature requirement_ method, constructor, field, property, or event outside of a _feature available_ scope is disallowed.
 
 ## Feature checks
 
@@ -128,7 +128,7 @@ Thie latter can happen for methods in a type with _feature requirement_ (but tha
 
 ## Alternatives
 
-One simplification would be to unify the concepts of _feature requirement_ with _feature available_, and treat both as similar to preprocessor symbols, where _any_ reference to a guarded type or member from an unguarded context warns.
+One simplification would be to unify the concepts of _feature requirement_ with _feature available_, and treat both as similar to preprocessor symbols, where _any_ reference to a guarded type or member from an unguarded context is disallowed.
 
 The advantage of the specified model is that it allows some references without warning, giving some extra flexibility and making it easier to migrate existing code. The downside is that it might lead to preserving more code, whereas a simplified model could guarantee that all code related to a disabled feature is removed.
 
