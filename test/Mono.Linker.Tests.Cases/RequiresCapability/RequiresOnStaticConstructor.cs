@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Helpers;
+using System.Reflection;
 
 namespace Mono.Linker.Tests.Cases.RequiresCapability
 {
@@ -23,6 +24,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestStaticCtorMarkingIsTriggeredByFieldAccessOnExplicitLayout ();
 			TestStaticCtorTriggeredByMethodCall ();
 			TestTypeIsBeforeFieldInit ();
+			TestStaticCtorOnTypeWithRequires ();
 			typeof (StaticCtor).RequiresNonPublicConstructors ();
 		}
 
@@ -42,6 +44,19 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		static void TestStaticCctorRequires ()
 		{
 			_ = new StaticCtor ();
+		}
+
+		[RequiresUnreferencedCode ("Message for --StaticCtorOnTypeWithRequires--")]
+		class StaticCtorOnTypeWithRequires
+		{
+			static StaticCtorOnTypeWithRequires () => MethodWithRequires ();
+		}
+
+		[ExpectedWarning ("IL2026", "Message for --StaticCtorOnTypeWithRequires--")]
+		static void TestStaticCtorOnTypeWithRequires ()
+		{
+			var cctor = typeof (StaticCtorOnTypeWithRequires).GetConstructor (BindingFlags.Static | BindingFlags.NonPublic, new Type[0]);
+			cctor.Invoke (null, null);
 		}
 
 		class StaticCtorTriggeredByFieldAccess
