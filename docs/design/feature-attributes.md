@@ -30,7 +30,7 @@ The use of this attribute establishes a [_feature requirement_](#feature-require
 
 Access to members with a _feature requirement_ is always allowed from a _feature available_ scope, and never produces feature warnings. The restrictions created by _feature requirement_ only limit access from scopes outside of _feature available_, where certain access patterns produce warnings.
 
-## Feature available scopes
+## Feature available scope
 
 Methods and constructors (except static constructors) with a _feature requirement_ are in a _feature available_ scope.
 
