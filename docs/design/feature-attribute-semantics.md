@@ -67,7 +67,7 @@ Note that the _feature available_ scope for a type does not extend to nested typ
 
 When `RequiresFeature` is used on a method or constructor (except static constructors), this declares a _feature requirement_ for the method.
 
-Static constructors never have a _feature requirement_. `RequiresFeature` on a static constructor is not supported.
+`RequiresFeature` on a static constructor is not supported. Note however that static constructors may have a _feature requirement_ due to the declaring type having a _feature requirement_.
 
 ### Classes
 
@@ -75,8 +75,8 @@ When `RequiresFeature` is used on a class, this declares a _feature requirement_
 
 When a class has a _feature requirement_, this creates a _feature requirement_ for the following members of the class:
   - static methods
-  - static fields
   - all constructors (static and instance)
+  - static fields
   - static properties
   - static events
 
