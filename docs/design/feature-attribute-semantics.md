@@ -1,6 +1,22 @@
-# Feature attributes
+# Feature attribute semantics
 
-This specification defines the semantics of "feature attributes", in terms of a hypothetical `RequiresFeature` attribute type. The rules described here are designed to be applicable to any attribute that describes feature or capability of the code or the platform.
+This specification defines the semantics of "feature attributes", in terms of a hypothetical `RequiresFeature` attribute type. The rules described here are designed to be applicable to any attribute that describes a feature or capability of the code or the platform.
+
+## Terminology
+
+There's a history in .NET of using the terms "features" and "capabilities" to describe closely related concepts.
+
+In the linker and runtime we often refer to "feature switches", which are toggles that can tell illink and NativeAot to treat specific predefined properties as constants. There are also "runtime features" such as support for new language features like byref fields.
+
+We also often refer to "platform capabilities" such as the ability to run dynamic code, or the ability to create new threads. Sometimes the deployment model may restrict the set of available APIs; in that case we also may refer to "capabilities" (for example the ability to access files on disk, which is not available in single-file apps).
+
+Capabilities will often have associated attributes and/or feature switches. For example, `RequiresDynamicCodeAttribute` is used to annotate code which requires support for running dynamic code, and `RuntimeFeature.IsDynamicCodeSupported` can be used to check for this support and guard access to annotated code. We also have many feature switches for features which depend on the availablility of so-called unreferenced code (that is, code which may be removed by trimming), which is attributed with `RequiresUnreferencedCodeAttribute`.
+
+Feature switch settings may also be determined by explicit configuration (in addition to the choice of target platform or deployment model). For example, the `System.Globalization.Invariant` feature switch can be used disable support for culture-specific globalization behavior.
+
+This design takes the view that "features" and "capabilities" are essentially the same concept. We use the terminology "features" for these attribute semantics, because it seems to have slightly more general usage. "Features" as used today often includes runtime features which don't have feature switches or attributes, whereas "capabilities" is most often used to refer to capabilities of the platform or deployment model and do usually come with feature switches.
+
+The intention is for this specification to be generally applicable to any feature which would benefit from an attribute used to annotate code that should only be run when a given feature is available. The decision whether to introduce such a feature attribute is of course determined case by case by the feature owners.
 
 ## Motivation
 
@@ -8,7 +24,9 @@ Existing attributes like `RequiresUnreferencedCodeAttribute`, `RequiresDynamicCo
 
 The ILLink Roslyn analyzer also produces warnings for these attributes, but doesn't have insight into the compilation strategy used for compiler-generated code. These rules are designed so that the warnings produced by a Roslyn analyzer are matched by the IL analysis, but IL analysis may include additional warnings (specifically for reflection access to compiler-generated code).
 
-There is also the possibility that we will create an attribute-based model which allows users to define their own such attributes; see this draft for example: https://github.com/dotnet/designs/pull/261. The semantics outlined here could be extended to those attributes if we determine that they are appropriate there.
+There is also the possibility that we will create an attribute-based model which allows users to define their own feature attributes; see this draft for example: https://github.com/dotnet/designs/pull/261. The semantics outlined here could be extended to those attributes if we determine that they are appropriate there.
+
+We would also like to share as much code as possible for this logic between the linker, NativeAot, the corresponding analyzers, and possibly future analyzers.
 
 ## Goals
 
@@ -20,11 +38,12 @@ There is also the possibility that we will create an attribute-based model which
 - Specify the warning codes or wording of the specific warnings for disallowed access
 - Define a model for defining new feature attributes
 - Define an attribute-based model for feature switches
+- Specify the relationship between feature switches and feature attributes
 - Define the interactions between `RequiresUnreferencedCodeAttribute` and `DynamicallyAccessedMembersAttribute`
 
 ## RequiresFeatureAttribute
 
-`RequiresFeature` may be used on methods, constructors, or classes only.
+`RequiresFeatureAttribute` may be used on methods, constructors, or classes only.
 
 The use of this attribute establishes a [_feature requirement_](#feature-requirement) for the attributed type or member, which restricts access to the attributed type or member (and in some cases to other related IL) in certain ways. It also establishes a [_feature available_](#feature-available-scope) scope (which includes the attributed member but may also include other related IL) wherein access to members with a _feature requirement_ is allowed.
 
@@ -40,7 +59,7 @@ Properties and events declared in a class or struct with a _feature requirement_
 
 Lambdas and local functions inside of a method in a _feature available_ scope are also in a _feature available_ scope.
 
-Note that nested types declared in a type that is in a _feature available_ scope are not necessarily in a _feature available_ scope.
+Note that the _feature available_ scope for a type does not extend to nested types.
 
 ## Feature requirement
 
@@ -95,13 +114,13 @@ Note that a lambda or local function inherits _feature requirement_ from the enc
 
 ## Validation behavior
 
-### RequiresFeatureAttribute
+### RequiresFeature attribute
 
-`RequiresFeatureAttribute` on a static constructor is disallowed.
+`RequiresFeature` on a static constructor is disallowed.
 
-`RequiresFeatureAttribute` on a method that already has a _feature requirement_ due to another attribute is allowed.
+`RequiresFeature` on a method that already has a _feature requirement_ due to another attribute is allowed.
 
-`RequiresFeatureAttribute` on a method that is in a _feature available_ scope is allowed. This establishes a _feature requirement_ for the method even if there was not one previously. (Note: this could be made stricter by warning about redundant `RequiresFeatureAttribute` on methods that are already in a _feature available_ scope.)
+`RequiresFeature` on a method that is in a _feature available_ scope is allowed. This establishes a _feature requirement_ for the method even if there was not one previously. (Note: this could be made stricter by warning about redundant `RequiresFeature` on methods that are already in a _feature available_ scope.)
 
 ### Virtual methods
 
