@@ -636,8 +636,7 @@ namespace Mono.Linker.Steps
 
 			void RewriteConditionTo (int index, Instruction instruction)
 			{
-				if (conditionInstrsToReplace == null)
-					conditionInstrsToReplace = new List<(int, Instruction)> ();
+				conditionInstrsToReplace ??= new List<(int, Instruction)> ();
 
 				conditionInstrsToReplace.Add ((index, instruction));
 			}
