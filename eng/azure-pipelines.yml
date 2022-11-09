@@ -28,6 +28,10 @@ variables:
     value: ${{ format('{0} /p:OfficialBuildId=$(Build.BuildNumber) /p:Test=false /p:IntegrationTest=false', variables['_BuildArgs']) }}
   # Provide HelixApiAccessToken for telemetry
   - group: DotNet-HelixApi-Access
+  - name: Codeql.Enabled
+    value: True
+  - name: Codeql.TSAEnabled
+    value: True
 
 stages:
 - stage: build
@@ -56,7 +60,7 @@ stages:
             vmImage: windows-latest
           ${{ if eq(variables.officialBuild, 'true') }}:
             name: NetCore1ESPool-Internal
-            demands: ImageOverride -equals Build.Windows.10.Amd64.VS2019
+            demands: ImageOverride -equals 1es-windows-2019
         variables:
           - ${{ if eq(variables.officialBuild, 'false') }}:
             - _SignType: test
@@ -95,7 +99,7 @@ stages:
           ${{ if eq(variables.officialBuild, 'true' )}}:
             name: NetCore1ESPool-Internal
             demands: ImageOverride -equals Build.Ubuntu.1804.Amd64
-        container: 'mcr.microsoft.com/dotnet-buildtools/prereqs:centos-7-3e800f1-20190501005343'
+        container: 'mcr.microsoft.com/dotnet-buildtools/prereqs:centos-7'
         workspace:
           clean: all
         steps:

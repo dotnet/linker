@@ -1,3 +1,5 @@
+using System;
+using System.Runtime.CompilerServices;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.Basic
@@ -8,6 +10,7 @@ namespace Mono.Linker.Tests.Cases.Basic
 		{
 			A a = new A ();
 			PreventCompilerOptimization (a);
+			R r = new R ();
 		}
 
 		[Kept]
@@ -26,6 +29,62 @@ namespace Mono.Linker.Tests.Cases.Basic
 			public void UnusedMethod ()
 			{
 			}
+		}
+
+		[KeptAttributeAttribute (typeof (IsByRefLikeAttribute))]
+		[KeptAttributeAttribute (typeof (CompilerFeatureRequiredAttribute))]
+		[KeptAttributeAttribute (typeof (ObsoleteAttribute))]
+		ref struct R
+		{
+			[Kept]
+			public ref int UnusedRefField;
+
+			[Kept]
+			public ref ReferencedType UnusedClass;
+
+			[Kept]
+			public ref ReferencedStruct UnusedStruct;
+
+			[Kept]
+			public ReferencedRefStruct UnusedRefStruct;
+
+			[Kept]
+			int UnusedField;
+
+			[Kept]
+			int UsedField;
+		}
+
+		[Kept]
+		struct ReferencedStruct
+		{
+			[Kept]
+			int UnusedField;
+
+			[Kept]
+			int UnusedField2;
+		}
+
+		[Kept]
+		[KeptAttributeAttribute (typeof (IsByRefLikeAttribute))]
+		[KeptAttributeAttribute (typeof (CompilerFeatureRequiredAttribute))]
+		[KeptAttributeAttribute (typeof (ObsoleteAttribute))]
+		ref struct ReferencedRefStruct
+		{
+			[Kept]
+			public ref int UnusedRefField;
+
+			[Kept]
+			public ref ReferencedType UnusedClass;
+
+			[Kept]
+			int UnusedField;
+		}
+
+		[Kept]
+		class ReferencedType
+		{
+			int field;
 		}
 	}
 }

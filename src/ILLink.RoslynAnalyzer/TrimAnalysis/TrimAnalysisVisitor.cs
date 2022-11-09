@@ -113,7 +113,7 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 			// The instance reference operation represents a 'this' or 'base' reference to the containing type,
 			// so we get the annotation from the containing method.
 			if (instanceRef.Type != null && instanceRef.Type.IsTypeInterestingForDataflow ())
-				return new MethodThisParameterValue (Method);
+				return new MethodParameterValue (Method, (ParameterIndex) 0, Method.GetDynamicallyAccessedMemberTypes ());
 
 			return TopValue;
 		}
@@ -252,8 +252,10 @@ namespace ILLink.RoslynAnalyzer.TrimAnalysis
 
 			var diagnosticContext = DiagnosticContext.CreateDisabled ();
 			var handleCallAction = new HandleCallAction (diagnosticContext, Method, operation);
+			MethodProxy method = new (calledMethod);
+			var intrinsicId = Intrinsics.GetIntrinsicIdForMethod (method);
 
-			if (!handleCallAction.Invoke (new MethodProxy (calledMethod), instance, arguments, out MultiValue methodReturnValue, out var intrinsicId)) {
+			if (!handleCallAction.Invoke (method, instance, arguments, intrinsicId, out MultiValue methodReturnValue)) {
 				switch (intrinsicId) {
 				case IntrinsicId.Array_Empty:
 					methodReturnValue = ArrayValue.Create (0);

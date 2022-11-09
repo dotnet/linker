@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -13,6 +14,7 @@ using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 using Mono.Linker.Tests.Extensions;
 using NUnit.Framework;
+using WellKnownType = ILLink.Shared.TypeSystemProxy.WellKnownType;
 
 namespace Mono.Linker.Tests.TestCasesRunner
 {
@@ -47,6 +49,32 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			_linkedReaderParameters = linkedReaderParameters;
 		}
 
+		static void VerifyIL (NPath pathToAssembly)
+		{
+			var verifier = new ILVerifier (pathToAssembly);
+			foreach (var result in verifier.Results) {
+				if (result.Code == ILVerify.VerifierError.None)
+					continue;
+				Assert.Fail (ILVerifier.GetErrorMessage (result));
+			}
+		}
+
+		static bool ShouldValidateIL (AssemblyDefinition inputAssembly)
+		{
+			if (HasAttribute (inputAssembly, nameof (SkipPeVerifyAttribute)))
+				return false;
+
+			var caaIsUnsafeFlag = (CustomAttributeArgument caa) =>
+				caa.Type.IsTypeOf (WellKnownType.System_String)
+				&& (string) caa.Value == "/unsafe";
+			var customAttributeHasUnsafeFlag = (CustomAttribute ca) => ca.ConstructorArguments.Any (caaIsUnsafeFlag);
+			if (GetCustomAttributes (inputAssembly, nameof (SetupCompileArgumentAttribute))
+				.Any (customAttributeHasUnsafeFlag))
+				return false;
+
+			return true;
+		}
+
 		public virtual void Check (LinkedTestCaseResult linkResult)
 		{
 			InitializeResolvers (linkResult);
@@ -57,13 +85,16 @@ namespace Mono.Linker.Tests.TestCasesRunner
 					Assert.IsTrue (linkResult.OutputAssemblyPath.FileExists (), $"The linked output assembly was not found.  Expected at {linkResult.OutputAssemblyPath}");
 					var linked = ResolveLinkedAssembly (linkResult.OutputAssemblyPath.FileNameWithoutExtension);
 
+					if (ShouldValidateIL (original))
+						VerifyIL (linkResult.OutputAssemblyPath);
+
 					InitialChecking (linkResult, original, linked);
 
 					PerformOutputAssemblyChecks (original, linkResult.OutputAssemblyPath.Parent);
 					PerformOutputSymbolChecks (original, linkResult.OutputAssemblyPath.Parent);
 
 					if (!HasAttribute (original.MainModule.GetType (linkResult.TestCase.ReconstructedFullTypeName), nameof (SkipKeptItemsValidationAttribute))) {
-						CreateAssemblyChecker (original, linked).Verify ();
+						CreateAssemblyChecker (original, linked, linkResult).Verify ();
 					}
 				}
 
@@ -75,9 +106,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			}
 		}
 
-		protected virtual AssemblyChecker CreateAssemblyChecker (AssemblyDefinition original, AssemblyDefinition linked)
+		protected virtual AssemblyChecker CreateAssemblyChecker (AssemblyDefinition original, AssemblyDefinition linked, LinkedTestCaseResult linkedTestCase)
 		{
-			return new AssemblyChecker (original, linked);
+			return new AssemblyChecker (original, linked, linkedTestCase);
 		}
 
 		void InitializeResolvers (LinkedTestCaseResult linkedResult)
@@ -1070,14 +1101,39 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		static bool HasAttribute (ICustomAttributeProvider caProvider, string attributeName)
 		{
-			if (caProvider is AssemblyDefinition assembly && assembly.EntryPoint != null)
-				return assembly.EntryPoint.DeclaringType.CustomAttributes
-					.Any (attr => attr.AttributeType.Name == attributeName);
+			return TryGetCustomAttribute (caProvider, attributeName, out var _);
+		}
 
-			if (caProvider is TypeDefinition type)
-				return type.CustomAttributes.Any (attr => attr.AttributeType.Name == attributeName);
+#nullable enable
+		static bool TryGetCustomAttribute (ICustomAttributeProvider caProvider, string attributeName, [NotNullWhen (true)] out CustomAttribute? customAttribute)
+		{
+			if (caProvider is AssemblyDefinition assembly && assembly.EntryPoint != null) {
+				customAttribute = assembly.EntryPoint.DeclaringType.CustomAttributes
+					.FirstOrDefault (attr => attr!.AttributeType.Name == attributeName, null);
+				return customAttribute is not null;
+			}
 
+			if (caProvider is TypeDefinition type) {
+				customAttribute = type.CustomAttributes
+					.FirstOrDefault (attr => attr!.AttributeType.Name == attributeName, null);
+				return customAttribute is not null;
+			}
+			customAttribute = null;
 			return false;
 		}
+
+		static IEnumerable<CustomAttribute> GetCustomAttributes (ICustomAttributeProvider caProvider, string attributeName)
+		{
+			if (caProvider is AssemblyDefinition assembly && assembly.EntryPoint != null)
+				return assembly.EntryPoint.DeclaringType.CustomAttributes
+					.Where (attr => attr!.AttributeType.Name == attributeName);
+
+			if (caProvider is TypeDefinition type)
+				return type.CustomAttributes
+					.Where (attr => attr!.AttributeType.Name == attributeName);
+
+			return Enumerable.Empty<CustomAttribute> ();
+		}
+#nullable restore
 	}
 }

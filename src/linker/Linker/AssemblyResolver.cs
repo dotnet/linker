@@ -100,12 +100,10 @@ namespace Mono.Linker
 			// Any full path explicit reference takes precedence over other look up logic
 			asm = ResolveFromReferences (name);
 
-			if (asm == null)
-				asm = SearchDirectory (name);
+			asm ??= SearchDirectory (name);
 
 			if (asm == null) {
-				if (_unresolvedAssemblies == null)
-					_unresolvedAssemblies = new HashSet<string> ();
+				_unresolvedAssemblies ??= new HashSet<string> ();
 
 				if (!probing)
 					ReportUnresolvedAssembly (name);
@@ -120,8 +118,7 @@ namespace Mono.Linker
 
 		void ReportUnresolvedAssembly (AssemblyNameReference reference)
 		{
-			if (_reportedUnresolvedAssemblies == null)
-				_reportedUnresolvedAssemblies = new HashSet<string> ();
+			_reportedUnresolvedAssemblies ??= new HashSet<string> ();
 
 			if (!_reportedUnresolvedAssemblies.Add (reference.Name))
 				return;
@@ -158,8 +155,7 @@ namespace Mono.Linker
 
 				return result;
 			} finally {
-				if (viewStream != null)
-					viewStream.Dispose ();
+				viewStream?.Dispose ();
 			}
 		}
 
@@ -225,11 +221,9 @@ namespace Mono.Linker
 			}
 
 			AssemblyCache.Clear ();
-			if (_unresolvedAssemblies != null)
-				_unresolvedAssemblies.Clear ();
+			_unresolvedAssemblies?.Clear ();
 
-			if (_reportedUnresolvedAssemblies != null)
-				_reportedUnresolvedAssemblies.Clear ();
+			_reportedUnresolvedAssemblies?.Clear ();
 
 			foreach (var viewStream in _viewStreams) {
 				viewStream.Dispose ();

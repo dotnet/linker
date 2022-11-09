@@ -2,19 +2,22 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using ILLink.Shared.TypeSystemProxy;
 using Mono.Cecil;
 
 namespace Mono.Linker
 {
-	public static class MethodReferenceExtensions
+	internal static class MethodReferenceExtensions
 	{
 		public static string GetDisplayName (this MethodReference method)
 		{
 			var sb = new System.Text.StringBuilder ();
 
 			// Match C# syntaxis name if setter or getter
+#pragma warning disable RS0030 // Cecil's Resolve is banned -- this should be a very cold path and makes calling this method much simpler
 			var methodDefinition = method.Resolve ();
+#pragma warning restore RS0030
 			if (methodDefinition != null && (methodDefinition.IsSetter || methodDefinition.IsGetter)) {
 				// Append property name
 				string name = methodDefinition.IsSetter ? string.Concat (methodDefinition.Name.AsSpan (4), ".set") : string.Concat (methodDefinition.Name.AsSpan (4), ".get");
@@ -40,11 +43,12 @@ namespace Mono.Linker
 
 			// Append parameters
 			sb.Append ("(");
-			if (method.HasParameters) {
+			if (method.HasMetadataParameters ()) {
+#pragma warning disable RS0030 // MethodReference.Parameters is banned -- it's best to leave this as is for now
 				for (int i = 0; i < method.Parameters.Count - 1; i++)
 					sb.Append (method.Parameters[i].ParameterType.GetDisplayNameWithoutNamespace ()).Append (", ");
-
 				sb.Append (method.Parameters[method.Parameters.Count - 1].ParameterType.GetDisplayNameWithoutNamespace ());
+#pragma warning restore RS0030 // Do not used banned APIs
 			}
 
 			sb.Append (")");
@@ -80,22 +84,41 @@ namespace Mono.Linker
 			return method.ReturnType.WithoutModifiers ().MetadataType == MetadataType.Void;
 		}
 
-		public static TypeReference? GetParameterType (this MethodReference method, int parameterIndex, LinkContext context)
+		public static TypeReference? GetInflatedParameterType (this MethodReference method, int parameterIndex, LinkContext context)
 		{
+#pragma warning disable RS0030 // MethodReference.Parameters is banned -- it's best to leave this as is for now
 			if (method.DeclaringType is GenericInstanceType genericInstance)
 				return TypeReferenceExtensions.InflateGenericType (genericInstance, method.Parameters[parameterIndex].ParameterType, context);
 
 			return method.Parameters[parameterIndex].ParameterType;
+#pragma warning restore RS0030 // Do not used banned APIs
 		}
+
+		/// <summary>
+		/// Gets the number of entries in the 'Parameters' section of a method's metadata (i.e. excludes the implicit 'this' from the count)
+		/// </summary>
+#pragma warning disable RS0030 // MethodReference.Parameters is banned -- this provides a wrapper
+		public static int GetMetadataParametersCount (this MethodReference method)
+			=> method.Parameters.Count;
+#pragma warning restore RS0030 // Do not used banned APIs
+
+		/// <summary>
+		/// Returns true if the method has any parameters in the .parameters section of the method's metadata (i.e. excludes the impicit 'this')
+		/// </summary>
+		public static bool HasMetadataParameters (this MethodReference method)
+			=> method.GetMetadataParametersCount () != 0;
+
+		/// <summary>
+		/// Returns the number of the parameters pushed before the method's call (i.e. including the implicit 'this' if present)
+		/// </summary>
+#pragma warning disable RS0030 // MethodReference.Parameters is banned -- this provides a wrapper
+		public static int GetParametersCount (this MethodReference method)
+			=> method.Parameters.Count + (method.HasImplicitThis () ? 1 : 0);
+#pragma warning restore RS0030 // Do not used banned APIs
 
 		public static bool IsDeclaredOnType (this MethodReference method, string fullTypeName)
 		{
 			return method.DeclaringType.IsTypeOf (fullTypeName);
-		}
-
-		public static bool HasParameterOfType (this MethodReference method, int parameterIndex, string fullTypeName)
-		{
-			return method.Parameters.Count > parameterIndex && method.Parameters[parameterIndex].ParameterType.IsTypeOf (fullTypeName);
 		}
 
 		public static bool HasImplicitThis (this MethodReference method)
@@ -104,23 +127,28 @@ namespace Mono.Linker
 		}
 
 		/// <summary>
-		/// Returns the ReferenceKind of a parameter (in, out, ref, none) of a method. Uses the IL based index number (i.e. `this` is 0 if there is a `this`, then 1 is the first parameter)
+		/// Returns an IEnumerable of the ReferenceKind of each parameter, with the first being for the implicit 'this' parameter if it exists
+		/// Used for better performance when it's only necessary to get the ReferenceKind of all parameters and nothing else.
 		/// </summary>
-		public static ReferenceKind ParameterReferenceKind (this MethodReference method, int index)
+		public static IEnumerable<ReferenceKind> GetParameterReferenceKinds (this MethodReference method)
 		{
-			if (method.HasImplicitThis ()) {
-				if (index == 0)
-					return method.DeclaringType.IsValueType ? ReferenceKind.Ref : ReferenceKind.None;
-				index--;
+			if (method.HasImplicitThis ())
+				yield return method.DeclaringType.IsValueType ? ReferenceKind.Ref : ReferenceKind.None;
+#pragma warning disable RS0030 // MethodReference.Parameters is banned -- this provides a wrapper
+			foreach (var parameter in method.Parameters)
+				yield return GetReferenceKind (parameter);
+#pragma warning restore RS0030 // Do not used banned APIs
+
+			static ReferenceKind GetReferenceKind (ParameterDefinition param)
+			{
+				if (!param.ParameterType.IsByReference)
+					return ReferenceKind.None;
+				if (param.IsIn)
+					return ReferenceKind.In;
+				if (param.IsOut)
+					return ReferenceKind.Out;
+				return ReferenceKind.Ref;
 			}
-			var param = method.Parameters[index];
-			if (!param.ParameterType.IsByReference)
-				return ReferenceKind.None;
-			if (param.IsIn)
-				return ReferenceKind.In;
-			if (param.IsOut)
-				return ReferenceKind.Out;
-			return ReferenceKind.Ref;
 		}
 	}
 }

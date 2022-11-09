@@ -436,6 +436,9 @@ namespace Mono.Linker
 			return public_api.Contains (provider);
 		}
 
+		/// <summary>
+		/// Returns a list of all known methods that override <paramref name="method"/>. The list may be incomplete if other overrides exist in assemblies that haven't been processed by TypeMapInfo yet
+		/// </summary>
 		public IEnumerable<OverrideInformation>? GetOverrides (MethodDefinition method)
 		{
 			return TypeMapInfo.GetOverrides (method);
@@ -446,7 +449,14 @@ namespace Mono.Linker
 			return TypeMapInfo.GetDefaultInterfaceImplementations (method);
 		}
 
-		public List<MethodDefinition>? GetBaseMethods (MethodDefinition method)
+		/// <summary>
+		/// Returns all base methods that <paramref name="method"/> overrides.
+		/// This includes methods on <paramref name="method"/>'s declaring type's base type (but not methods higher up in the type hierarchy),
+		/// methods on an interface that <paramref name="method"/>'s delcaring type implements,
+		/// and methods an interface implemented by a derived type of <paramref name="method"/>'s declaring type if the derived type uses <paramref name="method"/> as the implementing method.
+		/// The list may be incomplete if there are derived types in assemblies that havent been processed yet that use <paramref name="method"/> to implement an interface.
+		/// </summary>
+		public List<OverrideInformation>? GetBaseMethods (MethodDefinition method)
 		{
 			return TypeMapInfo.GetBaseMethods (method);
 		}
@@ -608,7 +618,7 @@ namespace Mono.Linker
 		/// <summary>
 		/// Determines if a member requires unreferenced code (and thus any usage of such method should be warned about).
 		/// </summary>
-		/// <remarks>Unlike <see cref="IsInRequiresUnreferencedCodeScope(MethodDefinition)"/> only static methods 
+		/// <remarks>Unlike <see cref="IsInRequiresUnreferencedCodeScope(MethodDefinition)"/> only static methods
 		/// and .ctors are reported as requiring unreferenced code when the declaring type has RUC on it.</remarks>
 		internal bool DoesMemberRequireUnreferencedCode (IMemberDefinition member, [NotNullWhen (returnValue: true)] out RequiresUnreferencedCodeAttribute? attribute)
 		{
@@ -673,12 +683,28 @@ namespace Mono.Linker
 			return TryGetLinkerAttribute (field.DeclaringType, out attribute);
 		}
 
+		/// <Summary>
+		/// Adds a virtual method to the queue if it is annotated and must have matching annotations on its bases and overrides. It does not check if the method is marked before producing a warning about mismatched annotations.
+		/// </summary>
 		public void EnqueueVirtualMethod (MethodDefinition method)
 		{
 			if (!method.IsVirtual)
 				return;
 
-			if (FlowAnnotations.RequiresDataFlowAnalysis (method) || HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method))
+			// Implementations of static interface methods are not virtual and won't reach here
+			// We'll search through the implementations of static interface methods to find if any need to be enqueued
+			if (method.IsStatic) {
+				Debug.Assert (method.DeclaringType.IsInterface);
+				var overrides = GetOverrides (method);
+				if (overrides is not null) {
+					foreach (var @override in overrides) {
+						if (FlowAnnotations.RequiresVirtualMethodDataFlowAnalysis (@override.Override) || HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (@override.Override))
+							VirtualMethodsWithAnnotationsToValidate.Add (@override.Override);
+					}
+				}
+			}
+
+			if (FlowAnnotations.RequiresVirtualMethodDataFlowAnalysis (method) || HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method))
 				VirtualMethodsWithAnnotationsToValidate.Add (method);
 		}
 	}

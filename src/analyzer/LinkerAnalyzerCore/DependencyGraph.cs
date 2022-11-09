@@ -13,7 +13,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Xml;
 
 namespace LinkerAnalyzer.Core
@@ -46,9 +45,8 @@ namespace LinkerAnalyzer.Core
 			Console.WriteLine ("Loading dependency tree from: {0}", filename);
 
 			try {
-				using (var fileStream = File.OpenRead (filename))
-				using (var zipStream = new GZipStream (fileStream, CompressionMode.Decompress)) {
-					Load (zipStream);
+				using (var fileStream = File.OpenRead (filename)) {
+					Load (fileStream);
 				}
 			} catch (Exception) {
 				Console.WriteLine ("Unable to open and read the dependencies.");
@@ -56,13 +54,13 @@ namespace LinkerAnalyzer.Core
 			}
 		}
 
-		void Load (GZipStream zipStream)
+		void Load (FileStream fileStream)
 		{
-			using (XmlReader reader = XmlReader.Create (zipStream)) {
+			using (XmlReader reader = XmlReader.Create (fileStream)) {
 				while (reader.Read ()) {
 					switch (reader.NodeType) {
 					case XmlNodeType.Element:
-						//Console.WriteLine (reader.Name);
+						// Console.WriteLine (reader.Name);
 						if (reader.Name == "edge" && reader.IsStartElement ()) {
 							string b = reader.GetAttribute ("b");
 							string e = reader.GetAttribute ("e");
@@ -72,8 +70,7 @@ namespace LinkerAnalyzer.Core
 								VertexData begin = Vertex (b, true);
 								VertexData end = Vertex (e, true);
 
-								if (end.parentIndexes == null)
-									end.parentIndexes = new List<int> ();
+								end.parentIndexes ??= new List<int> ();
 								if (!end.parentIndexes.Contains (begin.index)) {
 									end.parentIndexes.Add (begin.index);
 									//Console.WriteLine (" end parent index: {0}", end.parentIndexes);
@@ -91,27 +88,24 @@ namespace LinkerAnalyzer.Core
 
 		public VertexData Vertex (string vertexName, bool create = false)
 		{
-			VertexData vertex;
+			if (indexes.TryGetValue (vertexName, out int index))
+				return vertices[index];
 
-			try {
-				vertex = vertices[indexes[vertexName]];
-			} catch (KeyNotFoundException) {
-				if (create) {
-					int index = vertices.Count;
-					vertex = new VertexData () { value = vertexName, index = index };
-					vertices.Add (vertex);
-					indexes.Add (vertexName, index);
-					string prefix = vertexName.Substring (0, vertexName.IndexOf (':'));
-					if (counts.ContainsKey (prefix))
-						counts[prefix]++;
-					else
-						counts[prefix] = 1;
-					//Console.WriteLine ("prefix " + prefix + " count " + counts[prefix]);
-					if (prefix == "TypeDef") {
-						Types.Add (vertex);
-					}
-				} else
-					return null;
+			if (!create)
+				return null;
+
+			index = vertices.Count;
+			var vertex = new VertexData () { value = vertexName, index = index };
+			vertices.Add (vertex);
+			indexes.Add (vertexName, index);
+			string prefix = vertexName.Substring (0, vertexName.IndexOf (':'));
+			if (counts.TryGetValue (prefix, out var count))
+				counts[prefix] = count + 1;
+			else
+				counts[prefix] = 1;
+			//Console.WriteLine ("prefix " + prefix + " count " + counts[prefix]);
+			if (prefix == "TypeDef") {
+				Types.Add (vertex);
 			}
 
 			return vertex;

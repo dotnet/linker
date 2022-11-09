@@ -65,7 +65,25 @@ namespace ILLink.RoslynAnalyzer.Tests
 		}
 
 		[Fact]
+		public Task CompilerGeneratedCodeInPreservedAssembly ()
+		{
+			return RunTest ();
+		}
+
+		[Fact]
+		public Task CompilerGeneratedCodeInPreservedAssemblyWithWarning ()
+		{
+			return RunTest ();
+		}
+
+		[Fact]
 		public Task CompilerGeneratedTypes ()
+		{
+			return RunTest ();
+		}
+
+		[Fact]
+		public Task CompilerGeneratedTypesRelease ()
 		{
 			return RunTest ();
 		}
@@ -233,6 +251,12 @@ namespace ILLink.RoslynAnalyzer.Tests
 		public Task PropertyDataFlow ()
 		{
 			return RunTest (nameof (PropertyDataFlow));
+		}
+
+		[Fact]
+		public Task RefFieldDataFlow ()
+		{
+			return RunTest (nameof (RefFieldDataFlow));
 		}
 
 		[Fact (Skip = "https://github.com/dotnet/linker/issues/2273")]

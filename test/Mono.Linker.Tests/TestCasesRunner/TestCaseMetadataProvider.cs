@@ -27,7 +27,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				IgnoreDescriptors = GetOptionAttributeValue (nameof (IgnoreDescriptorsAttribute), true),
 				IgnoreSubstitutions = GetOptionAttributeValue (nameof (IgnoreSubstitutionsAttribute), true),
 				IgnoreLinkAttributes = GetOptionAttributeValue (nameof (IgnoreLinkAttributesAttribute), true),
-				KeepTypeForwarderOnlyAssemblies = GetOptionAttributeValue (nameof (KeepTypeForwarderOnlyAssembliesAttribute), string.Empty),
 				KeepDebugMembers = GetOptionAttributeValue (nameof (SetupLinkerKeepDebugMembersAttribute), string.Empty),
 				LinkSymbols = GetOptionAttributeValue (nameof (SetupLinkerLinkSymbolsAttribute), string.Empty),
 				TrimMode = GetOptionAttributeValue<string> (nameof (SetupLinkerTrimModeAttribute), null),
@@ -90,8 +89,10 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		public virtual void CustomizeLinker (LinkerDriver linker, LinkerCustomizations customizations)
 		{
-			if (_testCaseTypeDefinition.CustomAttributes.Any (attr =>
-				attr.AttributeType.Name == nameof (DependencyRecordedAttribute))) {
+			if (!_testCaseTypeDefinition.CustomAttributes.Any (a => a.AttributeType.IsTypeOf<SkipKeptItemsValidationAttribute> ())
+				|| _testCaseTypeDefinition.CustomAttributes.Any (attr =>
+				attr.AttributeType.Name == nameof (DependencyRecordedAttribute)
+				|| attr.AttributeType.Name == nameof (KeptByAttribute))) {
 				customizations.DependencyRecorder = new TestDependencyRecorder ();
 				customizations.CustomizeContext += context => {
 					context.Tracer.AddRecorder (customizations.DependencyRecorder);

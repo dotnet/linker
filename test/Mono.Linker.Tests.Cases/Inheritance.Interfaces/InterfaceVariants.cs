@@ -21,14 +21,19 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 			t = typeof (UninstantiatedPublicClassWithPrivateInterface);
 			t = typeof (ImplementsUsedStaticInterface.InterfaceMethodUnused);
 
-			ImplementsUnusedStaticInterface.Test (); ;
+			ImplementsUnusedStaticInterface.Test ();
 			GenericMethodThatCallsInternalStaticInterfaceMethod
 				<ImplementsUsedStaticInterface.InterfaceMethodUsedThroughInterface> ();
 			// Use all public interfaces - they're marked as public only to denote them as "used"
 			typeof (IPublicInterface).RequiresPublicMethods ();
 			typeof (IPublicStaticInterface).RequiresPublicMethods ();
-			var ___ = new InstantiatedClassWithInterfaces ();
+			_ = new InstantiatedClassWithInterfaces ();
+			MarkIFormattable (null);
 		}
+
+		[Kept]
+		static void MarkIFormattable (IFormattable x)
+		{ }
 
 		[Kept]
 		internal static void GenericMethodThatCallsInternalStaticInterfaceMethod<T> () where T : IStaticInterfaceUsed
@@ -71,41 +76,33 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 			// The interface methods themselves are not used, but the implementation of these methods is
 			internal interface IStaticInterfaceMethodUnused
 			{
-				// Can be removed with Static Interface trimming optimization
-				[Kept]
 				static abstract void InterfaceUsedMethodNot ();
 			}
 
-			// Can be removed with Static Interface Trimming
-			[Kept]
 			internal interface IStaticInterfaceUnused
 			{
-				// Can be removed with Static Interface Trimming
-				[Kept]
 				static abstract void InterfaceAndMethodNoUsed ();
 			}
 
+			// Methods used, but not relevant to variant casting, so iface implementation not kept
 			[Kept]
-			[KeptInterface (typeof (IStaticInterfaceUnused))]
-			[KeptInterface (typeof (IStaticInterfaceMethodUnused))]
 			internal class InterfaceMethodUsedThroughImplementation : IStaticInterfaceMethodUnused, IStaticInterfaceUnused
 			{
 				[Kept]
+				[RemovedOverride (typeof (IStaticInterfaceMethodUnused))]
 				public static void InterfaceUsedMethodNot () { }
 
 				[Kept]
+				[RemovedOverride (typeof (IStaticInterfaceUnused))]
 				public static void InterfaceAndMethodNoUsed () { }
 			}
 
 			[Kept]
 			[KeptInterface (typeof (IStaticInterfaceMethodUnused))]
-			[KeptInterface (typeof (IStaticInterfaceUnused))]
 			internal class InterfaceMethodUnused : IStaticInterfaceMethodUnused, IStaticInterfaceUnused
 			{
-				[Kept]
 				public static void InterfaceUsedMethodNot () { }
 
-				[Kept]
 				public static void InterfaceAndMethodNoUsed () { }
 			}
 
@@ -121,8 +118,8 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 			}
 		}
 
+		// Interfaces are kept despite being uninstantiated because it is relevant to variant casting
 		[Kept]
-		[KeptInterface (typeof (IEnumerator))]
 		[KeptInterface (typeof (IPublicInterface))]
 		[KeptInterface (typeof (IPublicStaticInterface))]
 		[KeptInterface (typeof (ICopyLibraryInterface))]
@@ -159,18 +156,12 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 			static void IInternalStaticInterface.ExplicitImplementationInternalStaticInterfaceMethod () { }
 
 
-			[Kept]
-			[ExpectBodyModified]
 			bool IEnumerator.MoveNext () { throw new PlatformNotSupportedException (); }
 
-			[Kept]
 			object IEnumerator.Current {
-				[Kept]
-				[ExpectBodyModified]
 				get { throw new PlatformNotSupportedException (); }
 			}
 
-			[Kept]
 			void IEnumerator.Reset () { }
 
 			[Kept]
@@ -206,7 +197,6 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 		}
 
 		[Kept]
-		[KeptInterface (typeof (IEnumerator))]
 		[KeptInterface (typeof (IPublicInterface))]
 		[KeptInterface (typeof (IPublicStaticInterface))]
 		[KeptInterface (typeof (ICopyLibraryInterface))]
@@ -243,13 +233,10 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces
 
 			static void IInternalStaticInterface.ExplicitImplementationInternalStaticInterfaceMethod () { }
 
-			[Kept]
 			bool IEnumerator.MoveNext () { throw new PlatformNotSupportedException (); }
 
-			[Kept]
-			object IEnumerator.Current { [Kept] get { throw new PlatformNotSupportedException (); } }
+			object IEnumerator.Current { get { throw new PlatformNotSupportedException (); } }
 
-			[Kept]
 			void IEnumerator.Reset () { }
 
 			[Kept]

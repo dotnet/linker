@@ -27,7 +27,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			Lambdas.Test ();
 			LocalFunctions.Test ();
 
-			LambdaWhichMarksItself.Test ();
+			SelfMarkingMethods.Test ();
 		}
 
 		class BaseTypeWithIteratorStateMachines
@@ -344,6 +344,22 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				lambda ();
 			}
 
+			static void LambdaCallsPInvokeTakingPrimitiveType ()
+			{
+				var lambda = () => MethodTakingPrimitiveType (42);
+				lambda ();
+			}
+
+			static void LambdaCallsPInvokeTakingObject ()
+			{
+				var lambda =
+				[ExpectedWarning ("IL2050")]
+				[ExpectedWarning ("IL2119", "<" + nameof (LambdaCallsPInvokeTakingObject) + ">",
+					ProducedBy = ProducedBy.Trimmer)]
+				() => MethodTakingObject (null);
+				lambda ();
+			}
+
 			[ExpectedWarning ("IL2112", nameof (RUCTypeWithLambdas) + "()", "--RUCTypeWithLambdas--", CompilerGeneratedCode = true,
 				ProducedBy = ProducedBy.Trimmer)]
 			[RequiresUnreferencedCode ("--RUCTypeWithLambdas--")]
@@ -374,6 +390,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				}
 			}
 
+			[ExpectedWarning ("IL2118", "<" + nameof (LambdaCallsPInvokeTakingObject) + ">",
+				ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2118", "<" + nameof (LambdaCallsMethodWithRequires) + ">",
 				ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2118", "<" + nameof (LambdaWithCorrectDataflow) + ">",
@@ -395,21 +413,6 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				typeof (Lambdas).RequiresAll ();
 
 				test.GetType ().RequiresAll ();
-			}
-		}
-
-		class LambdaWhichMarksItself
-		{
-			static void RequiresAllOnT<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] T> () { }
-
-			public static void Test ()
-			{
-				var a = () => {
-					// https://github.com/dotnet/linker/issues/2903
-					//RequiresAllOnT<LambdaWhichMarksItself> ();
-				};
-
-				a ();
 			}
 		}
 
@@ -478,6 +481,21 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				LocalFunction ();
 			}
 
+			static void LocalFunctionCallsPInvokeTakingPrimitiveType ()
+			{
+				void LocalFunction () => MethodTakingPrimitiveType (42);
+				LocalFunction ();
+			}
+
+			static void LocalFunctionCallsPInvokeTakingObject ()
+			{
+				[ExpectedWarning ("IL2050")]
+				[ExpectedWarning ("IL2119", "<" + nameof (LocalFunctionCallsPInvokeTakingObject) + ">",
+					ProducedBy = ProducedBy.Trimmer)]
+				void LocalFunction () => MethodTakingObject (null);
+				LocalFunction ();
+			}
+
 			[ExpectedWarning ("IL2112", nameof (RUCTypeWithLocalFunctions) + "()", CompilerGeneratedCode = true,
 				ProducedBy = ProducedBy.Trimmer)]
 			[RequiresUnreferencedCode ("--RUCTypeWithLocalFunctions--")]
@@ -514,6 +532,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				}
 			}
 
+			[ExpectedWarning ("IL2118", nameof (LocalFunctionCallsPInvokeTakingObject),
+				ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2118", nameof (LocalFunctionCallsMethodWithRequires),
 				ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2118", nameof (LocalFunctionWithCorrectDataflow),
@@ -538,6 +558,106 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 		}
 
+		class SelfMarkingMethods
+		{
+			static void RequiresAllOnT<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] T> () { }
+
+			static void RequiresNonPublicMethodsOnT<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)] T> () { }
+
+			class LambdaWhichMarksItself
+			{
+				public static void Test ()
+				{
+					var a =
+					() => {
+						RequiresAllOnT<LambdaWhichMarksItself> ();
+					};
+
+					a ();
+				}
+			}
+
+			class LocalFunctionWhichMarksItself
+			{
+				public static void Test ()
+				{
+					void LocalFunction ()
+					{
+						RequiresAllOnT<LocalFunctionWhichMarksItself> ();
+					};
+
+					LocalFunction ();
+				}
+			}
+
+			class IteratorWhichMarksItself
+			{
+				public static IEnumerable<int> Test ()
+				{
+					yield return 0;
+
+					RequiresAllOnT<IteratorWhichMarksItself> ();
+
+					yield return 1;
+				}
+			}
+
+			class AsyncWhichMarksItself
+			{
+				public static async void Test ()
+				{
+					await MethodAsync ();
+
+					RequiresAllOnT<AsyncWhichMarksItself> ();
+
+					await MethodAsync ();
+				}
+			}
+
+
+			class MethodWhichMarksItself
+			{
+				static void RequiresAllOnT<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] T> () { }
+
+				public static void Test ()
+				{
+					RequiresAllOnT<MethodWhichMarksItself> ();
+				}
+			}
+
+
+			class LocalFunctionWhichMarksItselfOnlyAccessedViaReflection
+			{
+				public static void Test ()
+				{
+					RequiresNonPublicMethodsOnT<ClassWithLocalFunction> ();
+				}
+
+				public class ClassWithLocalFunction
+				{
+					public static void MethodWithLocalFunction ()
+					{
+						static void LocalFunction ()
+						{
+							RequiresNonPublicMethodsOnT<ClassWithLocalFunction> ();
+						};
+
+						LocalFunction ();
+					}
+				}
+			}
+
+			public static void Test ()
+			{
+				LambdaWhichMarksItself.Test ();
+				LocalFunctionWhichMarksItself.Test ();
+				IteratorWhichMarksItself.Test ();
+				AsyncWhichMarksItself.Test ();
+				MethodWhichMarksItself.Test ();
+				LocalFunctionWhichMarksItselfOnlyAccessedViaReflection.Test ();
+			}
+		}
+
 		[RequiresUnreferencedCode ("--MethodWithRequires--")]
 		[RequiresAssemblyFiles ("--MethodWithRequires--")]
 		[RequiresDynamicCode ("--MethodWithRequires--")]
@@ -559,5 +679,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
 		static Type GetAll () => null;
+
+		[DllImport ("Foo")]
+		static extern int MethodTakingPrimitiveType (int num);
+
+		[DllImport ("Foo")]
+		static extern void MethodTakingObject ([MarshalAs (UnmanagedType.IUnknown)] object obj);
 	}
 }

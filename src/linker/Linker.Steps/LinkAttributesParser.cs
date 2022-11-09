@@ -38,9 +38,10 @@ namespace Mono.Linker.Steps
 
 		static bool IsRemoveAttributeInstances (string attributeName) => attributeName == "RemoveAttributeInstances" || attributeName == "RemoveAttributeInstancesAttribute";
 
-		CustomAttribute[]? ProcessAttributes (XPathNavigator nav, ICustomAttributeProvider provider)
+		(CustomAttribute[]? customAttributes, MessageOrigin[]? origins) ProcessAttributes (XPathNavigator nav, ICustomAttributeProvider provider)
 		{
-			var builder = new ArrayBuilder<CustomAttribute> ();
+			var customAttributesBuilder = new ArrayBuilder<CustomAttribute> ();
+			var originsBuilder = new ArrayBuilder<MessageOrigin> ();
 			foreach (XPathNavigator attributeNav in nav.SelectChildren ("attribute", string.Empty)) {
 				if (!ShouldProcessElement (attributeNav))
 					continue;
@@ -74,11 +75,12 @@ namespace Mono.Linker.Steps
 				CustomAttribute? customAttribute = CreateCustomAttribute (attributeNav, attributeType);
 				if (customAttribute != null) {
 					_context.LogMessage ($"Assigning external custom attribute '{FormatCustomAttribute (customAttribute)}' instance to '{provider}'.");
-					builder.Add (customAttribute);
+					customAttributesBuilder.Add (customAttribute);
+					originsBuilder.Add (GetMessageOriginForPosition (attributeNav));
 				}
 			}
 
-			return builder.ToArray ();
+			return (customAttributesBuilder.ToArray (), originsBuilder.ToArray ());
 
 			static string FormatCustomAttribute (CustomAttribute ca)
 			{
@@ -143,7 +145,9 @@ namespace Mono.Linker.Steps
 
 			var ctorN = new MethodDefinition (".ctor", ctorAttributes, voidType);
 			var paramN = new ParameterDefinition (objectArrayType);
+#pragma warning disable RS0030 // MethodReference.Parameters is banned. It's necessary to build the method definition here, though.
 			ctorN.Parameters.Add (paramN);
+#pragma warning restore RS0030
 			td.Methods.Add (ctorN);
 
 			return _context.MarkedKnownMembers.RemoveAttributeInstancesAttributeDefinition = td;
@@ -176,17 +180,16 @@ namespace Mono.Linker.Steps
 				if (!method.IsInstanceConstructor ())
 					continue;
 
-				var parameters = method.Parameters;
-				if (args.Length != parameters.Count)
+				if (args.Length != method.GetMetadataParametersCount ())
 					continue;
 
 				bool match = true;
-				for (int ii = 0; match && ii < args.Length; ++ii) {
+				foreach (var p in method.GetMetadataParameters ()) {
 					//
 					// No candidates betterness, only exact matches are supported
 					//
-					var parameterType = _context.TryResolve (parameters[ii].ParameterType);
-					if (parameterType == null || parameterType != _context.TryResolve (args[ii].Type))
+					var parameterType = _context.TryResolve (p.ParameterType);
+					if (parameterType == null || parameterType != _context.TryResolve (args[p.MetadataIndex].Type))
 						match = false;
 				}
 
@@ -491,17 +494,19 @@ namespace Mono.Linker.Steps
 		{
 			Debug.Assert (_attributeInfo != null);
 			foreach (XPathNavigator parameterNav in nav.SelectChildren ("parameter", string.Empty)) {
-				var attributes = ProcessAttributes (parameterNav, method);
-				if (attributes != null) {
+				var (attributes, origins) = ProcessAttributes (parameterNav, method);
+				if (attributes != null && origins != null) {
 					string paramName = GetAttribute (parameterNav, "name");
+#pragma warning disable RS0030 // MethodReference.Parameters is banned. It's easiest to leave existing code as is
 					foreach (ParameterDefinition parameter in method.Parameters) {
 						if (paramName == parameter.Name) {
 							if (parameter.HasCustomAttributes || _attributeInfo.CustomAttributes.ContainsKey (parameter))
 								LogWarning (parameterNav, DiagnosticId.XmlMoreThanOneValyForParameterOfMethod, paramName, method.GetDisplayName ());
-							_attributeInfo.AddCustomAttributes (parameter, attributes);
+							_attributeInfo.AddCustomAttributes (parameter, attributes, origins);
 							break;
 						}
 					}
+#pragma warning restore RS0030
 				}
 			}
 		}
@@ -529,6 +534,7 @@ namespace Mono.Linker.Steps
 			return null;
 		}
 
+#pragma warning disable RS0030 // MethdReference.Parameters is banned. It's easiest to leave existing code as is.
 		static string GetMethodSignature (MethodDefinition method, bool includeReturnType = false)
 		{
 			StringBuilder sb = new StringBuilder ();
@@ -547,7 +553,7 @@ namespace Mono.Linker.Steps
 				sb.Append (">");
 			}
 			sb.Append ("(");
-			if (method.HasParameters) {
+			if (method.HasMetadataParameters ()) {
 				for (int i = 0; i < method.Parameters.Count; i++) {
 					if (i > 0)
 						sb.Append (",");
@@ -558,6 +564,7 @@ namespace Mono.Linker.Steps
 			sb.Append (")");
 			return sb.ToString ();
 		}
+#pragma warning restore RS0030
 
 		protected override void ProcessProperty (TypeDefinition type, PropertyDefinition property, XPathNavigator nav, object? customData, bool fromSignature)
 		{
@@ -572,9 +579,9 @@ namespace Mono.Linker.Steps
 		void PopulateAttributeInfo (ICustomAttributeProvider provider, XPathNavigator nav)
 		{
 			Debug.Assert (_attributeInfo != null);
-			var attributes = ProcessAttributes (nav, provider);
-			if (attributes != null)
-				_attributeInfo.AddCustomAttributes (provider, attributes);
+			var (attributes, origins) = ProcessAttributes (nav, provider);
+			if (attributes != null && origins != null)
+				_attributeInfo.AddCustomAttributes (provider, attributes, origins);
 		}
 	}
 }

@@ -34,6 +34,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			PassRefToParameter (null);
 
 			PointerDereference.Test ();
+			MultipleOutRefsToField.Test ();
 		}
 
 		[Kept]
@@ -43,11 +44,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[Kept]
 		// Trimmer and analyzer use different formats for ref parameters: https://github.com/dotnet/linker/issues/2406
-		[ExpectedWarning ("IL2077", nameof (ByRefDataflow) + "." + nameof (MethodWithRefParameter) + "(Type&)", ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2077", nameof (ByRefDataflow) + "." + nameof (MethodWithRefParameter) + "(Type&)", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
 		[ExpectedWarning ("IL2077", nameof (ByRefDataflow) + "." + nameof (MethodWithRefParameter) + "(ref Type)", ProducedBy = ProducedBy.Analyzer)]
-		[ExpectedWarning ("IL2069", nameof (s_typeWithPublicParameterlessConstructor), "parameter 'type'", nameof (MethodWithRefParameter), ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2069", nameof (s_typeWithPublicParameterlessConstructor), "parameter 'type'", nameof (MethodWithRefParameter), ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
 		// MethodWithRefParameter (ref x)
-		[ExpectedWarning ("IL2077", nameof (ByRefDataflow) + "." + nameof (MethodWithRefParameter) + "(Type&)", ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2077", nameof (ByRefDataflow) + "." + nameof (MethodWithRefParameter) + "(Type&)", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
 		[ExpectedWarning ("IL2077", nameof (ByRefDataflow) + "." + nameof (MethodWithRefParameter) + "(ref Type)", ProducedBy = ProducedBy.Analyzer)]
 		public static void PassRefToField ()
 		{
@@ -58,7 +59,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 		[Kept]
 		// Trimmer and analyzer use different formats for ref parameters: https://github.com/dotnet/linker/issues/2406
-		[ExpectedWarning ("IL2067", nameof (ByRefDataflow) + "." + nameof (MethodWithRefParameter) + "(Type&)", ProducedBy = ProducedBy.Trimmer)]
+		[ExpectedWarning ("IL2067", nameof (ByRefDataflow) + "." + nameof (MethodWithRefParameter) + "(Type&)", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
 		[ExpectedWarning ("IL2067", nameof (ByRefDataflow) + "." + nameof (MethodWithRefParameter) + "(ref Type)", ProducedBy = ProducedBy.Analyzer)]
 		public static void PassRefToParameter (Type parameter)
 		{
@@ -148,6 +149,42 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				IntPtrDeref ();
 				LocalStackAllocDeref (null);
+			}
+		}
+
+		[Kept]
+		class MultipleOutRefsToField
+		{
+			[Kept]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			static Type _publicMethodsField;
+
+			[Kept]
+			[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)]
+			static Type _publicPropertiesField;
+
+			[Kept]
+			static void TwoOutRefs (
+				[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+				out Type publicMethods,
+				[KeptAttributeAttribute (typeof (DynamicallyAccessedMembersAttribute))]
+				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicProperties)]
+				out Type publicProperties)
+			{
+				publicMethods = null;
+				publicProperties = null;
+			}
+
+			[Kept]
+			// https://github.com/dotnet/linker/issues/2874
+			[ExpectedWarning ("IL2069", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
+			[ExpectedWarning ("IL2069", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
+			public static void Test ()
+			{
+				TwoOutRefs (out _publicMethodsField, out _publicPropertiesField);
 			}
 		}
 	}
