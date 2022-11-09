@@ -534,9 +534,13 @@ namespace Mono.Linker.Steps
 			//
 			// Sorted list of body instruction indexes which were
 			// replaced pass-through nop
-			// 
+			//
 			List<int>? conditionInstrsToRemove;
 
+			//
+			// Sorted list of body instruction indexes which were
+			// set to be replaced with different intstruction
+			//
 			List<(int, Instruction)>? conditionInstrsToReplace;
 
 			public BodyReducer (MethodBody body, LinkContext context)
@@ -761,10 +765,7 @@ namespace Mono.Linker.Steps
 				var bodySweeper = new BodySweeper (Body, reachableInstrs, unreachableEH, context);
 				bodySweeper.Initialize ();
 
-				if (conditionInstrsToReplace != null)
-					bodySweeper.Process (conditionInstrsToReplace);
-
-				bodySweeper.Process (conditionInstrsToRemove, out var nopInstructions);
+				bodySweeper.Process (conditionInstrsToRemove, conditionInstrsToReplace, out var nopInstructions);
 				InstructionsReplaced = bodySweeper.InstructionsReplaced;
 				if (InstructionsReplaced == 0)
 					return false;
@@ -1239,33 +1240,34 @@ namespace Mono.Linker.Steps
 				ilprocessor = body.GetLinkerILProcessor ();
 			}
 
-			public void Process (List<(int, Instruction)> conditionInstrsToReplace)
-			{
-				var instrs = body.Instructions;
-
-				foreach (var pair in conditionInstrsToReplace) {
-					var instr = instrs[pair.Item1];
-					switch (instr.OpCode.StackBehaviourPop) {
-					case StackBehaviour.Popi:
-						ILProcessor.Replace (pair.Item1, pair.Item2);
-						InstructionsReplaced++;
-						break;
-					default:
-						Debug.Fail ("not supported");
-						break;
-					}
-				}
-			}
-
-			public void Process (List<int>? conditionInstrsToRemove, out List<Instruction>? sentinelNops)
+			public void Process (List<int>? conditionInstrsToRemove, List<(int, Instruction)>? conditionInstrsToReplace, out List<Instruction>? sentinelNops)
 			{
 				List<VariableDefinition>? removedVariablesReferences = null;
+				var instrs = body.Instructions;
+
+				//
+				// Process list of conditional instructions that were set to be replaced and not removed
+				//
+				if (conditionInstrsToReplace != null) {
+					foreach (var pair in conditionInstrsToReplace) {
+						var instr = instrs[pair.Item1];
+						switch (instr.OpCode.StackBehaviourPop) {
+						case StackBehaviour.Popi:
+							ILProcessor.Replace (pair.Item1, pair.Item2);
+							InstructionsReplaced++;
+							break;
+						default:
+							Debug.Fail ("not supported");
+							break;
+						}
+					}
+
+				}
 
 				//
 				// Initial pass which replaces unreachable instructions with nops or
 				// ret to keep the body verifiable
 				//
-				var instrs = body.Instructions;
 				for (int i = 0; i < instrs.Count; ++i) {
 					if (reachable[i])
 						continue;
