@@ -80,7 +80,7 @@ When a class has a _feature requirement_, this creates a _feature requirement_ f
   - static properties
   - static events
 
-Note that this does not create a _feature requirement_ for nested types.
+Note that this does not create a _feature requirement_ for nested types or for members of base classes or interfaces implemented by the type.
 Note also that this may create a _feature requirement_ for fields, properties, and events, which cannot have `RequiresFeature` used on them directly.
 
 ### Structs
@@ -93,6 +93,7 @@ When a struct has a _feature requirement_, this creates a _feature requirement_ 
   - all events
 
 Note that structs may have _feature requirement_ due to compiler-generated code, even though they can not have `RequiresFeature`.
+Note also that this does not create a _feature requirement_ for members of interfaces implemented by the type.
 
 ### State machine types
 
@@ -139,9 +140,9 @@ Some feature attributes also come with corresponding feature checks that can be 
 
 These semantics have been designed with trimming in mind. When a feature is disabled (by user configuration, or based on limitations of the target platform), trimming an app that will remove most or all of the feature-related code. Specifically, when a feature is disabled and an app has no trim warnings (including suppressed warnings):
 
-- Methods, fields, properties, and events which have a _feature requirement_ are guaranteed to be removed.
+- Methods, fields, properties, and events which have a _feature requirement_ may be removed.
 
-- Methods which are in a _feature available_ scope but aren't entirely removed are guaranteed to have the method body replaced with a throwing instruction sequence.
+- Methods which are in a _feature available_ scope but aren't entirely removed may have the method body replaced with a throwing instruction sequence.
 
 Thie latter can happen for methods in a type with _feature requirement_ (but that do not themselves have _feature requirement_) that are referenced outside of a _feature available_ scope. The reference to such a method may remain even though the type is never constructed. The callsite would produce a `NullReferenceException` and the method body is unreachable.
 
