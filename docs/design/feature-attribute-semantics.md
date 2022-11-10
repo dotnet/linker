@@ -125,8 +125,8 @@ Note that a lambda or local function inherits _feature requirement_ from the enc
 
 ### Virtual methods
 
-- Overriding a _feature requirement_ method with a method outside of a _feature available_ scope is disallowed.
-- Overriding a method outside of a _feature available_ scope with a _feature requirement_ method is disallowed.
+- Overriding a method that has a _feature requirement_ with a method outside of a _feature available_ scope is disallowed.
+- Overriding a method outside of a _feature available_ scope with a method that has a _feature requirement_ is disallowed.
 
 ### Member access
 
