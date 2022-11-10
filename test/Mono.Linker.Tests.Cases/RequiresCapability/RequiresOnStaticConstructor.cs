@@ -49,6 +49,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		[RequiresUnreferencedCode ("Message for --StaticCtorOnTypeWithRequires--")]
 		class StaticCtorOnTypeWithRequires
 		{
+			[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 			static StaticCtorOnTypeWithRequires () => MethodWithRequires ();
 		}
 
