@@ -12,7 +12,7 @@ We also often refer to "platform capabilities" such as the ability to run dynami
 
 Capabilities will often have associated attributes and/or feature switches. For example, `RequiresDynamicCodeAttribute` is used to annotate code which requires support for running dynamic code, and `RuntimeFeature.IsDynamicCodeSupported` can be used to check for this support and guard access to annotated code. We also have many feature switches for features which depend on the availablility of so-called unreferenced code (that is, code which may be removed by trimming), which is attributed with `RequiresUnreferencedCodeAttribute`.
 
-Feature switch settings may also be determined by explicit configuration (in addition to the choice of target platform or deployment model). For example, the `System.Globalization.Invariant` feature switch can be used disable support for culture-specific globalization behavior.
+Feature switch settings may also be determined by explicit configuration (in addition to the choice of target platform or deployment model). For example, the `System.Globalization.Invariant` feature switch can be used to disable support for culture-specific globalization behavior.
 
 This design takes the view that "features" and "capabilities" are essentially the same concept. We use the terminology "features" for these attribute semantics, because it seems to have slightly more general usage. "Features" as used today often includes runtime features which don't have feature switches or attributes, whereas "capabilities" is most often used to refer to capabilities of the platform or deployment model and do usually come with feature switches.
 
@@ -57,7 +57,7 @@ Methods, constructors (including static constructors), and fields declared in a 
 
 Properties and events declared in a class or struct with a _feature requirement_ are also in a _feature available_ scope.
 
-Lambdas and local functions inside of a method in a _feature available_ scope are also in a _feature available_ scope.
+Lambdas and local functions with a _feature requirement_ are also in a _feature available_ scope.
 
 Note that the _feature available_ scope for a type does not extend to nested types.
 
@@ -101,7 +101,11 @@ When an iterator or async method is in a _feature available_ scope, the compiler
 
 ### Nested functions
 
-When a lambda or local function is declared in a method which is in a _feature available_ scope, then the following compiler-generated type or members have a _feature requirement_:
+When a method is in a _feature available_ scope, lambdas and local functions declared in the method have a _feature requirement_.
+
+When a lambda or local function is in a _feature available_ scope, lambdas and local functions declared in it have a _feature requirement_.
+
+When a lambda or local function is declared in a method or nested function which is in a _feature available_ scope, then the following compiler-generated type or members have a _feature requirement_:
 
 - The generated closure environment type, if it is unique to the lambda or local function, OR
 
@@ -109,9 +113,7 @@ When a lambda or local function is declared in a method which is in a _feature a
 
 - The generated method and delegate cache field for the lambda or local function, if these are generated into a static closure environment type.
 
-For analyzers which don't have visibility into the compiler-generated code for nested functions, nested functions declared in a method which is in a _feature available_ scope have a _feature requirement_.
-
-Note that a lambda or local function inherits _feature requirement_ from the enclosing user method, not from an enclosing lambda or local function if one is present.
+Note that IL analysis tools currently deviate from this specification because the IL does not always contain enough information to reconstruct the original nesting of lambdas and local functions. (For ILLink, lambdas and local functions inherit _feature requirement_ from the enclosing user method, not from an enclosing lambda or local function if one is present.)
 
 ## Validation behavior
 
