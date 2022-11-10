@@ -140,9 +140,9 @@ Some feature attributes also come with corresponding feature checks that can be 
 
 These semantics have been designed with trimming in mind. When a feature is disabled (by user configuration, or based on limitations of the target platform), trimming an app that will remove most or all of the feature-related code. Specifically, when a feature is disabled and an app has no trim warnings (including suppressed warnings):
 
-- Methods, fields, properties, and events which have a _feature requirement_ may be removed.
+- Methods, fields, properties, and events which have a _feature requirement_ for the disabled feature may be removed.
 
-- Methods which are in a _feature available_ scope but aren't entirely removed may have the method body replaced with a throwing instruction sequence.
+- Methods which are in a _feature available_ scope for the disabled feature, but aren't entirely removed, may have the method body replaced with a throwing instruction sequence.
 
 Thie latter can happen for methods in a type with _feature requirement_ (but that do not themselves have _feature requirement_) that are referenced outside of a _feature available_ scope. The reference to such a method may remain even though the type is never constructed. The callsite would produce a `NullReferenceException` and the method body is unreachable.
 
