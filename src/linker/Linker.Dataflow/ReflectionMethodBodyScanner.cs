@@ -211,13 +211,13 @@ namespace Mono.Linker.Dataflow
 			case IntrinsicId.RuntimeHelpers_RunClassConstructor:
 			case var callType when (callType == IntrinsicId.Type_GetConstructors || callType == IntrinsicId.Type_GetMethods || callType == IntrinsicId.Type_GetFields ||
 				callType == IntrinsicId.Type_GetProperties || callType == IntrinsicId.Type_GetEvents || callType == IntrinsicId.Type_GetNestedTypes || callType == IntrinsicId.Type_GetMembers)
-				&& calledMethod.DeclaringType.IsTypeOf (WellKnownType.System_Type)
-				&& calledMethod.Parameters[0].ParameterType.FullName == "System.Reflection.BindingFlags"
-				&& calledMethod.HasThis:
+				&& calledMethodDefinition.DeclaringType.IsTypeOf (WellKnownType.System_Type)
+				&& calledMethodDefinition.Parameters[0].ParameterType.FullName == "System.Reflection.BindingFlags"
+				&& calledMethodDefinition.HasThis:
 			case var fieldPropertyOrEvent when (fieldPropertyOrEvent == IntrinsicId.Type_GetField || fieldPropertyOrEvent == IntrinsicId.Type_GetProperty || fieldPropertyOrEvent == IntrinsicId.Type_GetEvent)
-				&& calledMethod.DeclaringType.IsTypeOf (WellKnownType.System_Type)
-				&& calledMethod.Parameters[0].ParameterType.IsTypeOf (WellKnownType.System_String)
-				&& calledMethod.HasThis:
+				&& calledMethodDefinition.DeclaringType.IsTypeOf (WellKnownType.System_Type)
+				&& calledMethodDefinition.Parameters[0].ParameterType.IsTypeOf (WellKnownType.System_String)
+				&& calledMethodDefinition.HasThis:
 			case var getRuntimeMember when getRuntimeMember == IntrinsicId.RuntimeReflectionExtensions_GetRuntimeEvent
 				|| getRuntimeMember == IntrinsicId.RuntimeReflectionExtensions_GetRuntimeField
 				|| getRuntimeMember == IntrinsicId.RuntimeReflectionExtensions_GetRuntimeMethod
@@ -226,7 +226,7 @@ namespace Mono.Linker.Dataflow
 			case IntrinsicId.Type_GetMethod:
 			case IntrinsicId.Type_GetNestedType:
 			case IntrinsicId.Nullable_GetUnderlyingType:
-			case IntrinsicId.Expression_Property when calledMethod.HasParameterOfType (1, "System.Reflection.MethodInfo"):
+			case IntrinsicId.Expression_Property when calledMethodDefinition.HasParameterOfType (1, "System.Reflection.MethodInfo"):
 			case var fieldOrPropertyIntrinsic when fieldOrPropertyIntrinsic == IntrinsicId.Expression_Field || fieldOrPropertyIntrinsic == IntrinsicId.Expression_Property:
 			case IntrinsicId.Type_get_BaseType:
 			case IntrinsicId.Type_GetConstructor:
@@ -360,7 +360,7 @@ namespace Mono.Linker.Dataflow
 			// If we get here, we handled this as an intrinsic.  As a convenience, if the code above
 			// didn't set the return value (and the method has a return value), we will set it to be an
 			// unknown value with the return type of the method.
-			bool returnsVoid = calledMethod.ReturnsVoid ();
+			bool returnsVoid = calledMethodDefinition.ReturnsVoid ();
 			methodReturnValue = maybeMethodReturnValue ?? (returnsVoid ?
 				MultiValueLattice.Top :
 				annotatedMethodReturnValue);
