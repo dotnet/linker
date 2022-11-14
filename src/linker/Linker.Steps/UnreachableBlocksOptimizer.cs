@@ -71,7 +71,7 @@ namespace Mono.Linker.Steps
 				var inliner = new CallInliner (method.Body, this);
 				inliner.RewriteBody ();
 			} catch (Exception e) {
-				throw new InternalErrorException ($"Could not process method '{method.GetDisplayName ()}' body", e);
+				throw new InternalErrorException ($"Could not process the body of method '{method.GetDisplayName ()}'.", e);
 			}
 		}
 
