@@ -7,7 +7,6 @@
     <PatchVersion>100</PatchVersion>
     <!-- Use an unchanging prerelease label so it doesn't need to be updated. -->
     <PreReleaseVersionLabel>1</PreReleaseVersionLabel>
-    <UsingToolMicrosoftNetCompilers>true</UsingToolMicrosoftNetCompilers>
   </PropertyGroup>
   <PropertyGroup>
     <!-- ilasm -->
@@ -18,11 +17,10 @@
     <SystemReflectionMetadataVersion>5.0.0</SystemReflectionMetadataVersion>
     <MicrosoftBuildFrameworkVersion>17.0.0-preview-21267-01</MicrosoftBuildFrameworkVersion>
     <MicrosoftBuildUtilitiesCoreVersion>17.0.0-preview-21267-01</MicrosoftBuildUtilitiesCoreVersion>
-    <MicrosoftDotNetApiCompatVersion>7.0.0-beta.22379.10</MicrosoftDotNetApiCompatVersion>
+    <MicrosoftDotNetApiCompatVersion>7.0.0-beta.22558.4</MicrosoftDotNetApiCompatVersion>
     <MicrosoftDotNetCodeAnalysisVersion>6.0.0-beta.21271.1</MicrosoftDotNetCodeAnalysisVersion>
     <MicrosoftCodeAnalysisCSharpCodeStyleVersion>3.10.0-2.final</MicrosoftCodeAnalysisCSharpCodeStyleVersion>
     <MicrosoftCodeAnalysisVersion>4.4.0-2.22379.3</MicrosoftCodeAnalysisVersion>
-    <MicrosoftNetCompilersToolsetVersion>$(MicrosoftCodeAnalysisVersion)</MicrosoftNetCompilersToolsetVersion>
     <MicrosoftCodeAnalysisCSharpAnalyzerTestingXunitVersion>1.0.1-beta1.*</MicrosoftCodeAnalysisCSharpAnalyzerTestingXunitVersion>
     <MicrosoftCodeAnalysisBannedApiAnalyzersVersion>3.3.2</MicrosoftCodeAnalysisBannedApiAnalyzersVersion>
     <MicrosoftILVerificationVersion>7.0.0-preview.7.22375.6</MicrosoftILVerificationVersion>
