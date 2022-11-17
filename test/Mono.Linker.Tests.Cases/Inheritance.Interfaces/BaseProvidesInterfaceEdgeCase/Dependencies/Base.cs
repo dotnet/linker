@@ -7,9 +7,9 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.BaseProvidesInterfaceEd
 {
 	public class Base
 	{
-		public virtual void Method()
+		public virtual void Method ()
 		{
-			throw new NotImplementedException();
+			throw new NotImplementedException ();
 		}
 	}
 }

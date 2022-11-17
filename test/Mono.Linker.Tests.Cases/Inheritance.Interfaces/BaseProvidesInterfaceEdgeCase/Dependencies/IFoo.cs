@@ -5,11 +5,11 @@ namespace Mono.Linker.Tests.Cases.Inheritance.Interfaces.BaseProvidesInterfaceEd
 {
 	public interface IFoo
 	{
-		void Method();
+		void Method ();
 	}
 	public interface IBar
 	{
-		void Method();
+		void Method ();
 	}
 	public class Derived2 : Base, IBar
 	{
