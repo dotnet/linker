@@ -51,15 +51,18 @@ Access to members with a _feature requirement_ is always allowed from a _feature
 
 ## Feature available scope
 
-Methods and constructors (including static constructors) with a _feature requirement_ are in a _feature available_ scope.
+The following constructs with a _feature requirement_ are also in a _feature available_ scope:
+- Methods
+- Constructors (including static constructors)
 
-Methods, constructors (including static constructors), and fields declared in a class or struct with a _feature requirement_ are also in a _feature available_ scope.
+When a class or struct has a _feature requirement_, the following members are in a _feature available_ scope:
+- Methods
+- Constructors (including static constructors)
+- Fields
+- Properties
+- Events
 
-Properties and events declared in a class or struct with a _feature requirement_ are also in a _feature available_ scope.
-
-Lambdas and local functions with a _feature requirement_ are also in a _feature available_ scope.
-
-Note that the _feature available_ scope for a type does not extend to nested types.
+Note that the _feature available_ scope for a type does not extend to nested types or to members of base classes or interfaces implemented by the type.
 
 ## Feature requirement
 
