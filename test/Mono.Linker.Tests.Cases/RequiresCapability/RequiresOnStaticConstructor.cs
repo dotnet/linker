@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,6 +26,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			TestStaticCtorTriggeredByMethodCall ();
 			TestTypeIsBeforeFieldInit ();
 			TestStaticCtorOnTypeWithRequires ();
+			TestRunClassConstructorOnTypeWithRequires ();
 			typeof (StaticCtor).RequiresNonPublicConstructors ();
 		}
 
@@ -59,6 +61,13 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		{
 			var cctor = typeof (StaticCtorOnTypeWithRequires).GetConstructor (BindingFlags.Static | BindingFlags.NonPublic, new Type[0]);
 			cctor.Invoke (null, null);
+		}
+
+		[ExpectedWarning ("IL2026", "Message for --StaticCtorOnTypeWithRequires--")]
+		static void TestRunClassConstructorOnTypeWithRequires ()
+		{
+			var typeHandle = typeof (StaticCtorOnTypeWithRequires).TypeHandle;
+			RuntimeHelpers.RunClassConstructor (typeHandle);
 		}
 
 		class StaticCtorTriggeredByFieldAccess
