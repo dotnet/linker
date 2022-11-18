@@ -64,12 +64,15 @@ namespace Mono.Linker.Steps
 				ret = Instruction.Create (OpCodes.Ret);
 				processor.Append (ret);
 			} else {
-				ret = cctor.Body.Instructions.Last (l => l.OpCode.Code == Code.Ret);
 				var body = cctor.Body;
-				processor = cctor.Body.GetLinkerILProcessor ();
+#pragma warning disable RS0030 // After MarkStep all methods should be processed and thus accessing Cecil directly is the right approach
+				var instructions = body.Instructions;
+#pragma warning restore RS0030
+				ret = instructions.Last (l => l.OpCode.Code == Code.Ret);
+				processor = body.GetLinkerILProcessor ();
 
-				for (int i = 0; i < body.Instructions.Count; ++i) {
-					var instr = body.Instructions[i];
+				for (int i = 0; i < instructions.Count; ++i) {
+					var instr = instructions[i];
 					if (instr.OpCode.Code != Code.Stsfld)
 						continue;
 
@@ -157,8 +160,10 @@ namespace Mono.Linker.Steps
 		{
 			var body = new MethodBody (method);
 
+#pragma warning disable RS0030 // MethodReference.Parameters is banned. This code already works and doesn't need to be changed
 			if (method.HasParameters && method.Parameters.Any (l => l.IsOut))
 				throw new NotSupportedException ($"Cannot replace body of method '{method.GetDisplayName ()}' because it has an out parameter.");
+#pragma warning restore RS0030
 
 			var il = body.GetLinkerILProcessor ();
 			if (method.IsInstanceConstructor () && !method.DeclaringType.IsValueType) {
@@ -166,7 +171,7 @@ namespace Mono.Linker.Steps
 				if (baseType is null)
 					return body;
 
-				MethodReference base_ctor = baseType.GetDefaultInstanceConstructor ();
+				MethodReference base_ctor = baseType.GetDefaultInstanceConstructor (Context);
 				if (base_ctor == null)
 					throw new NotSupportedException ($"Cannot replace constructor for '{method.DeclaringType}' when no base default constructor exists");
 
@@ -199,7 +204,9 @@ namespace Mono.Linker.Steps
 			case MetadataType.MVar:
 			case MetadataType.ValueType:
 				var vd = new VariableDefinition (method.ReturnType);
+#pragma warning disable RS0030 // Anything after MarkStep should not use ILProvider since all methods are guaranteed processed
 				body.Variables.Add (vd);
+#pragma warning restore RS0030
 				body.InitLocals = true;
 
 				il.Emit (OpCodes.Ldloca_S, vd);

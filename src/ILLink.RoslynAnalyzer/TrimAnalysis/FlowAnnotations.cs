@@ -8,6 +8,7 @@ using ILLink.RoslynAnalyzer;
 using ILLink.Shared.TypeSystemProxy;
 using Microsoft.CodeAnalysis;
 
+#nullable enable
 namespace ILLink.Shared.TrimAnalysis
 {
 	sealed partial class FlowAnnotations
@@ -23,30 +24,36 @@ namespace ILLink.Shared.TrimAnalysis
 
 		public static bool RequiresDataFlowAnalysis (IMethodSymbol method)
 		{
-			if (method.GetDynamicallyAccessedMemberTypes () != DynamicallyAccessedMemberTypes.None)
-				return true;
-
 			if (GetMethodReturnValueAnnotation (method) != DynamicallyAccessedMemberTypes.None)
 				return true;
 
-			foreach (var parameter in method.Parameters) {
-				if (GetMethodParameterAnnotation (parameter) != DynamicallyAccessedMemberTypes.None)
+			foreach (var param in method.GetParameters ()) {
+				if (GetMethodParameterAnnotation (param) != DynamicallyAccessedMemberTypes.None)
 					return true;
 			}
 
 			return false;
 		}
 
-		public static DynamicallyAccessedMemberTypes GetMethodParameterAnnotation (IParameterSymbol parameter)
+		internal static DynamicallyAccessedMemberTypes GetMethodParameterAnnotation (ParameterProxy param)
 		{
+			IMethodSymbol method = param.Method.Method;
+			if (param.IsImplicitThis)
+				return method.GetDynamicallyAccessedMemberTypes ();
+
+			IParameterSymbol parameter = param.ParameterSymbol!;
 			var damt = parameter.GetDynamicallyAccessedMemberTypes ();
 
-			// Is this a property setter parameter?
 			var parameterMethod = (IMethodSymbol) parameter.ContainingSymbol;
 			Debug.Assert (parameterMethod != null);
+
 			// If there are conflicts between the setter and the property annotation,
 			// the setter annotation wins. (But DAMT.None is ignored)
-			if (parameterMethod!.MethodKind == MethodKind.PropertySet && damt == DynamicallyAccessedMemberTypes.None) {
+
+			// Is this a property setter `value` parameter?
+			if (parameterMethod!.MethodKind == MethodKind.PropertySet
+				&& damt == DynamicallyAccessedMemberTypes.None
+				&& parameter.Ordinal == parameterMethod.Parameters.Length - 1) {
 				var property = (IPropertySymbol) parameterMethod.AssociatedSymbol!;
 				Debug.Assert (property != null);
 				damt = property!.GetDynamicallyAccessedMemberTypes ();
@@ -88,20 +95,38 @@ namespace ILLink.Shared.TrimAnalysis
 		internal partial GenericParameterValue GetGenericParameterValue (GenericParameterProxy genericParameter)
 			=> new GenericParameterValue (genericParameter.TypeParameterSymbol);
 
-		internal partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-			=> new MethodThisParameterValue (method.Method, dynamicallyAccessedMemberTypes);
-
-		internal partial MethodThisParameterValue GetMethodThisParameterValue (MethodProxy method)
-			=> GetMethodThisParameterValue (method, method.Method.GetDynamicallyAccessedMemberTypes ());
-
-		internal partial MethodParameterValue GetMethodParameterValue (MethodProxy method, SourceParameterIndex parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
-			=> new MethodParameterValue (method.Method.Parameters[(int) parameterIndex], dynamicallyAccessedMemberTypes);
-
-		internal partial MethodParameterValue GetMethodParameterValue (MethodProxy method, SourceParameterIndex parameterIndex)
+		internal partial MethodParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
 		{
-			var annotation = GetMethodParameterAnnotation (method.Method.Parameters[(int) parameterIndex]);
-			return GetMethodParameterValue (method, parameterIndex, annotation);
+			if (!method.HasImplicitThis ())
+				throw new InvalidOperationException ($"Cannot get 'this' parameter of method {method.GetDisplayName ()} with no 'this' parameter.");
+			return GetMethodParameterValue (new ParameterProxy (method, (ParameterIndex) 0), dynamicallyAccessedMemberTypes);
 		}
+
+		// overrideIsThis is needed for backwards compatibility with MakeGenericType/Method https://github.com/dotnet/linker/issues/2428
+		internal MethodParameterValue GetMethodThisParameterValue (MethodProxy method, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes, bool overrideIsThis = false)
+		{
+			if (!method.HasImplicitThis () && !overrideIsThis)
+				throw new InvalidOperationException ($"Cannot get 'this' parameter of method {method.GetDisplayName ()} with no 'this' parameter.");
+			return new MethodParameterValue (new ParameterProxy (method, (ParameterIndex) 0), dynamicallyAccessedMemberTypes, overrideIsThis);
+		}
+
+		internal partial MethodParameterValue GetMethodThisParameterValue (MethodProxy method)
+		{
+			if (!method.HasImplicitThis ())
+				throw new InvalidOperationException ($"Cannot get 'this' parameter of method {method.GetDisplayName ()} with no 'this' parameter.");
+			ParameterProxy param = new (method, (ParameterIndex) 0);
+			var damt = GetMethodParameterAnnotation (param);
+			return GetMethodParameterValue (new ParameterProxy (method, (ParameterIndex) 0), damt);
+		}
+
+		internal MethodParameterValue GetMethodParameterValue (MethodProxy method, ParameterIndex parameterIndex, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+			=> new MethodParameterValue (new (method, parameterIndex), dynamicallyAccessedMemberTypes);
+
+		internal partial MethodParameterValue GetMethodParameterValue (ParameterProxy param)
+			=> new MethodParameterValue (param, GetMethodParameterAnnotation (param));
+
+		internal partial MethodParameterValue GetMethodParameterValue (ParameterProxy param, DynamicallyAccessedMemberTypes dynamicallyAccessedMemberTypes)
+			=> new MethodParameterValue (param, dynamicallyAccessedMemberTypes);
 #pragma warning restore CA1822
 	}
 }

@@ -14,9 +14,9 @@ using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.Single
 namespace ILLink.Shared.TrimAnalysis
 {
 	[StructLayout (LayoutKind.Auto)]
-	partial struct RequireDynamicallyAccessedMembersAction
+	internal partial struct RequireDynamicallyAccessedMembersAction
 	{
-		readonly DiagnosticContext _diagnosticContext;
+		private readonly DiagnosticContext _diagnosticContext;
 
 		public void Invoke (in MultiValue value, ValueWithDynamicallyAccessedMembers targetValue)
 		{
@@ -52,10 +52,10 @@ namespace ILLink.Shared.TrimAnalysis
 					// Ignore - probably unreachable path as it would fail at runtime anyway.
 				} else {
 					DiagnosticId diagnosticId = targetValue switch {
+						MethodParameterValue maybeThis when maybeThis.IsThisParameter () => DiagnosticId.ImplicitThisCannotBeStaticallyDetermined,
 						MethodParameterValue => DiagnosticId.MethodParameterCannotBeStaticallyDetermined,
 						MethodReturnValue => DiagnosticId.MethodReturnValueCannotBeStaticallyDetermined,
 						FieldValue => DiagnosticId.FieldValueCannotBeStaticallyDetermined,
-						MethodThisParameterValue => DiagnosticId.ImplicitThisCannotBeStaticallyDetermined,
 						GenericParameterValue => DiagnosticId.TypePassedToGenericParameterCannotBeStaticallyDetermined,
 						_ => throw new NotImplementedException ($"unsupported target value {targetValue}")
 					};

@@ -80,6 +80,7 @@ namespace Mono.Linker
 		readonly List<MessageContainer> _cachedWarningMessageContainers;
 		readonly ILogger _logger;
 		readonly Dictionary<AssemblyDefinition, bool> _isTrimmable;
+		readonly UnreachableBlocksOptimizer _unreachableBlocksOptimizer;
 
 		public Pipeline Pipeline {
 			get { return _pipeline; }
@@ -223,6 +224,7 @@ namespace Mono.Linker
 			GeneralSingleWarn = false;
 			SingleWarn = new Dictionary<string, bool> ();
 			AssembliesWithGeneratedSingleWarning = new HashSet<string> ();
+			_unreachableBlocksOptimizer = new UnreachableBlocksOptimizer (this);
 
 			const CodeOptimizations defaultOptimizations =
 				CodeOptimizations.BeforeFieldInit |
@@ -753,7 +755,11 @@ namespace Mono.Linker
 		readonly Dictionary<MethodReference, MethodDefinition?> methodresolveCache = new ();
 		readonly Dictionary<FieldReference, FieldDefinition?> fieldresolveCache = new ();
 		readonly Dictionary<TypeReference, TypeDefinition?> typeresolveCache = new ();
+		readonly Dictionary<ExportedType, TypeDefinition?> exportedTypeResolveCache = new ();
 
+		/// <summary>
+		/// Tries to resolve the MethodReference to a MethodDefinition and logs a warning if it can't
+		/// </summary>
 		public MethodDefinition? Resolve (MethodReference methodReference)
 		{
 			if (methodReference is MethodDefinition methodDefinition)
@@ -765,7 +771,9 @@ namespace Mono.Linker
 			if (methodresolveCache.TryGetValue (methodReference, out MethodDefinition? md))
 				return md;
 
+#pragma warning disable RS0030 // Cecil's resolve is banned -- this provides the wrapper
 			md = methodReference.Resolve ();
+#pragma warning restore RS0030
 			if (md == null && !IgnoreUnresolved)
 				ReportUnresolved (methodReference);
 
@@ -773,6 +781,9 @@ namespace Mono.Linker
 			return md;
 		}
 
+		/// <summary>
+		/// Tries to resolve the MethodReference to a MethodDefinition and returns null if it can't
+		/// </summary>
 		public MethodDefinition? TryResolve (MethodReference methodReference)
 		{
 			if (methodReference is MethodDefinition methodDefinition)
@@ -784,11 +795,16 @@ namespace Mono.Linker
 			if (methodresolveCache.TryGetValue (methodReference, out MethodDefinition? md))
 				return md;
 
+#pragma warning disable RS0030 // Cecil's resolve is banned -- this method provides the wrapper
 			md = methodReference.Resolve ();
+#pragma warning restore RS0030
 			methodresolveCache.Add (methodReference, md);
 			return md;
 		}
 
+		/// <summary>
+		/// Tries to resolve the FieldReference to a FieldDefinition and logs a warning if it can't
+		/// </summary>
 		public FieldDefinition? Resolve (FieldReference fieldReference)
 		{
 			if (fieldReference is FieldDefinition fieldDefinition)
@@ -808,6 +824,9 @@ namespace Mono.Linker
 			return fd;
 		}
 
+		/// <summary>
+		/// Tries to resolve the FieldReference to a FieldDefinition and returns null if it can't
+		/// </summary>
 		public FieldDefinition? TryResolve (FieldReference fieldReference)
 		{
 			if (fieldReference is FieldDefinition fieldDefinition)
@@ -824,6 +843,9 @@ namespace Mono.Linker
 			return fd;
 		}
 
+		/// <summary>
+		/// Tries to resolve the TypeReference to a TypeDefinition and logs a warning if it can't
+		/// </summary>
 		public TypeDefinition? Resolve (TypeReference typeReference)
 		{
 			if (typeReference is TypeDefinition typeDefinition)
@@ -851,6 +873,9 @@ namespace Mono.Linker
 			return td;
 		}
 
+		/// <summary>
+		/// Tries to resolve the TypeReference to a TypeDefinition and returns null if it can't
+		/// </summary>
 		public TypeDefinition? TryResolve (TypeReference typeReference)
 		{
 			if (typeReference is TypeDefinition typeDefinition)
@@ -881,6 +906,33 @@ namespace Mono.Linker
 			return td;
 		}
 
+		/// <summary>
+		/// Tries to resolve the ExportedType to a TypeDefinition and logs a warning if it can't
+		/// </summary>
+		public TypeDefinition? Resolve (ExportedType et)
+		{
+			if (TryResolve (et) is not TypeDefinition td) {
+				ReportUnresolved (et);
+				return null;
+			}
+			return td;
+		}
+
+		/// <summary>
+		/// Tries to resolve the ExportedType to a TypeDefinition and returns null if it can't
+		/// </summary>
+		public TypeDefinition? TryResolve (ExportedType et)
+		{
+			if (exportedTypeResolveCache.TryGetValue (et, out var td)) {
+				return td;
+			}
+#pragma warning disable RS0030 // Cecil's Resolve is banned -- this method provides the wrapper
+			td = et.Resolve ();
+#pragma warning restore RS0030
+			exportedTypeResolveCache.Add (et, td);
+			return td;
+		}
+
 		public TypeDefinition? TryResolve (AssemblyDefinition assembly, string typeNameString)
 		{
 			// It could be cached if it shows up on fast path
@@ -889,7 +941,31 @@ namespace Mono.Linker
 				: null;
 		}
 
+		readonly HashSet<MethodDefinition> _processed_bodies_for_method = new HashSet<MethodDefinition> (2048);
+
+		/// <summary>
+		/// Linker applies some optimization on method bodies. For example it can remove dead branches of code
+		/// based on constant propagation. To avoid overmarking, all code which processes the method's IL
+		/// should only view the IL after it's been optimized.
+		/// As such typically MethodDefinition.MethodBody should not be accessed directly on the Cecil object model
+		/// instead all accesses to method body should go through the ILProvider here
+		/// which will make sure the IL of the method is fully optimized before it's handed out.
+		/// </summary>
+		public MethodIL GetMethodIL (Cecil.Cil.MethodBody methodBody)
+			=> GetMethodIL (methodBody.Method);
+
+		public MethodIL GetMethodIL (MethodDefinition method)
+		{
+			if (_processed_bodies_for_method.Add (method)) {
+				_unreachableBlocksOptimizer.ProcessMethod (method);
+			}
+
+			return MethodIL.Create (method.Body);
+		}
+
 		readonly HashSet<MemberReference> unresolved_reported = new ();
+
+		readonly HashSet<ExportedType> unresolved_exported_types_reported = new ();
 
 		protected virtual void ReportUnresolved (FieldReference fieldReference)
 		{
@@ -907,6 +983,12 @@ namespace Mono.Linker
 		{
 			if (unresolved_reported.Add (typeReference))
 				LogError (string.Format (SharedStrings.FailedToResolveTypeElementMessage, typeReference.GetDisplayName ()), (int) DiagnosticId.FailedToResolveMetadataElement);
+		}
+
+		protected virtual void ReportUnresolved (ExportedType et)
+		{
+			if (unresolved_exported_types_reported.Add (et))
+				LogError (string.Format (SharedStrings.FailedToResolveTypeElementMessage, et.Name), (int) DiagnosticId.FailedToResolveMetadataElement);
 		}
 	}
 
