@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Reflection.Emit;
+using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
-using System.Runtime.InteropServices;
 
 namespace Mono.Linker.Tests.Cases.UnreachableBlock
 {
@@ -18,7 +18,7 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			TestSwitch.TestOffset ();
 			TestSwitch2.TestFallThrough ();
 			TestSwitchZero.Test ();
-			TestSwitch3.TestFallThrough(true);
+			TestSwitch3.TestFallThrough (true);
 		}
 
 		[Kept]
@@ -144,28 +144,27 @@ namespace Mono.Linker.Tests.Cases.UnreachableBlock
 			{
 				object instance;
 
-				switch (ProcessArchitecture, createReader)
-				{
-					case (Architecture.X86, true):
-						Unreached ();
-						break;
-					case (Architecture.X86, false):
-						Unreached ();
-						break;
-					case (Architecture.X64, true):
-						Unreached ();
-						break;
-					case (Architecture.X64, false):
-						Unreached ();
-						break;
-					case (Architecture.Arm64, true):
-						Unreached ();
-						break;
-					case (Architecture.Arm64, false):
-						Unreached ();
-						break;
-					default:
-						throw new NotSupportedException();
+				switch (ProcessArchitecture, createReader) {
+				case (Architecture.X86, true):
+					Unreached ();
+					break;
+				case (Architecture.X86, false):
+					Unreached ();
+					break;
+				case (Architecture.X64, true):
+					Unreached ();
+					break;
+				case (Architecture.X64, false):
+					Unreached ();
+					break;
+				case (Architecture.Arm64, true):
+					Unreached ();
+					break;
+				case (Architecture.Arm64, false):
+					Unreached ();
+					break;
+				default:
+					throw new NotSupportedException ();
 				}
 
 				return null;
