@@ -189,9 +189,9 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			// NativeAot is missing ldftn detection: https://github.com/dotnet/runtime/issues/68786
-			[ExpectedWarning("IL2026", "--GenericTypeWithStaticMethodWhichRequires--", ProducedBy = ProducedBy.Trimmer | ProducedBy.Analyzer)]
-			[ExpectedWarning("IL3002", "--GenericTypeWithStaticMethodWhichRequires--", ProducedBy = ProducedBy.Analyzer)]
-			[ExpectedWarning("IL3050", "--GenericTypeWithStaticMethodWhichRequires--", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL2026", "--GenericTypeWithStaticMethodWhichRequires--", ProducedBy = ProducedBy.Trimmer | ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", "--GenericTypeWithStaticMethodWhichRequires--", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3050", "--GenericTypeWithStaticMethodWhichRequires--", ProducedBy = ProducedBy.Analyzer)]
 			public static void GenericTypeWithStaticMethodViaLdftn ()
 			{
 				var _ = new Action (GenericWithStaticMethod<TestType>.GenericTypeWithStaticMethodWhichRequires);
