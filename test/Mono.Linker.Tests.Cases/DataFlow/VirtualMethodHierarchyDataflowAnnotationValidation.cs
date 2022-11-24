@@ -869,10 +869,13 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			public static void Test ()
 			{
+				// https://github.com/dotnet/linker/issues/3133
 				// Access the interfaces as well - otherwise NativeAOT can decide
 				// to not look for overrides since it knows it's making a direct access
 				// to a method and it doesn't need to know about the base method
 				// which leads to some warnings not being generated.
+				// The goal of this test is to validate the generated diagnostics
+				// so we're forcing the checks to happen with this.
 				typeof (Library.IAnnotatedMethods).RequiresAll ();
 				typeof (Library.IUnannotatedMethods).RequiresAll ();
 
