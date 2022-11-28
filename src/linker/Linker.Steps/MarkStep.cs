@@ -2933,8 +2933,8 @@ namespace Mono.Linker.Steps
 			// Use the original reason as it's important to correctly generate warnings
 			// the updated reason is only useful for better tracking of dependencies.
 			ProcessAnalysisAnnotationsForMethod (method, originalReasonKind, origin);
-			// Record the reason for marking a method on each call. The logic under CheckProcessed happens
-			// only once per method.
+
+			// Record the reason for marking a method on each call.
 			switch (reason.Kind) {
 			case DependencyKind.AlreadyMarked:
 				Debug.Assert (Annotations.IsMarked (method));
@@ -2957,6 +2957,7 @@ namespace Mono.Linker.Steps
 				MarkType (method.DeclaringType, new DependencyInfo (DependencyKind.DeclaringTypeOfCalledMethod, method), new MessageOrigin (reason.Source as IMemberDefinition ?? method));
 			}
 
+			// We will only enqueue a method to be processed if it hasn't been processed yet.
 			if (!CheckProcessed (method))
 				EnqueueMethod (method, reason, origin);
 
