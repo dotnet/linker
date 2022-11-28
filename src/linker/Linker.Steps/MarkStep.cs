@@ -749,7 +749,7 @@ namespace Mono.Linker.Steps
 		/// <summary>
 		/// Marks the Override of <paramref name="overrideInformation"/> with the correct reason. Should be called when <see cref="ShouldMarkOverrideForBase(OverrideInformation, bool)"/> returns true.
 		/// </summary>
-		// TODO: Take into account a base method in preserved scope
+		// TODO: Take into account a base method in preserved scope https://github.com/dotnet/linker/issues/3090
 		void MarkOverrideForBaseMethod (OverrideInformation overrideInformation)
 		{
 			if (Context.IsOptimizationEnabled (CodeOptimizations.OverrideRemoval, overrideInformation.Override) && Annotations.IsInstantiated (overrideInformation.Override.DeclaringType)) {
