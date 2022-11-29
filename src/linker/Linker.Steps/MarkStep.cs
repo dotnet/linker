@@ -2940,7 +2940,7 @@ namespace Mono.Linker.Steps
 				Debug.Assert (Annotations.IsMarked (method));
 				break;
 			default:
-				Annotations.Mark (method, reason, ScopeStack.CurrentScope.Origin);
+				Annotations.Mark (method, reason, origin);
 				break;
 			}
 
