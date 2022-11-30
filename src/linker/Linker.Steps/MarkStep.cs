@@ -710,12 +710,12 @@ namespace Mono.Linker.Steps
 		/// <summary>
 		/// Returns true if the Override in <paramref name="overrideInformation"/> should be marked because it is needed by the base method.
 		/// Does not take into account if the base method is in a preserved scope.
-		/// Assumes the base method is marked.
+		/// Assumes the base method is marked or comes from a preserved scope.
 		/// </summary>
 		// TODO: Move interface method marking logic here https://github.com/dotnet/linker/issues/3090
 		bool ShouldMarkOverrideForBase (OverrideInformation overrideInformation)
 		{
-			Debug.Assert (Annotations.IsMarked (overrideInformation.Base);
+			Debug.Assert (Annotations.IsMarked (overrideInformation.Base) || IgnoreScope (overrideInformation.Base.DeclaringType.Scope));
 			if (!Annotations.IsMarked (overrideInformation.Override.DeclaringType))
 				return false;
 			if (overrideInformation.IsOverrideOfInterfaceMember) {
@@ -3202,7 +3202,7 @@ namespace Mono.Linker.Steps
 			MarkBaseMethods (method);
 
 			if (Annotations.GetOverrides (method) is IEnumerable<OverrideInformation> overrides) {
-				foreach (var @override in overrides) {
+				foreach (var @override in overrides.Where (ov => Annotations.IsMarked (ov.Base) || IgnoreScope (ov.Base.DeclaringType.Scope))) {
 					if (ShouldMarkOverrideForBase (@override))
 						MarkOverrideForBaseMethod (@override);
 				}
