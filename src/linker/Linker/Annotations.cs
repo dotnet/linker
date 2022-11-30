@@ -604,14 +604,15 @@ namespace Mono.Linker
 		/// <remarks>Unlike <see cref="DoesMemberRequireUnreferencedCode(IMemberDefinition, out RequiresUnreferencedCodeAttribute?)"/>
 		/// if a declaring type has RUC, all methods in that type are considered "in scope" of that RUC. So this includes also
 		/// instance methods (not just statics and .ctors).</remarks>
-		internal bool IsInRequiresUnreferencedCodeScope (MethodDefinition method)
+		internal bool IsInRequiresUnreferencedCodeScope (MethodDefinition method, [NotNullWhen (true)] out RequiresUnreferencedCodeAttribute? attribute)
 		{
-			if (HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method) && !method.IsStaticConstructor ())
+			if (TryGetLinkerAttribute (method, out attribute) && !method.IsStaticConstructor ())
 				return true;
 
-			if (method.DeclaringType is not null && HasLinkerAttribute<RequiresUnreferencedCodeAttribute> (method.DeclaringType))
+			if (method.DeclaringType is not null && TryGetLinkerAttribute (method.DeclaringType, out attribute))
 				return true;
 
+			attribute = null;
 			return false;
 		}
 
@@ -630,27 +631,30 @@ namespace Mono.Linker
 			};
 		}
 
-		internal bool ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (ICustomAttributeProvider? originMember)
+		internal bool ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (ICustomAttributeProvider? originMember, [NotNullWhen (true)] out RequiresUnreferencedCodeAttribute? attribute)
 		{
 			// Check if the current scope method has RequiresUnreferencedCode on it
 			// since that attribute automatically suppresses all trim analysis warnings.
 			// Check both the immediate origin method as well as suppression context method
 			// since that will be different for compiler generated code.
 			if (originMember is MethodDefinition &&
-				IsInRequiresUnreferencedCodeScope ((MethodDefinition) originMember))
+				IsInRequiresUnreferencedCodeScope ((MethodDefinition) originMember, out attribute))
 				return true;
 
-			if (originMember is not IMemberDefinition member)
+			if (originMember is not IMemberDefinition member) {
+				attribute = null;
 				return false;
+			}
 
 			MethodDefinition? owningMethod;
 			while (context.CompilerGeneratedState.TryGetOwningMethodForCompilerGeneratedMember (member, out owningMethod)) {
 				Debug.Assert (owningMethod != member);
-				if (IsInRequiresUnreferencedCodeScope (owningMethod))
+				if (IsInRequiresUnreferencedCodeScope (owningMethod, out attribute))
 					return true;
 				member = owningMethod;
 			}
 
+			attribute = null;
 			return false;
 		}
 

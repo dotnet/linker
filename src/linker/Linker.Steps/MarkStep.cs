@@ -1653,7 +1653,7 @@ namespace Mono.Linker.Steps
 			// When marking override methods via DynamicallyAccessedMembers, we should only issue a warning for the base method.
 			bool skipWarningsForOverride = member is MethodDefinition m && m.IsVirtual && Annotations.GetBaseMethods (m) != null;
 
-			bool isReflectionAccessCoveredByRUC = Annotations.DoesMemberRequireUnreferencedCode (member, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCodeAttribute);
+			bool isReflectionAccessCoveredByRUC = Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (member, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCodeAttribute);
 			if (isReflectionAccessCoveredByRUC && !skipWarningsForOverride) {
 				var id = reportOnMember ? DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesMemberWithRequiresUnreferencedCode : DiagnosticId.DynamicallyAccessedMembersOnTypeReferencesMemberOnBaseWithRequiresUnreferencedCode;
 				Context.LogWarning (origin, id, type.GetDisplayName (),
@@ -1777,7 +1777,7 @@ namespace Mono.Linker.Steps
 				return;
 			}
 
-			if (Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (origin.Provider))
+			if (Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (origin.Provider, out _))
 				return;
 
 			bool isReflectionAccessCoveredByRUC;
@@ -3065,15 +3065,31 @@ namespace Mono.Linker.Steps
 				break;
 			};
 
-			if (Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (origin.Provider))
+			if (Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (origin.Provider, out _))
 				return;
 
-			// All override methods should have the same annotations as their base methods
-			// (else we will produce warning IL2046 or IL2092 or some other warning).
-			// When marking override methods via DynamicallyAccessedMembers, we should only issue a warning for the base method.
-			bool skipWarningsForOverride = dependencyKind == DependencyKind.DynamicallyAccessedMember && method.IsVirtual && Annotations.GetBaseMethods (method) != null;
+			bool skipWarningsForOverride;
+			bool isReflectionAccessCoveredByRUC;
+			RequiresUnreferencedCodeAttribute? requiresUnreferencedCode;
+			// Attribute properties are marked as a result of marking attribute instances, not because 
+			if (dependencyKind == DependencyKind.AttributeProperty) {
+				// Property assignment in an attribute instance.
+				// This case is more like a direct method call than reflection, and should
+				// be logically similar to what is done in ReflectionMethodBodyScanner for method calls.
+				skipWarningsForOverride = false;
+				isReflectionAccessCoveredByRUC = Annotations.DoesMethodRequireUnreferencedCode (method, out requiresUnreferencedCode);
+			} else {
+				// All override methods should have the same annotations as their base methods
+				// (else we will produce warning IL2046 or IL2092 or some other warning).
+				// When marking override methods via DynamicallyAccessedMembers, we should only issue a warning for the base method.
+				skipWarningsForOverride = dependencyKind == DependencyKind.DynamicallyAccessedMember && method.IsVirtual && Annotations.GetBaseMethods (method) != null;
+				// If the method being accessed has warnings suppressed due to Requires attributes,
+				// we need to issue a warning for the reflection access. This is true even for instance
+				// methods, which can be reflection-invoked without ever calling a constructor of the
+				// accessed type.
+				isReflectionAccessCoveredByRUC = Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (method, out requiresUnreferencedCode);
+			}
 
-			bool isReflectionAccessCoveredByRUC = Annotations.DoesMethodRequireUnreferencedCode (method, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCode);
 			if (isReflectionAccessCoveredByRUC && !skipWarningsForOverride)
 				ReportRequiresUnreferencedCode (method.GetDisplayName (), requiresUnreferencedCode!, new DiagnosticContext (origin, diagnosticsEnabled: true, Context));
 
