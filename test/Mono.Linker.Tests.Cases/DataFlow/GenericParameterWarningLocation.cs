@@ -264,19 +264,38 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				}
 			}
 
-			class MultipleRefrencedsToTheSameType<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] TPublicMethods, TUnknown>
+			class MultipleReferencesToTheSameType<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] TPublicMethods, TUnknown>
 			{
-				[ExpectedWarning ("IL2091")]
-				static TypeWithPublicMethods<TUnknown> Property1 { get; set; }
-				static TypeWithPublicMethods<TPublicMethods> Property2 { get; set; }
-				[ExpectedWarning ("IL2091")]
-				static TypeWithPublicMethods<TUnknown> Property3 { get; set; }
+				// The warnings is generated on the backing field
+				[ExpectedWarning ("IL2091", CompilerGeneratedCode = true)]
+				static TypeWithPublicMethods<TUnknown> Property1 {
+					[ExpectedWarning ("IL2091")]
+					get;
+
+					[ExpectedWarning ("IL2091")]
+					set;
+				}
+
+				static TypeWithPublicMethods<TPublicMethods> Property2 {
+					get;
+					set;
+				}
+
+				// The warnings is generated on the backing field
+				[ExpectedWarning ("IL2091", CompilerGeneratedCode = true)]
+				static TypeWithPublicMethods<TUnknown> Property3 {
+					[ExpectedWarning ("IL2091")]
+					get;
+
+					[ExpectedWarning ("IL2091")]
+					set;
+				}
 
 				public static void Test ()
 				{
-					Property1 = null;
-					Property2 = null;
-					Property3 = null;
+					Property1 = Property1;
+					Property2 = Property2;
+					Property3 = Property3;
 				}
 			}
 
@@ -284,9 +303,17 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] TPublicMethods,
 				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] TPublicFields>
 			{
-				[ExpectedWarning ("IL2091")]
-				[ExpectedWarning ("IL2091")]
-				static IWithTwo<TPublicFields, TPublicMethods> Property { get; set; }
+				// The warnings is generated on the backing field
+				[ExpectedWarning ("IL2091", CompilerGeneratedCode = true)]
+				[ExpectedWarning ("IL2091", CompilerGeneratedCode = true)]
+				static IWithTwo<TPublicFields, TPublicMethods> Property { 
+					// Getter is trimmed and doesn't produce any warning
+					get;
+
+					[ExpectedWarning ("IL2091")]
+					[ExpectedWarning ("IL2091")]
+					set;
+				}
 
 				public static void Test ()
 				{
@@ -298,7 +325,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				SpecificType.Test ();
 				OneMatchingAnnotation<TestType>.Test ();
-				MultipleRefrencedsToTheSameType<TestType, TestType>.Test ();
+				MultipleReferencesToTheSameType<TestType, TestType>.Test ();
 				TwoMismatchesInOne<TestType, TestType>.Test ();
 			}
 		}
