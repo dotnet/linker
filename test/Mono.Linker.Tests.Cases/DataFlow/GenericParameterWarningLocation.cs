@@ -50,7 +50,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				: BaseWithPublicMethods<TPublicFields>
 			{ }
 
-			[ExpectedWarning("IL2091", nameof (DynamicallyAccessedMemberTypes.PublicMethods))]
+			[ExpectedWarning ("IL2091", nameof (DynamicallyAccessedMemberTypes.PublicMethods))]
 			class DerivedWithOneMismatch<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] TPublicFields>
 				: BaseWithTwo<TPublicFields, TPublicFields>
 			{ }
@@ -185,7 +185,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				}
 			}
 
-			class OneMatchingAnnotation<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] TPublicMethods>
+			class OneMatchingAnnotation<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] TPublicMethods>
 			{
 				static TypeWithPublicMethods<TPublicMethods> _field;
 
@@ -195,7 +195,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				}
 			}
 
-			class MultipleRefrencedsToTheSameType<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] TPublicMethods, TUnknown>
+			class MultipleRefrencedsToTheSameType<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] TPublicMethods, TUnknown>
 			{
 				[ExpectedWarning ("IL2091")]
 				static TypeWithPublicMethods<TUnknown> _field1;
@@ -219,7 +219,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				[ExpectedWarning ("IL2091")]
 				static IWithTwo<TPublicFields, TPublicMethods> _field;
 
-				public static void Test()
+				public static void Test ()
 				{
 					_field = null;
 				}
@@ -306,7 +306,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				// The warnings is generated on the backing field
 				[ExpectedWarning ("IL2091", CompilerGeneratedCode = true)]
 				[ExpectedWarning ("IL2091", CompilerGeneratedCode = true)]
-				static IWithTwo<TPublicFields, TPublicMethods> Property { 
+				static IWithTwo<TPublicFields, TPublicMethods> Property {
 					// Getter is trimmed and doesn't produce any warning
 					get;
 
@@ -358,13 +358,13 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 			class TypeOf
 			{
-				static void SpecificType()
+				static void SpecificType ()
 				{
 					Type t = typeof (TypeWithPublicMethods<TestType>);
 					t = typeof (IWithTwo<TestType, TestType>);
 				}
 
-				static void OneMatchingAnnotation<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] TPublicMethods>()
+				static void OneMatchingAnnotation<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] TPublicMethods> ()
 				{
 					Type t = typeof (TypeWithPublicMethods<TPublicMethods>);
 				}
@@ -546,9 +546,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 					[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] TPublicMethods,
 					TUnknown> ()
 				{
-					var a1 = new Action(MethodWithPublicMethods<TUnknown>); // Warn
+					var a1 = new Action (MethodWithPublicMethods<TUnknown>); // Warn
 					var a2 = new Action (MethodWithPublicMethods<TPublicMethods>); // No warn
-					var a3 = new Action(MethodWithPublicMethods<TUnknown>); // Warn
+					var a3 = new Action (MethodWithPublicMethods<TUnknown>); // Warn
 				}
 
 				[ExpectedWarning ("IL2091")]
@@ -558,7 +558,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 					[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] TPublicMethods>
 					()
 				{
-					var a = new Action(MethodWithTwo<TPublicFields, TPublicMethods>);
+					var a = new Action (MethodWithTwo<TPublicFields, TPublicMethods>);
 				}
 
 				public static void Test ()
@@ -616,12 +616,12 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			{
 				static void SpecificType ()
 				{
-					object a = new TypeWithPublicMethods<TestType>();
+					object a = new TypeWithPublicMethods<TestType> ();
 				}
 
 				static void OneMatchingAnnotation<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] TPublicMethods> ()
 				{
-					object a = new TypeWithPublicMethods<TPublicMethods>();
+					object a = new TypeWithPublicMethods<TPublicMethods> ();
 				}
 
 				[ExpectedWarning ("IL2091")]
@@ -630,9 +630,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 					[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] TPublicMethods,
 					TUnknown> ()
 				{
-					object a1 = new TypeWithPublicMethods<TUnknown>(); // Warn
-					object a2 = new TypeWithPublicMethods<TPublicMethods>(); // No warn
-					object a3 = new TypeWithPublicMethods<TUnknown>(); // Warn
+					object a1 = new TypeWithPublicMethods<TUnknown> (); // Warn
+					object a2 = new TypeWithPublicMethods<TPublicMethods> (); // No warn
+					object a3 = new TypeWithPublicMethods<TUnknown> (); // Warn
 				}
 
 				[ExpectedWarning ("IL2091")]
@@ -642,7 +642,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 					[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] TPublicMethods>
 					()
 				{
-					object a = new TypeWithTwo<TPublicFields, TPublicMethods>();
+					object a = new TypeWithTwo<TPublicFields, TPublicMethods> ();
 				}
 
 				public static void Test ()
@@ -748,8 +748,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				{
 					try {
 						DoNothing ();
-					}
-					catch (TypeWithPublicMethods<TestType>) {
+					} catch (TypeWithPublicMethods<TestType>) {
 					}
 				}
 
@@ -757,8 +756,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				{
 					try {
 						DoNothing ();
-					}
-					catch (TypeWithPublicMethods<TPublicMethods>) {
+					} catch (TypeWithPublicMethods<TPublicMethods>) {
 					}
 				}
 
@@ -770,8 +768,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				{
 					try {
 						DoNothing ();
-					}
-					catch (TypeWithPublicMethods<TUnknown>) { // Warn
+					} catch (TypeWithPublicMethods<TUnknown>) { // Warn
 					}
 
 					try {
