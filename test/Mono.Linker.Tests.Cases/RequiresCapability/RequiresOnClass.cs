@@ -1038,7 +1038,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 				// https://github.com/dotnet/linker/issues/3142
 				// Instance fields get generic warnings but static fields don't.
-				[ExpectedWarning ("IL2091")]
+				[ExpectedWarning ("IL2091", ProducedBy = ProducedBy.Trimmer)]
 				public RequiresAll<T> instanceField;
 
 				[RequiresOnCtor]
@@ -1046,7 +1046,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 
 				// https://github.com/dotnet/linker/issues/3140
 				// Instance fields get attribute warnings but static fields don't.
-				[ExpectedWarning ("IL2026", "--RequiresOnCtorAttribute--")]
+				[ExpectedWarning ("IL2026", "--RequiresOnCtorAttribute--", ProducedBy = ProducedBy.Trimmer)]
 				[RequiresOnCtor]
 				public int instanceFieldWithAttribute;
 
