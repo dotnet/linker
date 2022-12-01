@@ -364,9 +364,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				public void MethodWithLambdas ()
 				{
 					var lambda =
-					// [ExpectedWarning ("IL2119", "<" + nameof (MethodWithLambdas) + ">",
-					// 	ProducedBy = ProducedBy.Trimmer)]
-					[ExpectedWarning ("IL2112", "<" + nameof (MethodWithLambdas) + ">",
+					[ExpectedWarning ("IL2112", "<" + nameof (MethodWithLambdas) + ">", "--RUCTypeWithLambdas--",
 						ProducedBy = ProducedBy.Trimmer)]
 					[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 					[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
@@ -374,9 +372,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 
 					int i = 0;
 					var lambdaWithCapturedState =
-					// [ExpectedWarning ("IL2119", "<" + nameof (MethodWithLambdas) + ">",
-					// 	ProducedBy = ProducedBy.Trimmer)]
-					[ExpectedWarning ("IL2112", "<" + nameof (MethodWithLambdas) + ">",
+					[ExpectedWarning ("IL2112", "<" + nameof (MethodWithLambdas) + ">", "--RUCTypeWithLambdas--",
 						ProducedBy = ProducedBy.Trimmer)]
 					[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
 					[ExpectedWarning ("IL3050", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
@@ -402,16 +398,11 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2118", "<" + nameof (LambdaWithCapturedTypeToDAM) + ">",
 				ProducedBy = ProducedBy.Trimmer)]
-			// Expect RUC warnings for static, compiler-generated code warnings for instance.
 			[ExpectedWarning ("IL2026", nameof (RUCTypeWithLambdas) + "()", "--RUCTypeWithLambdas--")]
-			// [ExpectedWarning ("IL2118", "<" + nameof (RUCTypeWithLambdas.MethodWithLambdas) + ">",
-			// 	ProducedBy = ProducedBy.Trimmer)]
-			// [ExpectedWarning ("IL2118", "<" + nameof (RUCTypeWithLambdas.MethodWithLambdas) + ">",
-			// 	ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "<" + nameof (RUCTypeWithLambdas.MethodWithLambdas) + ">", "b__0_0()",
+			[ExpectedWarning ("IL2026", nameof (RUCTypeWithLambdas.MethodWithLambdas) + "()", "--RUCTypeWithLambdas--")]
+			[ExpectedWarning ("IL2026", "<" + nameof (RUCTypeWithLambdas.MethodWithLambdas) + ">", "--RUCTypeWithLambdas--",
 				ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", nameof (RUCTypeWithLambdas.MethodWithLambdas) + "()")]
-			[ExpectedWarning ("IL2026", "<" + nameof (RUCTypeWithLambdas.MethodWithLambdas) + ">", "b__1()",
+			[ExpectedWarning ("IL2026", "<" + nameof (RUCTypeWithLambdas.MethodWithLambdas) + ">", "--RUCTypeWithLambdas--",
 				ProducedBy = ProducedBy.Trimmer)]
 			public static void Test (Lambdas test = null)
 			{
