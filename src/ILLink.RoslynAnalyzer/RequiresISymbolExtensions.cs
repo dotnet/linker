@@ -79,7 +79,7 @@ namespace ILLink.RoslynAnalyzer
 						return false;
 					}
 				}
-				return true;
+				return requiresAttribute != null;
 			}
 
 			requiresAttribute = null;

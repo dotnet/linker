@@ -519,6 +519,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[ExpectedWarning ("IL2026", "BaseWithRequiresOnType.Method()")]
 			[ExpectedWarning ("IL2026", "BaseWithoutRequiresOnType.Method()")]
 			[ExpectedWarning ("IL2026", "BaseWithoutRequiresOnType.Method()")]
+			// Linker skips warnings for base method overrides, assuming it is covered by RUC on the base method.
+			[ExpectedWarning ("IL2026", "DerivedWithRequiresOnType.Method()", ProducedBy = ProducedBy.Analyzer)]
 			[ExpectedWarning ("IL2026", "InterfaceWithoutRequires.Method(Int32)")]
 			[ExpectedWarning ("IL2026", "InterfaceWithoutRequires.Method()")]
 			[ExpectedWarning ("IL2026", "ImplementationWithRequiresOnType.Method()")]
