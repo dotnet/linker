@@ -1780,6 +1780,7 @@ namespace Mono.Linker.Steps
 			if (Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (origin.Provider, out _))
 				return;
 
+			bool isReflectionAccessCoveredByRUC;
 			if (isReflectionAccessCoveredByRUC = Annotations.ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (field, out RequiresUnreferencedCodeAttribute? requiresUnreferencedCodeAttribute))
 				ReportRequiresUnreferencedCode (field.GetDisplayName (), requiresUnreferencedCodeAttribute!, new DiagnosticContext (origin, diagnosticsEnabled: true, Context));
 

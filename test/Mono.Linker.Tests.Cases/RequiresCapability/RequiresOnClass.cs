@@ -38,6 +38,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			ReflectionAccessOnProperties.Test ();
 			KeepFieldOnAttribute ();
 			AttributeParametersAndProperties.Test ();
+			MembersOnClassWithRequires<int>.Test ();
 		}
 
 		[RequiresUnreferencedCode ("Message for --ClassWithRequires--")]
@@ -1013,6 +1014,114 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			public static void Test ()
 			{
 				TestClass.Test ();
+			}
+		}
+
+		class RequiresOnCtorAttribute : Attribute {
+			[RequiresUnreferencedCode ("--RequiresOnCtorAttribute--")]
+			public RequiresOnCtorAttribute () {
+			}
+		}
+
+		class MembersOnClassWithRequires<T>
+		{
+			public class RequiresAll<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] U>
+			{
+			}
+
+			[RequiresUnreferencedCode ("--ClassWithRequires--")]
+			public class ClassWithRequires
+			{
+				public static RequiresAll<T> field;
+
+				// https://github.com/dotnet/linker/issues/3142
+				// Instance fields get generic warnings but static fields don't.
+				[ExpectedWarning ("IL2091")]
+				public RequiresAll<T> instanceField;
+
+				[RequiresOnCtor]
+				public static int fieldWithAttribute;
+
+				// https://github.com/dotnet/linker/issues/3140
+				// Instance fields get attribute warnings but static fields don't.
+				[ExpectedWarning ("IL2026", "--RequiresOnCtorAttribute--")]
+				[RequiresOnCtor]
+				public int instanceFieldWithAttribute;
+
+				public static void GenericMethod<U>(RequiresAll<U> r) {}
+
+				public void GenericInstanceMethod<U>(RequiresAll<U> r) {}
+
+				[RequiresOnCtor]
+				public static void MethodWithAttribute() {}
+
+				[RequiresOnCtor]
+				public void InstanceMethodWithAttribute() {}
+
+				// NOTE: The enclosing RUC does not apply to nested types.
+				[ExpectedWarning ("IL2091")]
+				public class ClassWithWarning : RequiresAll<T>
+				{
+					[ExpectedWarning ("IL2091", ProducedBy = ProducedBy.Trimmer)]
+					public ClassWithWarning ()
+					{
+					}
+				}
+
+				// NOTE: The enclosing RUC does not apply to nested types.
+				[ExpectedWarning ("IL2026", "--RequiresOnCtorAttribute--")]
+				[RequiresOnCtor]
+				public class ClassWithAttribute
+				{
+				}
+			}
+
+			// This warning should ideally be suppressed by the RUC on the type:
+			// https://github.com/dotnet/linker/issues/3142
+			[ExpectedWarning ("IL2091")]
+			[RequiresUnreferencedCode ("--GenericClassWithWarningWithRequires--")]
+			public class GenericClassWithWarningWithRequires<U> : RequiresAll<U>
+			{
+			}
+
+			// This warning should ideally be suppressed by the RUC on the type:
+			// https://github.com/dotnet/linker/issues/3142
+			[ExpectedWarning ("IL2091")]
+			[RequiresUnreferencedCode ("--ClassWithWarningWithRequires--")]
+			public class ClassWithWarningWithRequires : RequiresAll<T>
+			{
+			}
+
+			// https://github.com/dotnet/linker/issues/3142
+			[ExpectedWarning ("IL2091")]
+			[RequiresUnreferencedCode ("--GenericAnnotatedWithWarningWithRequires--")]
+			public class GenericAnnotatedWithWarningWithRequires<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] TFields> : RequiresAll<TFields>
+			{
+			}
+
+			[ExpectedWarning ("IL2026", "--ClassWithRequires--", "ClassWithRequires.field")]
+			[ExpectedWarning ("IL2026", "--ClassWithRequires--", "ClassWithRequires.fieldWithAttribute")]
+			[ExpectedWarning ("IL2026", "--ClassWithRequires--", "ClassWithRequires.GenericMethod")]
+			[ExpectedWarning ("IL2026", "--ClassWithRequires--", "ClassWithRequires.MethodWithAttribute")]
+			[ExpectedWarning ("IL2026", "--GenericClassWithWarningWithRequires--")]
+			[ExpectedWarning ("IL2026", "--ClassWithWarningWithRequires--")]
+			[ExpectedWarning ("IL2026", "--GenericAnnotatedWithWarningWithRequires--")]
+			[ExpectedWarning ("IL2091", ProducedBy = ProducedBy.Trimmer)]
+			public static void Test (ClassWithRequires inst = null)
+			{
+				var f = ClassWithRequires.field;
+				f = inst.instanceField;
+				int i = ClassWithRequires.fieldWithAttribute;
+				i = inst.instanceFieldWithAttribute;
+				ClassWithRequires.GenericMethod<int>(new());
+				inst.GenericInstanceMethod<int>(new());
+				ClassWithRequires.MethodWithAttribute();
+				inst.InstanceMethodWithAttribute();
+				var c = new ClassWithRequires.ClassWithWarning ();
+				var d = new ClassWithRequires.ClassWithAttribute();
+				var g = new GenericClassWithWarningWithRequires<int>();
+				var h = new ClassWithWarningWithRequires();
+				var j = new GenericAnnotatedWithWarningWithRequires<int>();
 			}
 		}
 	}
