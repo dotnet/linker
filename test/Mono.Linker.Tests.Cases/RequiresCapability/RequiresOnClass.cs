@@ -1017,9 +1017,11 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 		}
 
-		class RequiresOnCtorAttribute : Attribute {
+		class RequiresOnCtorAttribute : Attribute
+		{
 			[RequiresUnreferencedCode ("--RequiresOnCtorAttribute--")]
-			public RequiresOnCtorAttribute () {
+			public RequiresOnCtorAttribute ()
+			{
 			}
 		}
 
@@ -1048,15 +1050,15 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				[RequiresOnCtor]
 				public int instanceFieldWithAttribute;
 
-				public static void GenericMethod<U>(RequiresAll<U> r) {}
+				public static void GenericMethod<U> (RequiresAll<U> r) { }
 
-				public void GenericInstanceMethod<U>(RequiresAll<U> r) {}
-
-				[RequiresOnCtor]
-				public static void MethodWithAttribute() {}
+				public void GenericInstanceMethod<U> (RequiresAll<U> r) { }
 
 				[RequiresOnCtor]
-				public void InstanceMethodWithAttribute() {}
+				public static void MethodWithAttribute () { }
+
+				[RequiresOnCtor]
+				public void InstanceMethodWithAttribute () { }
 
 				// NOTE: The enclosing RUC does not apply to nested types.
 				[ExpectedWarning ("IL2091")]
@@ -1113,15 +1115,15 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				f = inst.instanceField;
 				int i = ClassWithRequires.fieldWithAttribute;
 				i = inst.instanceFieldWithAttribute;
-				ClassWithRequires.GenericMethod<int>(new());
-				inst.GenericInstanceMethod<int>(new());
-				ClassWithRequires.MethodWithAttribute();
-				inst.InstanceMethodWithAttribute();
+				ClassWithRequires.GenericMethod<int> (new ());
+				inst.GenericInstanceMethod<int> (new ());
+				ClassWithRequires.MethodWithAttribute ();
+				inst.InstanceMethodWithAttribute ();
 				var c = new ClassWithRequires.ClassWithWarning ();
-				var d = new ClassWithRequires.ClassWithAttribute();
-				var g = new GenericClassWithWarningWithRequires<int>();
-				var h = new ClassWithWarningWithRequires();
-				var j = new GenericAnnotatedWithWarningWithRequires<int>();
+				var d = new ClassWithRequires.ClassWithAttribute ();
+				var g = new GenericClassWithWarningWithRequires<int> ();
+				var h = new ClassWithWarningWithRequires ();
+				var j = new GenericAnnotatedWithWarningWithRequires<int> ();
 			}
 		}
 	}
