@@ -105,17 +105,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[RequiresUnreferencedCode ("--RUCTypeWithIterators--")]
 			class RUCTypeWithIterators
 			{
-				// [ExpectedWarning ("IL2112", nameof (StaticIteratorCallsMethodWithRequires), "--RUCTypeWithIterators--",
-				// 	ProducedBy = ProducedBy.Trimmer)]
-				[ExpectedWarning ("IL2112", "<" + nameof (StaticIteratorCallsMethodWithRequires) + ">", "d__0(Int32)", "--RUCTypeWithIterators--", CompilerGeneratedCode = true,
+				[ExpectedWarning ("IL2112", "<" + nameof (StaticIteratorCallsMethodWithRequires) + ">", "(Int32)", "--RUCTypeWithIterators--", CompilerGeneratedCode = true,
 					ProducedBy = ProducedBy.Trimmer)] // state machine ctor
-				[ExpectedWarning ("IL2112", "<" + nameof (StaticIteratorCallsMethodWithRequires) + ">", "d__0.<>1__state", "--RUCTypeWithIterators--", CompilerGeneratedCode = true,
-					ProducedBy = ProducedBy.Trimmer)]
-				[ExpectedWarning ("IL2112", "<" + nameof (StaticIteratorCallsMethodWithRequires) + ">", "d__0.<>2__current", "--RUCTypeWithIterators--", CompilerGeneratedCode = true,
-					ProducedBy = ProducedBy.Trimmer)]
-				// [ExpectedWarning ("IL2112", "<" + nameof (StaticIteratorCallsMethodWithRequires) + ">", "d__0.<>4__this", "--RUCTypeWithIterators--", CompilerGeneratedCode = true)]
-				[ExpectedWarning ("IL2112", "<" + nameof (StaticIteratorCallsMethodWithRequires) + ">", "d__0.<>l__initialThreadId", "--RUCTypeWithIterators--", CompilerGeneratedCode = true,
-					ProducedBy = ProducedBy.Trimmer)]
 				[ExpectedWarning ("IL2112", nameof (StaticIteratorCallsMethodWithRequires) + "()", "--RUCTypeWithIterators--",
 					ProducedBy = ProducedBy.Trimmer)]
 				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
@@ -126,21 +117,8 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 					MethodWithRequires ();
 				}
 
-				// BUG: this should also give IL2112 for the InstanceIteratorCallsMethodWithRequires state machine constructor.
-				// https://github.com/dotnet/linker/issues/2806
-				// [ExpectedWarning ("IL2026", "<" + nameof (RUCTypeWithIterators.InstanceIteratorCallsMethodWithRequires) + ">")]
-				// With that, the IL2119 warning should also go away.
-				[ExpectedWarning ("IL2112", "<" + nameof (InstanceIteratorCallsMethodWithRequires) + ">", "d__1(Int32)", CompilerGeneratedCode = true,
-					ProducedBy = ProducedBy.Trimmer)]
-				// TODO: should we warn on reflection access to fields in a RUC type? Instance fields?
-				[ExpectedWarning ("IL2112", "<" + nameof (InstanceIteratorCallsMethodWithRequires) + ">", "d__1.<>1__state", CompilerGeneratedCode = true,
-					ProducedBy = ProducedBy.Trimmer)]
-				[ExpectedWarning ("IL2112", "<" + nameof (InstanceIteratorCallsMethodWithRequires) + ">", "d__1.<>2__current", CompilerGeneratedCode = true,
-					ProducedBy = ProducedBy.Trimmer)]
-				[ExpectedWarning ("IL2112", "<" + nameof (InstanceIteratorCallsMethodWithRequires) + ">", "d__1.<>4__this", CompilerGeneratedCode = true,
-					ProducedBy = ProducedBy.Trimmer)]
-				[ExpectedWarning ("IL2112", "<" + nameof (InstanceIteratorCallsMethodWithRequires) + ">", "d__1.<>l__initialThreadId", CompilerGeneratedCode = true,
-					ProducedBy = ProducedBy.Trimmer)]
+				[ExpectedWarning ("IL2112", "<" + nameof (InstanceIteratorCallsMethodWithRequires) + ">", "(Int32)", "--RUCTypeWithIterators--", CompilerGeneratedCode = true,
+					ProducedBy = ProducedBy.Trimmer)] // state machine ctor
 				[ExpectedWarning ("IL2112", nameof (InstanceIteratorCallsMethodWithRequires) + "()",
 					ProducedBy = ProducedBy.Trimmer)]
 				[ExpectedWarning ("IL3002", "--MethodWithRequires--", ProducedBy = ProducedBy.Analyzer)]
@@ -167,15 +145,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			[ExpectedWarning ("IL2026", nameof (RUCTypeWithIterators.StaticIteratorCallsMethodWithRequires) + "()", "--RUCTypeWithIterators--")]
 			[ExpectedWarning ("IL2026", "<" + nameof (RUCTypeWithIterators.StaticIteratorCallsMethodWithRequires) + ">",
 				ProducedBy = ProducedBy.Trimmer)]
-			// BUG: this should also give IL2026 for the InstanceIteratorCallsMethodWithRequires state machine constructor.
-			// https://github.com/dotnet/linker/issues/2806
-			// [ExpectedWarning ("IL2026", "<" + nameof (RUCTypeWithIterators.InstanceIteratorCallsMethodWithRequires) + ">")]
-			// With that, the IL2118 warning should also go away.
-			// [ExpectedWarning ("IL2118", "<" + nameof (RUCTypeWithIterators.InstanceIteratorCallsMethodWithRequires) + ">", "MoveNext",
-			// 	ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2026", nameof (RUCTypeWithIterators.InstanceIteratorCallsMethodWithRequires) + "()")]
-			[ExpectedWarning ("IL2026", "<" + nameof (RUCTypeWithIterators.InstanceIteratorCallsMethodWithRequires) + ">", "d__1(Int32)",
-				ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "<" + nameof (RUCTypeWithIterators.InstanceIteratorCallsMethodWithRequires) + ">", "(Int32)",
+				ProducedBy = ProducedBy.Trimmer)] // state machine ctor
 			[ExpectedWarning ("IL2118", "<" + nameof (IteratorWithCorrectDataflow) + ">", "<t_IteratorWithCorrectDataflow>",
 				ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL2118", "<" + nameof (IteratorWithProblematicDataflow) + ">", "<t_IteratorWithProblematicDataflow>",

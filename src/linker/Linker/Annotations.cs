@@ -633,6 +633,7 @@ namespace Mono.Linker
 
 		internal bool ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (ICustomAttributeProvider? originMember, [NotNullWhen (true)] out RequiresUnreferencedCodeAttribute? attribute)
 		{
+			attribute = null;
 			// Check if the current scope method has RequiresUnreferencedCode on it
 			// since that attribute automatically suppresses all trim analysis warnings.
 			// Check both the immediate origin method as well as suppression context method
@@ -641,10 +642,11 @@ namespace Mono.Linker
 				IsInRequiresUnreferencedCodeScope ((MethodDefinition) originMember, out attribute))
 				return true;
 
-			if (originMember is not IMemberDefinition member) {
-				attribute = null;
+			if (originMember is FieldDefinition field)
+				return field.IsStatic && TryGetLinkerAttribute (field.DeclaringType, out attribute);
+
+			if (originMember is not IMemberDefinition member)
 				return false;
-			}
 
 			MethodDefinition? owningMethod;
 			while (context.CompilerGeneratedState.TryGetOwningMethodForCompilerGeneratedMember (member, out owningMethod)) {
@@ -654,7 +656,6 @@ namespace Mono.Linker
 				member = owningMethod;
 			}
 
-			attribute = null;
 			return false;
 		}
 
