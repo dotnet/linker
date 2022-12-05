@@ -3071,7 +3071,6 @@ namespace Mono.Linker.Steps
 			bool skipWarningsForOverride;
 			bool isReflectionAccessCoveredByRUC;
 			RequiresUnreferencedCodeAttribute? requiresUnreferencedCode;
-			// Attribute properties are marked as a result of marking attribute instances, not because 
 			if (dependencyKind == DependencyKind.AttributeProperty) {
 				// Property assignment in an attribute instance.
 				// This case is more like a direct method call than reflection, and should

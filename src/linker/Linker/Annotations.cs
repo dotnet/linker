@@ -601,7 +601,7 @@ namespace Mono.Linker
 		/// Determines if method is within a declared RUC scope - this typically means that trim analysis
 		/// warnings should be suppressed in such a method.
 		/// </summary>
-		/// <remarks>Unlike <see cref="DoesMemberRequireUnreferencedCode(IMemberDefinition, out RequiresUnreferencedCodeAttribute?)"/>
+		/// <remarks>Unlike <see cref="DoesMethodRequireUnreferencedCode(IMemberDefinition, out RequiresUnreferencedCodeAttribute?)"/>
 		/// if a declaring type has RUC, all methods in that type are considered "in scope" of that RUC. So this includes also
 		/// instance methods (not just statics and .ctors).</remarks>
 		internal bool IsInRequiresUnreferencedCodeScope (MethodDefinition method, [NotNullWhen (true)] out RequiresUnreferencedCodeAttribute? attribute)
@@ -616,21 +616,6 @@ namespace Mono.Linker
 			return false;
 		}
 
-		/// <summary>
-		/// Determines if a member requires unreferenced code (and thus any usage of such method should be warned about).
-		/// </summary>
-		/// <remarks>Unlike <see cref="IsInRequiresUnreferencedCodeScope(MethodDefinition)"/> only static methods
-		/// and .ctors are reported as requiring unreferenced code when the declaring type has RUC on it.</remarks>
-		internal bool DoesMemberRequireUnreferencedCode (IMemberDefinition member, [NotNullWhen (returnValue: true)] out RequiresUnreferencedCodeAttribute? attribute)
-		{
-			attribute = null;
-			return member switch {
-				MethodDefinition method => DoesMethodRequireUnreferencedCode (method, out attribute),
-				FieldDefinition field => DoesFieldRequireUnreferencedCode (field, out attribute),
-				_ => false
-			};
-		}
-
 		internal bool ShouldSuppressAnalysisWarningsForRequiresUnreferencedCode (ICustomAttributeProvider? originMember, [NotNullWhen (true)] out RequiresUnreferencedCodeAttribute? attribute)
 		{
 			attribute = null;
@@ -643,7 +628,7 @@ namespace Mono.Linker
 				return true;
 
 			if (originMember is FieldDefinition field)
-				return field.IsStatic && TryGetLinkerAttribute (field.DeclaringType, out attribute);
+				return DoesFieldRequireUnreferencedCode (field, out attribute);
 
 			if (originMember is not IMemberDefinition member)
 				return false;
@@ -659,6 +644,11 @@ namespace Mono.Linker
 			return false;
 		}
 
+		/// <summary>
+		/// Determines if a method requires unreferenced code (and thus any usage of such method should be warned about).
+		/// </summary>
+		/// <remarks>Unlike <see cref="IsInRequiresUnreferencedCodeScope(MethodDefinition)"/> only static methods
+		/// and .ctors are reported as requiring unreferenced code when the declaring type has RUC on it.</remarks>
 		internal bool DoesMethodRequireUnreferencedCode (MethodDefinition originalMethod, [NotNullWhen (returnValue: true)] out RequiresUnreferencedCodeAttribute? attribute)
 		{
 			MethodDefinition? method = originalMethod;

@@ -530,6 +530,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			// it will be covered by the base method. But in this case the base method
 			// is unannotated (and the mismatch produces no warning because the derived
 			// type has RUC).
+			// https://github.com/dotnet/linker/issues/2533
 			[ExpectedWarning ("IL2026", "DerivedWithRequiresOnTypeOverBaseWithNoRequires.Method()", ProducedBy = ProducedBy.Analyzer)]
 			static void TestDAMAccess ()
 			{
@@ -545,10 +546,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				// Warns because ImplementationWithRequiresOnType.Method is a static public method on a RUC type
 				typeof (ImplementationWithRequiresOnType).RequiresPublicMethods ();
 
-				// Doesn't warn since BaseWithRequiresOnType has no static methods
+				// Warns for instance method on BaseWithRequiresOnType
 				typeof (BaseWithRequiresOnType).RequiresPublicMethods ();
 
-				// Doesn't warn since DerivedWithoutRequiresOnType has no static methods
+				// Warns for instance method on base type
 				typeof (DerivedWithoutRequiresOnType).RequiresPublicMethods ();
 
 				// Doesn't warn since the type has no statics
@@ -569,10 +570,10 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 				// Requires on the method itself
 				typeof (InterfaceWithoutRequires).GetMethod (nameof (InterfaceWithoutRequires.Method));
 
-				// Warns because ImplementationWithRequiresOnType.Method is a static public method on a RUC type
+				// Warns for static and instance methods on ImplementationWithRequiresOnType
 				typeof (ImplementationWithRequiresOnType).GetMethod (nameof (ImplementationWithRequiresOnType.Method));
 
-				// Doesn't warn since Method is not static (so it doesn't matter that the type has RUC)
+				// Warns for instance Method on RUC type
 				typeof (BaseWithRequiresOnType).GetMethod (nameof (BaseWithRequiresOnType.Method));
 			}
 
