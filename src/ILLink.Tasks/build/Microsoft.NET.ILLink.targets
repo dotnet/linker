@@ -81,6 +81,7 @@ Copyright (c) .NET Foundation. All rights reserved.
           Condition=" '$(PublishTrimmed)' == 'true' And
                       '$(RunILLink)' != 'false' And
                       '$(_TargetFrameworkVersionWithoutV)' >= '3.0' And '$(TargetFrameworkIdentifier)' == '.NETCoreApp' "
+          AfterTargets="ComputeResolvedFilesToPublishList"
           DependsOnTargets="_RunILLink">
 
     <NETSdkError Condition="'$(_ILLinkExitCode)' != '' And '$(_ILLinkExitCode)' != '0'" ResourceName="ILLinkFailed" />
