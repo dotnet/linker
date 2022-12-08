@@ -283,8 +283,7 @@ namespace Mono.Linker.Dataflow
 			// Now that we have instantiating methods fully filled out, walk the generated types and fill in the attribute
 			// providers
 			foreach (var generatedType in generatedTypeToTypeArgs.Keys) {
-				if (HasGenericParameters (generatedType))
-				{
+				if (HasGenericParameters (generatedType)) {
 					MapGeneratedTypeTypeParameters (generatedType, generatedTypeToTypeArgs, _context);
 					// Finally, add resolved type arguments to the cache
 					var info = generatedTypeToTypeArgs[generatedType];

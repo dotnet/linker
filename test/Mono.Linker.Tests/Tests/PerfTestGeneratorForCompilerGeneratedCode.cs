@@ -15,7 +15,7 @@ using System.Linq;
 static class PerfTestGeneratorForCompilerGeneratedCode
 {
 	const int FuncNumber = 10000;
-    public static void Run()
+	public static void Run ()
 	{
 		using var fstream = File.Create ("GeneratedLinkerTests.cs");
 		using var writer = new StreamWriter (fstream);
