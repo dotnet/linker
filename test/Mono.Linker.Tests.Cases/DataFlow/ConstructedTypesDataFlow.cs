@@ -16,7 +16,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 	[SkipKeptItemsValidation]
 	class ConstructedTypesDataFlow
 	{
-		public static void Main()
+		public static void Main ()
 		{
 			DeconstructedVariable.Test ();
 			ConstructedVariable.Test ();
@@ -63,7 +63,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				public void Deconstruct ([DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)] out Type type, out object instance)
 					=> (type, instance) = (this.type, this.instance);
 			}
-		
+
 			// This case actually works because the annotation is correctly propagated through the Deconstruct
 			static void DeconstructClassWithAnnotation (TypeAndInstanceManual value)
 			{
@@ -111,7 +111,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		class ConstructedVariable
 		{
 			[ExpectedWarning ("IL2077")]
-			static void ConstructedType()
+			static void ConstructedType ()
 			{
 				var ct = (typeof (string), 1);
 				ct.Item1.RequiresPublicMethods ();
@@ -132,7 +132,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 			}
 
 			[ExpectedWarning ("IL2072")]
-			static void AnonymousTypeWithoutAnnotations()
+			static void AnonymousTypeWithoutAnnotations ()
 			{
 				var ct = new {
 					Type = typeof (string),
@@ -177,7 +177,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				_ = new TypeAndValue (typeUnknown, 3);
 			}
 
-			public static void Test()
+			public static void Test ()
 			{
 				ConstructedType ();
 				ConstructedTypeNamed ();
