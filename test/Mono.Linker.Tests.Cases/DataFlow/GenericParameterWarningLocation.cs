@@ -73,7 +73,7 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 				// The method body in this case looks like:
 				//     BaseWithPublicMethods<TUnknown>.GetMethods ()
 				// The type instantiation needs to be validated and in this case it produces a warning.
-				// This is no different from the same code being part of a completely unrelate method/class.
+				// This is no different from the same code being part of a completely unrelated method/class.
 				// So the fact that this is in derived class has no impact on the validation in this case.
 				[ExpectedWarning ("IL2091")]
 				public static void GetDerivedMethods () => GetMethods ();
@@ -136,9 +136,9 @@ namespace Mono.Linker.Tests.Cases.DataFlow
 		}
 
 		// Method parameter instantiation doesn't technically need to be validated on its own
-		// Especially in AOT compiler the type of the method parameter won't event exist in the compilation
+		// Especially in AOT compiler the type of the method parameter won't even exist in the compilation
 		// unless something passes a real value to it, in which case that value creation will do all the necessary
-		// validations. So the declaration of the parameter type alone doesn't not create an analysis hole
+		// validations. So the declaration of the parameter type alone doesn't create an analysis hole
 		// it only becomes one if something tries to create an instance of such type.
 		// Similarly for statics - since we do validate accesses to static members, the static .ctor is covered through
 		// those as well.
