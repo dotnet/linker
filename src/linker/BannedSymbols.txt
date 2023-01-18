@@ -1,2 +1,6 @@
 T:Mono.Cecil.Cil.ILProcessor;Use LinkerILProcessor instead
 M:Mono.Cecil.TypeReference.Resolve();Use LinkContext.Resolve and LinkContext.TryResolve helpers instead
+P:Mono.Cecil.Cil.MethodBody.Instructions;Use LinkContext.MethodBodyInstructionProvider instead
+P:Mono.Cecil.Cil.MethodBody.ExceptionHandlers;Use LinkContext.MethodBodyInstructionProvider instead
+P:Mono.Cecil.Cil.MethodBody.Variables;Use LinkContext.MethodBodyInstructionProvider instead
+M:Mono.Linker.Steps.ILProvider/MethodIL.Create;Use ILProvider GetMethodIL instead
