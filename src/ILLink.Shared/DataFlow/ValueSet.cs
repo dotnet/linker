@@ -120,8 +120,8 @@ namespace ILLink.Shared.DataFlow
 			}
 		}
 
-		public static bool operator ==(ValueSet<TValue> left, ValueSet<TValue> right) => left.Equals(right);
-		public static bool operator !=(ValueSet<TValue> left, ValueSet<TValue> right) => !(left == right);
+		public static bool operator == (ValueSet<TValue> left, ValueSet<TValue> right) => left.Equals (right);
+		public static bool operator != (ValueSet<TValue> left, ValueSet<TValue> right) => !(left == right);
 
 		public override int GetHashCode ()
 		{

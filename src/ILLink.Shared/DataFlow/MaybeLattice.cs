@@ -27,8 +27,8 @@ namespace ILLink.Shared.DataFlow
 			return new (value);
 		}
 
-		public static bool operator ==(Maybe<T> left, Maybe<T> right) => left.Equals(right);
-		public static bool operator !=(Maybe<T> left, Maybe<T> right) => !(left == right);
+		public static bool operator == (Maybe<T> left, Maybe<T> right) => left.Equals (right);
+		public static bool operator != (Maybe<T> left, Maybe<T> right) => !(left == right);
 	}
 
 	public struct MaybeLattice<T, TValueLattice> : ILattice<Maybe<T>>
