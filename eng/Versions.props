@@ -25,7 +25,6 @@
     <MicrosoftNetCompilersToolsetVersion>$(MicrosoftCodeAnalysisVersion)</MicrosoftNetCompilersToolsetVersion>
     <MicrosoftCodeAnalysisCSharpAnalyzerTestingXunitVersion>1.0.1-beta1.*</MicrosoftCodeAnalysisCSharpAnalyzerTestingXunitVersion>
     <MicrosoftCodeAnalysisBannedApiAnalyzersVersion>3.3.2</MicrosoftCodeAnalysisBannedApiAnalyzersVersion>
-    <MicrosoftCodeAnalysisNetAnalyzersVersion>8.0.0-preview1.22566.1</MicrosoftCodeAnalysisNetAnalyzersVersion>
     <MicrosoftILVerificationVersion>8.0.0-alpha.1.23067.11</MicrosoftILVerificationVersion>
     <!-- This controls the version of the cecil package, or the version of cecil in the project graph
          when we build the cecil submodule. The reference assembly package will depend on this version of cecil.
