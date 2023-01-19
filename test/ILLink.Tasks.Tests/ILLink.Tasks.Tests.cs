@@ -829,6 +829,8 @@ namespace ILLink.Tasks.Tests
 			if (corelibPath == null)
 				throw new NotSupportedException ("Running this test in single-file mode is not yet supported.");
 
+Assert.Equal ("foo", corelibPath);
+
 			string dotnetToolName = OperatingSystem.IsWindows () ? "dotnet.exe" : "dotnet";
 
 			// The path to corelib should be something like <dotnetroot>/shared/Microsoft.NETCore.App/version/System.Private.CoreLib.dll
