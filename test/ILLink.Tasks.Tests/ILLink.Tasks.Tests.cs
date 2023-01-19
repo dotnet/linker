@@ -829,7 +829,7 @@ namespace ILLink.Tasks.Tests
 			if (corelibPath == null)
 				throw new NotSupportedException ("Running this test in single-file mode is not yet supported.");
 
-Assert.Equal ("foo", corelibPath);
+			Assert.Equal ("foo", corelibPath);
 
 			string dotnetToolName = OperatingSystem.IsWindows () ? "dotnet.exe" : "dotnet";
 
