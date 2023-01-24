@@ -7,6 +7,12 @@
     <CallTarget Targets="VSTest" Condition="'$(IsTestProject)' == 'true'" />
   </Target>
 
+  <!-- Don't flow repo settings (i.e. paths) into referenced submodule repo projects. -->
+  <ItemGroup>
+    <ProjectReference Update="@(ProjectReference->WithMetadataValue('Filename', 'Mono.Cecil'));
+                              @(ProjectReference->WithMetadataValue('Filename', 'Mono.Cecil.Pdb'))"
+                      UndefineProperties="%(UndefineProperties);RepoRoot;VersionsPropsPath" />
+  </ItemGroup>
 
   <!-- Shared logic for reference assemblies. This enables apicompat and
        packaging logic for projects that have corresponding reference assemblies. -->
