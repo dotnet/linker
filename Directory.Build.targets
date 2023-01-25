@@ -11,7 +11,8 @@
   <ItemGroup>
     <ProjectReference Update="@(ProjectReference->WithMetadataValue('Filename', 'Mono.Cecil'));
                               @(ProjectReference->WithMetadataValue('Filename', 'Mono.Cecil.Pdb'))"
-                      UndefineProperties="%(UndefineProperties);RepoRoot;VersionsPropsPath" />
+                      UndefineProperties="%(UndefineProperties);RepoRoot;VersionsPropsPath"
+                      PrivateAssets="all" />
   </ItemGroup>
 
   <!-- Shared logic for reference assemblies. This enables apicompat and
