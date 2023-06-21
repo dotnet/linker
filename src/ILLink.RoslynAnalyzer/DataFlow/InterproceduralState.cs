@@ -39,7 +39,7 @@ namespace ILLink.RoslynAnalyzer.DataFlow
 			=> Methods.Equals (other.Methods) && HoistedLocals.Equals (other.HoistedLocals);
 
 		public InterproceduralState<TValue, TValueLattice> Clone ()
-			=> new (Methods.Clone (),
+			=> new (Methods.DeepCopy (),
 			HoistedLocals.Clone (), lattice);
 
 		public void TrackMethod (MethodBodyValue method)
