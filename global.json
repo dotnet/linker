@@ -1,9 +1,9 @@
 {
   "tools": {
-    "dotnet": "6.0.121"
+    "dotnet": "6.0.122"
   },
   "msbuild-sdks": {
-    "Microsoft.DotNet.Arcade.Sdk": "6.0.0-beta.23409.1",
+    "Microsoft.DotNet.Arcade.Sdk": "6.0.0-beta.23476.1",
     "Microsoft.FIX-85B6-MERGE-9C38-CONFLICT": "1.0.0",
     "Microsoft.NET.Sdk.IL": "7.0.0-alpha.1.21524.4"
   }
