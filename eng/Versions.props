@@ -23,8 +23,8 @@
     <MicrosoftCodeAnalysisVersion>3.10.0-2.final</MicrosoftCodeAnalysisVersion>
     <MicrosoftCodeAnalysisCSharpAnalyzerTestingXunitVersion>1.1.2-beta1.22109.1</MicrosoftCodeAnalysisCSharpAnalyzerTestingXunitVersion>
     <MicrosoftCodeAnalysisBannedApiAnalyzersVersion>3.3.2</MicrosoftCodeAnalysisBannedApiAnalyzersVersion>
-    <MicrosoftNETTestSdkVersion>16.11.0</MicrosoftNETTestSdkVersion>
-    <NuGetProtocolVersion>6.6.1</NuGetProtocolVersion>
+    <MicrosoftNETTestSdkVersion>17.8.0</MicrosoftNETTestSdkVersion>
+    <NuGetProtocolVersion>6.6.2</NuGetProtocolVersion>
     <!-- This controls the version of the cecil package, or the version of cecil in the project graph
          when we build the cecil submodule. The reference assembly package will depend on this version of cecil.
          Keep this in sync with ProjectInfo.cs in the submodule. -->
