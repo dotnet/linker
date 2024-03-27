@@ -21,7 +21,7 @@
     <MicrosoftDotNetCodeAnalysisVersion>6.0.0-beta.21271.1</MicrosoftDotNetCodeAnalysisVersion>
     <MicrosoftCodeAnalysisCSharpCodeStyleVersion>3.10.0-2.final</MicrosoftCodeAnalysisCSharpCodeStyleVersion>
     <MicrosoftCodeAnalysisVersion>3.10.0-2.final</MicrosoftCodeAnalysisVersion>
-    <MicrosoftCodeAnalysisCSharpAnalyzerTestingXunitVersion>1.1.1</MicrosoftCodeAnalysisCSharpAnalyzerTestingXunitVersion>
+    <MicrosoftCodeAnalysisCSharpAnalyzerTestingXunitVersion>1.1.2-beta1.22109.1</MicrosoftCodeAnalysisCSharpAnalyzerTestingXunitVersion>
     <MicrosoftCodeAnalysisBannedApiAnalyzersVersion>3.3.2</MicrosoftCodeAnalysisBannedApiAnalyzersVersion>
     <MicrosoftNETTestSdkVersion>16.11.0</MicrosoftNETTestSdkVersion>
     <NuGetProtocolVersion>6.6.1</NuGetProtocolVersion>
