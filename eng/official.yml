@@ -51,7 +51,8 @@ extends:
       - job: SourceBuild_Managed
         displayName: Source-Build (Managed)
         pool:
-          vmImage: ubuntu-latest
+          demands: ImageOverride -equals 1es-ubuntu-2204
+          os: linux
         container: 'mcr.microsoft.com/dotnet-buildtools/prereqs:centos-7-3e800f1-20190501005343'
         workspace:
           clean: all
