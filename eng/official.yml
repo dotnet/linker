@@ -58,7 +58,7 @@ extends:
         steps:
         - checkout: self
           submodules: true
-        - template: /eng/common/templates/steps/source-build.yml
+        - template: /eng/common/templates-official/steps/source-build.yml
           parameters:
             enablePublishTestResults: true
 
