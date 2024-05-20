@@ -47,6 +47,23 @@ extends:
     - stage: build
       displayName: Build
       jobs:
+
+      - job: SourceBuild_Managed
+        displayName: Source-Build (Managed)
+        pool:
+          name: NetCore1ESPool-Svc-Internal
+          demands: ImageOverride -equals 1es-ubuntu-2204
+          os: linux
+        container: 'mcr.microsoft.com/dotnet-buildtools/prereqs:centos-7-3e800f1-20190501005343'
+        workspace:
+          clean: all
+        steps:
+        - checkout: self
+          submodules: true
+        - template: /eng/common/templates-official/steps/source-build.yml@self
+          parameters:
+            enablePublishTestResults: true
+
       - template: /eng/common/templates-official/jobs/jobs.yml@self
         parameters:
           enableTelemetry: true
