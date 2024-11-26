@@ -10,7 +10,6 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
-using Microsoft.CodeAnalysis.Testing.Verifiers;
 
 namespace ILLink.RoslynAnalyzer.Tests
 {
@@ -24,7 +23,7 @@ namespace ILLink.RoslynAnalyzer.Tests
 		   where TAnalyzer : DiagnosticAnalyzer, new()
 		   where TCodeFix : Microsoft.CodeAnalysis.CodeFixes.CodeFixProvider, new()
 	{
-		public class Test : CSharpCodeFixTest<TAnalyzer, TCodeFix, XUnitVerifier>
+		public class Test : CSharpCodeFixTest<TAnalyzer, TCodeFix, DefaultVerifier>
 		{
 			public Test ()
 			{
